@@ -5,112 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>هي كيميا ! - بروفايل الطالب</title>
   <link rel="stylesheet" href="dashboard.css">
-  <link rel="stylesheet" href="style.css">
   <style>
-    .live-chat-bubble-btn {
-      position: fixed;
-      bottom: 25px;
-      left: 25px;
-      background: var(--primary);
-      color: #03070a;
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      box-shadow: 0 6px 20px var(--primary-glow);
-      cursor: pointer;
-      z-index: 9999;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .live-chat-bubble-btn:hover {
-      transform: scale(1.08);
-    }
-    .live-chat-window {
-      display: none;
-      position: fixed;
-      bottom: 90px;
-      left: 25px;
-      width: 350px;
-      height: 460px;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-lg);
-      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(20px);
-      z-index: 9999;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    .chat-win-header {
-      background: rgba(6, 9, 17, 0.85);
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border-glass);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .chat-win-messages {
-      flex: 1;
-      padding: 14px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .student-bubble {
-      align-self: flex-end;
-      background: var(--primary);
-      color: #03070a;
-      font-weight: 700;
-      padding: 8px 12px;
-      border-radius: 12px;
-      border-bottom-left-radius: 2px;
-      max-width: 80%;
-      font-size: 13px;
-    }
-    .support-bubble {
-      align-self: flex-start;
-      background: #1e293b;
-      color: #fff;
-      padding: 8px 12px;
-      border-radius: 12px;
-      border-bottom-right-radius: 2px;
-      border: 1px solid var(--border-glass);
-      max-width: 80%;
-      font-size: 13px;
-    }
-    .chat-win-input {
-      padding: 10px 14px;
-      background: rgba(6, 9, 17, 0.85);
-      border-top: 1px solid var(--border-glass);
-      display: flex;
-      gap: 8px;
-    }
+    .live-chat-bubble-btn { position: fixed; bottom: 25px; left: 25px; background: var(--emerald); color: #03070a; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; z-index: 9999; }
+    .live-chat-window { display: none; position: fixed; bottom: 90px; left: 25px; width: 350px; height: 460px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 18px; z-index: 9999; flex-direction: column; overflow: hidden; backdrop-filter: blur(20px); }
+    .chat-win-header { background: rgba(6, 9, 17, 0.85); padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+    .chat-win-messages { flex: 1; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+    .student-bubble { align-self: flex-end; background: var(--emerald); color: #03070a; font-weight: 700; padding: 8px 12px; border-radius: 12px; max-width: 80%; font-size: 13px; }
+    .support-bubble { align-self: flex-start; background: #1e293b; color: #fff; padding: 8px 12px; border-radius: 12px; max-width: 80%; font-size: 13px; }
+    .chat-win-input { padding: 10px 14px; background: rgba(6, 9, 17, 0.85); border-top: 1px solid var(--border); display: flex; gap: 8px; }
   </style>
 </head>
 <body>
 
   <div class="dashboard-wrapper">
     <aside class="sidebar">
-      <div class="sidebar-brand">
-        <h2>هي كيميا<span>!</span></h2>
-      </div>
+      <div class="sidebar-brand"><h2>هي كيميا<span>!</span></h2></div>
       <div class="user-profile-summary">
         <div class="avatar" id="dashAvatar">ط</div>
-        <div class="user-info">
-          <h4 id="dashName">اسم الطالب</h4>
-          <span class="badge" id="dashMeta">طالب مسجل</span>
-        </div>
+        <div class="user-info"><h4 id="dashName">اسم الطالب</h4><span class="badge" id="dashMeta">طالب مسجل</span></div>
       </div>
       <nav class="sidebar-nav">
         <a href="dashboard.html" class="nav-item active">📊 لوحة التحكم</a>
         <a href="#my-courses" class="nav-item">📚 كورساتي المفعلة</a>
         <a href="#general-exams" class="nav-item">🏆 الامتحانات الشاملة</a>
         <a href="#exams" class="nav-item">📝 سجل درجاتي</a>
-        <a href="javascript:void(0)" onclick="toggleChatWindow()" class="nav-item" style="color:var(--cyan);">💬 الدعم الفني لايف</a>
+        <a href="javascript:void(0)" onclick="toggleChatWindow()" class="nav-item" style="color:var(--cyan);">💬 الدعم الفني</a>
         <a href="index.html#courses" class="nav-item">🛒 تصفح الكورسات</a>
         <a href="javascript:void(0)" onclick="logout()" class="nav-item logout">🚪 تسجيل الخروج</a>
       </nav>
@@ -118,75 +37,32 @@
 
     <main class="main-content">
       <header class="topbar">
-        <div>
-          <h1>مرحباً بك يا <span id="welcomeName">بطل</span> 👋</h1>
-          <p class="subtitle">المختبر التعليمي - كيمياء المرحلة الثانوية والأزهر</p>
-        </div>
-        <div class="topbar-actions">
-          <span class="school-tag" id="dashSchool">🏫 المدرسة</span>
-        </div>
+        <div><h1>مرحباً بك يا <span id="welcomeName">بطل</span> 👋</h1><p class="subtitle">المختبر التعليمي لكيمياء الثانوية العامة</p></div>
+        <span class="school-tag" id="dashSchool">🏫 المدرسة</span>
       </header>
 
       <section class="stats-grid">
-        <div class="stat-card">
-          <span class="stat-icon">📚</span>
-          <div>
-            <h3 id="enrolledCount">0</h3>
-            <p>الكورسات المفعلة</p>
-          </div>
-        </div>
-        <div class="stat-card">
-          <span class="stat-icon">🎯</span>
-          <div>
-            <h3 id="averageScore">0%</h3>
-            <p>متوسط الامتحانات</p>
-          </div>
-        </div>
-        <div class="stat-card">
-          <span class="stat-icon">📝</span>
-          <div>
-            <h3 id="completedExamsCount">0</h3>
-            <p>الامتحانات المكتملة</p>
-          </div>
-        </div>
-        <div class="stat-card">
-          <span class="stat-icon">🏆</span>
-          <div>
-            <h3 id="studentRating">مستجد</h3>
-            <p>التقييم العام</p>
-          </div>
-        </div>
+        <div class="stat-card"><span class="stat-icon">📚</span><div><h3 id="enrolledCount">0</h3><p>الكورسات المفعلة</p></div></div>
+        <div class="stat-card"><span class="stat-icon">🎯</span><div><h3 id="averageScore">0%</h3><p>متوسط الامتحانات</p></div></div>
+        <div class="stat-card"><span class="stat-icon">📝</span><div><h3 id="completedExamsCount">0</h3><p>الامتحانات المكتملة</p></div></div>
+        <div class="stat-card"><span class="stat-icon">🏆</span><div><h3 id="studentRating">مستجد</h3><p>التقييم العام</p></div></div>
       </section>
 
-      <section id="my-courses" class="dashboard-section">
-        <div class="section-header">
-          <h2>الكورسات المفعلة بحسابك</h2>
-          <a href="index.html#courses" class="btn-link" style="color:var(--primary); text-decoration:none;">تصفح المزيد من الكورسات ←</a>
-        </div>
-        <div class="courses-enrolled-grid" id="coursesContainer"></div>
+      <section id="my-courses" style="margin-bottom:30px;">
+        <h2 style="font-size:18px; margin-bottom:15px;">الكورسات المفعلة بحسابك</h2>
+        <div class="courses-grid" id="coursesContainer"></div>
       </section>
 
-      <section id="general-exams" class="dashboard-section">
-        <div class="section-header">
-          <h2>🏆 الامتحانات الشاملة والتجريبية</h2>
-        </div>
-        <div class="courses-enrolled-grid" id="generalExamsContainer"></div>
+      <section id="general-exams" style="margin-bottom:30px;">
+        <h2 style="font-size:18px; margin-bottom:15px;">🏆 الامتحانات الشاملة</h2>
+        <div class="courses-grid" id="generalExamsContainer"></div>
       </section>
 
-      <section id="exams" class="dashboard-section">
-        <div class="section-header"><h2>سجل نتائج الامتحانات والتقييمات</h2></div>
+      <section id="exams">
+        <h2 style="font-size:18px; margin-bottom:15px;">نتائج الامتحانات والتقييمات</h2>
         <div class="table-container">
           <table class="exams-table">
-            <thead>
-              <tr>
-                <th>اسم الامتحان</th>
-                <th>المادة</th>
-                <th>تاريخ الحل</th>
-                <th>الدرجة المحصلة</th>
-                <th>النسبة</th>
-                <th>الحالة</th>
-              </tr>
-            </thead>
+            <thead><tr><th>اسم الامتحان</th><th>المادة</th><th>التاريخ</th><th>الدرجة</th><th>النسبة</th><th>الحالة</th></tr></thead>
             <tbody id="examsTableBody"></tbody>
           </table>
         </div>
@@ -194,174 +70,104 @@
     </main>
   </div>
 
-  <div class="live-chat-bubble-btn" onclick="toggleChatWindow()" title="محادثة لايف مع الدعم">
-    💬
-  </div>
-
+  <div class="live-chat-bubble-btn" onclick="toggleChatWindow()">💬</div>
   <div class="live-chat-window" id="liveChatWindow">
     <div class="chat-win-header">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="color: var(--primary); font-size: 14px;">🟢</span>
-        <div>
-          <h4 style="font-size: 13px; color: #fff;">الدعم الفني - هي كيميا !</h4>
-          <span style="font-size: 11px; color: var(--text-muted);">متصلون معك للرد على أي استفسار</span>
-        </div>
-      </div>
-      <button onclick="toggleChatWindow()" style="background:none; border:none; color:#fff; font-size:16px; cursor:pointer;">✕</button>
+      <h4 style="font-size:13px; color:#fff;">شات الدعم والمعلم 🟢</h4>
+      <button onclick="toggleChatWindow()" style="background:none; border:none; color:#fff; cursor:pointer;">✕</button>
     </div>
-
     <div class="chat-win-messages" id="studentChatMessages"></div>
-
     <form class="chat-win-input" id="studentSendForm">
-      <input type="text" id="studentMsgInput" placeholder="اكتب رسالتك وسنرد عليك..." style="padding:8px 12px; font-size:13px;" required>
-      <button type="submit" class="btn btn-primary" style="padding:6px 12px; font-size:13px;">إرسال</button>
+      <input type="text" id="studentMsgInput" placeholder="اكتب سؤالك وسنرد فوراً..." required>
+      <button type="submit" class="btn btn-primary" style="padding:6px 12px;">إرسال</button>
     </form>
   </div>
 
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const user = getCurrentUser();
-      if (!user) {
-        window.location.href = "login.html";
-        return;
-      }
+    const user = JSON.parse(localStorage.getItem("current_user"));
+    if (!user) window.location.href = "login.html";
 
-      if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") { window.location.href = "admin.html"; return; }
-      if (user.role === "SUPPORT") { window.location.href = "support.html"; return; }
+    document.getElementById("dashName").innerText = user.fullName;
+    document.getElementById("dashAvatar").innerText = user.fullName.slice(0, 2);
+    document.getElementById("dashMeta").innerText = `${user.educationType === 'AZHAR' ? 'أزهر' : 'عام'} - ${user.governorate || 'مصر'}`;
+    document.getElementById("dashSchool").innerText = `🏫 ${user.schoolName || 'المنصة'}`;
+    document.getElementById("welcomeName").innerText = user.fullName.split(" ")[0];
 
-      document.getElementById("dashName").innerText = user.fullName;
-      document.getElementById("dashAvatar").innerText = user.fullName.slice(0, 2);
-      document.getElementById("dashMeta").innerText = `${user.educationType === 'AZHAR' ? 'أزهر' : 'عام'} - ${user.governorate}`;
-      document.getElementById("dashSchool").innerText = `🏫 ${user.schoolName}`;
-      document.getElementById("welcomeName").innerText = user.fullName.split(" ")[0];
+    const allCourses = JSON.parse(localStorage.getItem("edu_courses")) || [];
+    const myCourses = allCourses.filter(c => user.enrolledCourses && user.enrolledCourses.includes(c.id));
+    document.getElementById("enrolledCount").innerText = myCourses.length;
 
-      const allCourses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-      const myCourses = allCourses.filter(c => user.enrolledCourses && user.enrolledCourses.includes(c.id));
-      document.getElementById("enrolledCount").innerText = myCourses.length;
-
-      const coursesCont = document.getElementById("coursesContainer");
-      if (myCourses.length === 0) {
-        coursesCont.innerHTML = `<div style="background:var(--bg-surface); padding:24px; border-radius:var(--radius-lg); grid-column:1/-1; text-align:center; border:1px dashed var(--border-glass);"><p style="color:var(--text-muted); margin-bottom:12px;">لست مشتركاً في أي كورس حالياً.</p><a href="index.html#courses" class="btn btn-primary">تصفح الكورسات واشترك الآن</a></div>`;
-      } else {
-        coursesCont.innerHTML = myCourses.map(c => `
-          <div class="enrolled-card">
-            <div class="enrolled-card-header">
-              <span class="subject-tag" style="background:rgba(16,185,129,0.12); color:var(--primary);">كورس مفعّل</span>
-              <span class="status-tag active">مشترك</span>
-            </div>
-            <h3>${c.title}</h3>
-            <p>${c.desc}</p>
-            <div class="card-actions" style="margin-top:15px;">
-              <a href="course-view.html?id=${c.id}" class="btn btn-primary" style="width:100%;">دخول المحاضرات والمذكرات 🎬</a>
-            </div>
+    const coursesCont = document.getElementById("coursesContainer");
+    if (myCourses.length === 0) {
+      coursesCont.innerHTML = `<div style="background:var(--bg-card); padding:20px; border-radius:14px; text-align:center; border:1px dashed var(--border); grid-column:1/-1;"><p style="color:var(--text-muted); margin-bottom:10px;">لست مشتركاً في أي كورس حالياً.</p><a href="index.html#courses" class="btn btn-primary">تصفح الكورسات</a></div>`;
+    } else {
+      coursesCont.innerHTML = myCourses.map(c => `
+        <div class="course-card">
+          <div class="course-card-body">
+            <span class="card-tag">كورس مفعّل</span>
+            <h3 style="color:#fff; font-size:18px; margin-bottom:6px;">${c.title}</h3>
+            <p style="color:var(--text-muted); font-size:13px; margin-bottom:15px;">${c.desc}</p>
+            <a href="course-view.html?id=${c.id}" class="btn btn-primary" style="width:100%;">دخول المحاضرات 🎬</a>
           </div>
-        `).join('');
-      }
+        </div>
+      `).join('');
+    }
 
-      const allExams = JSON.parse(localStorage.getItem("edu_exams")) || [];
-      const generalExams = allExams.filter(e => e.isGeneral);
-      const generalContainer = document.getElementById("generalExamsContainer");
+    const allExams = JSON.parse(localStorage.getItem("edu_exams")) || [];
+    const generalExams = allExams.filter(e => e.isGeneral);
+    document.getElementById("generalExamsContainer").innerHTML = generalExams.map(ge => `
+      <div class="course-card">
+        <div class="course-card-body">
+          <span class="card-tag">امتحان شامل</span>
+          <h3 style="color:#fff; font-size:18px; margin-bottom:6px;">${ge.title}</h3>
+          <p style="color:var(--text-muted); font-size:13px; margin-bottom:15px;">المدة: ${ge.durationMinutes} دقيقة</p>
+          <a href="exam.html?examId=${ge.id}" class="btn btn-primary" style="width:100%;">بدء الامتحان 🎯</a>
+        </div>
+      </div>
+    `).join('');
 
-      if (generalExams.length === 0) {
-        generalContainer.innerHTML = `<p style="color:var(--text-muted); grid-column:1/-1;">لا توجد امتحانات شاملة منشورة حالياً.</p>`;
-      } else {
-        generalContainer.innerHTML = generalExams.map(ge => `
-          <div class="enrolled-card" style="border-color:var(--cyan);">
-            <div class="enrolled-card-header">
-              <span class="subject-tag" style="background:rgba(6,182,212,0.12); color:var(--cyan);">امتحان شامل</span>
-              <span class="status-tag active">متاح</span>
-            </div>
-            <h3>${ge.title}</h3>
-            <p>المدة: ${ge.durationMinutes} دقيقة | عدد الأسئلة: ${ge.questions ? ge.questions.length : 0}</p>
-            <div class="card-actions" style="margin-top:15px;">
-              <a href="exam.html?examId=${ge.id}" class="btn btn-primary" style="width:100%;">بدء الامتحان الشامل 🎯</a>
-            </div>
-          </div>
-        `).join('');
-      }
-
-      const allSubmissions = JSON.parse(localStorage.getItem("edu_submissions")) || [];
-      const mySubs = allSubmissions.filter(s => s.userEmail === user.email);
-      document.getElementById("completedExamsCount").innerText = mySubs.length;
-
-      const examsTable = document.getElementById("examsTableBody");
-      if (mySubs.length === 0) {
-        examsTable.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">لم تقم بحل أي امتحانات بعد.</td></tr>`;
-      } else {
-        const avg = Math.round(mySubs.reduce((acc, curr) => acc + curr.percentage, 0) / mySubs.length);
-        document.getElementById("averageScore").innerText = `${avg}%`;
-        document.getElementById("studentRating").innerText = avg >= 85 ? "ممتاز 🌟" : avg >= 65 ? "جيد جداً 👍" : "مستمر بالتدريب";
-
-        examsTable.innerHTML = mySubs.map(s => `
-          <tr>
-            <td style="font-weight:bold; color:#fff;">${s.examTitle}</td>
-            <td>${s.subject}</td>
-            <td>${s.date}</td>
-            <td><strong style="color:var(--primary);">${s.score}</strong> / ${s.total}</td>
-            <td><span class="${s.percentage >= 50 ? 'score-high' : 'score-mid'}">${s.percentage}%</span></td>
-            <td><span class="badge-success">تم التسليم</span></td>
-          </tr>
-        `).reverse().join('');
-      }
-    });
+    const submissions = JSON.parse(localStorage.getItem("edu_submissions")) || [];
+    const mySubs = submissions.filter(s => s.userEmail === user.email);
+    document.getElementById("completedExamsCount").innerText = mySubs.length;
+    if (mySubs.length > 0) {
+      const avg = Math.round(mySubs.reduce((acc, curr) => acc + curr.percentage, 0) / mySubs.length);
+      document.getElementById("averageScore").innerText = `${avg}%`;
+      document.getElementById("studentRating").innerText = avg >= 85 ? "ممتاز 🌟" : avg >= 65 ? "جيد جداً 👍" : "مستمر بالتدريب";
+      document.getElementById("examsTableBody").innerHTML = mySubs.map(s => `
+        <tr><td>${s.examTitle}</td><td>${s.subject}</td><td>${s.date}</td><td>${s.score}/${s.total}</td><td>${s.percentage}%</td><td><span class="badge-success">تم التسليم</span></td></tr>
+      `).join('');
+    }
 
     function toggleChatWindow() {
       const win = document.getElementById("liveChatWindow");
       win.style.display = (win.style.display === "flex") ? "none" : "flex";
-      if (win.style.display === "flex") renderStudentLiveMessages();
+      if (win.style.display === "flex") renderLiveMessages();
     }
+    window.toggleChatWindow = toggleChatWindow;
 
-    function renderStudentLiveMessages() {
-      const user = getCurrentUser();
-      if (!user) return;
-
+    function renderLiveMessages() {
       const chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
       const myChats = chats.filter(c => c.studentEmail === user.email);
       const container = document.getElementById("studentChatMessages");
-
-      if (myChats.length === 0) {
-        container.innerHTML = `<p style="text-align:center; color:var(--text-muted); font-size:12px; margin-top:20px;">مرحباً بك! اكتب أي سؤال أو استفسار وسيرد عليك الدعم فوراً.</p>`;
-      } else {
-        container.innerHTML = myChats.map(c => `
-          <div class="${c.sender === 'student' ? 'student-bubble' : 'support-bubble'}">
-            ${c.text}
-            <span style="font-size:9px; opacity:0.7; display:block; margin-top:2px;">${c.time || ''}</span>
-          </div>
-        `).join('');
-        container.scrollTop = container.scrollHeight;
-      }
+      container.innerHTML = myChats.map(c => `
+        <div class="${c.sender === 'student' ? 'student-bubble' : 'support-bubble'}">${c.text}</div>
+      `).join('');
+      container.scrollTop = container.scrollHeight;
     }
 
     document.getElementById("studentSendForm").addEventListener("submit", (e) => {
       e.preventDefault();
-      const user = getCurrentUser();
       const input = document.getElementById("studentMsgInput");
       const text = input.value.trim();
       if (!text) return;
-
       const chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
-      chats.push({
-        id: Date.now(),
-        studentEmail: user.email,
-        studentName: user.fullName,
-        sender: "student",
-        text: text,
-        time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
-      });
-
+      chats.push({ id: Date.now(), studentEmail: user.email, studentName: user.fullName, sender: "student", text: text, time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) });
       localStorage.setItem("edu_live_chats", JSON.stringify(chats));
       input.value = "";
-      renderStudentLiveMessages();
+      renderLiveMessages();
     });
-
-    window.addEventListener("storage", () => {
-      if (document.getElementById("liveChatWindow").style.display === "flex") renderStudentLiveMessages();
-    });
-
-    setInterval(() => {
-      if (document.getElementById("liveChatWindow").style.display === "flex") renderStudentLiveMessages();
-    }, 1500);
+    setInterval(() => { if (document.getElementById("liveChatWindow").style.display === "flex") renderLiveMessages(); }, 1500);
   </script>
 </body>
 </html>

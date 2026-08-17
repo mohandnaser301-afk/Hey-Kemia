@@ -5,12 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>هي كيميا ! - إنشاء حساب طالب جديد</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    .auth-wrapper {
-      max-width: 620px;
-      margin: 40px auto;
-    }
-  </style>
+  <style>.auth-wrapper { max-width: 620px; margin: 40px auto; }</style>
 </head>
 <body>
 
@@ -26,7 +21,7 @@
   <div class="container">
     <div class="form-container auth-wrapper">
       <h2 style="color: #fff; font-size: 22px; text-align: center; margin-bottom: 6px;">إنشاء حساب طالب جديد 🎓</h2>
-      <p style="color: var(--text-muted); font-size: 13px; text-align: center; margin-bottom: 25px;">انضم لقاعدة بيانات كيمياء المرحلة الثانوية</p>
+      <p style="color: var(--text-muted); font-size: 13px; text-align: center; margin-bottom: 25px;">أدخل بياناتك للانضمام لمنصة كيمياء الثانوية العامة</p>
 
       <form id="registerForm">
         <div class="form-group">
@@ -87,30 +82,11 @@
           </div>
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 10px;">إنشاء الحساب والبدء</button>
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 10px;">إنشاء الحساب والبدء 🚀</button>
       </form>
     </div>
   </div>
 
-  <script type="module">
-    import { registerStudent } from "./app.js";
-
-    document.getElementById("registerForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      
-      const userData = {
-        fullName: document.getElementById("fullName").value.trim(),
-        email: document.getElementById("email").value.trim(),
-        password: document.getElementById("password").value.trim(),
-        studentPhone: document.getElementById("studentPhone").value.trim(),
-        parentPhone: document.getElementById("parentPhone").value.trim(),
-        governorate: document.getElementById("governorate").value,
-        schoolName: document.getElementById("schoolName").value.trim(),
-        educationType: document.querySelector('input[name="educationType"]:checked').value
-      };
-
-      registerStudent(userData);
-    });
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>

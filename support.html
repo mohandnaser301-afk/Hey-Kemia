@@ -5,145 +5,55 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>هي كيميا ! - شات الدعم الحي</title>
   <link rel="stylesheet" href="dashboard.css">
-  <link rel="stylesheet" href="style.css">
   <style>
-    .chat-layout {
-      display: grid;
-      grid-template-columns: 320px 1fr;
-      gap: 20px;
-      height: calc(100vh - 125px);
-      background: var(--bg-card);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-    }
-    .chat-users-list {
-      background: rgba(6, 9, 17, 0.65);
-      border-left: 1px solid var(--border-glass);
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-    }
-    .chat-user-item {
-      padding: 15px;
-      border-bottom: 1px solid var(--border-glass);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      transition: all 0.2s;
-    }
-    .chat-user-item:hover, .chat-user-item.active {
-      background: rgba(16, 185, 129, 0.08);
-      border-right: 4px solid var(--primary);
-    }
-    .chat-main-area {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-    }
-    .chat-header {
-      padding: 15px 20px;
-      border-bottom: 1px solid var(--border-glass);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: rgba(6, 9, 17, 0.5);
-    }
-    .chat-messages {
-      flex: 1;
-      padding: 20px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .message-bubble {
-      max-width: 70%;
-      padding: 12px 16px;
-      border-radius: 14px;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-    .msg-student {
-      align-self: flex-start;
-      background: #1e293b;
-      color: #fff;
-      border-bottom-right-radius: 2px;
-      border: 1px solid var(--border-glass);
-    }
-    .msg-support {
-      align-self: flex-end;
-      background: var(--primary);
-      color: #03070a;
-      font-weight: 700;
-      border-bottom-left-radius: 2px;
-    }
-    .msg-time {
-      font-size: 10px;
-      opacity: 0.7;
-      margin-top: 4px;
-      display: block;
-      text-align: left;
-    }
-    .chat-input-area {
-      padding: 14px 20px;
-      border-top: 1px solid var(--border-glass);
-      background: rgba(6, 9, 17, 0.65);
-      display: flex;
-      gap: 10px;
-    }
+    .chat-layout { display: grid; grid-template-columns: 320px 1fr; gap: 20px; height: calc(100vh - 125px); background: var(--bg-card); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+    .chat-users-list { background: rgba(6, 9, 17, 0.65); border-left: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column; }
+    .chat-user-item { padding: 15px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; gap: 12px; }
+    .chat-user-item.active { background: rgba(16, 185, 129, 0.1); border-right: 4px solid var(--emerald); }
+    .chat-main-area { display: flex; flex-direction: column; height: 100%; }
+    .chat-header { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(6, 9, 17, 0.5); }
+    .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+    .message-bubble { max-width: 70%; padding: 12px 16px; border-radius: 14px; font-size: 14px; }
+    .msg-student { align-self: flex-start; background: #1e293b; color: #fff; }
+    .msg-support { align-self: flex-end; background: var(--emerald); color: #03070a; font-weight: 700; }
+    .chat-input-area { padding: 14px 20px; border-top: 1px solid var(--border); background: rgba(6, 9, 17, 0.65); display: flex; gap: 10px; }
   </style>
 </head>
 <body>
 
   <div class="dashboard-wrapper">
     <aside class="sidebar">
-      <div class="sidebar-brand">
-        <h2>هي كيميا<span>!</span></h2>
-      </div>
+      <div class="sidebar-brand"><h2>هي كيميا<span>!</span></h2></div>
       <div class="user-profile-summary">
-        <div class="avatar" id="agentAvatar" style="background: var(--primary); color:#000;">دعم</div>
-        <div class="user-info">
-          <h4 id="agentName">فريق الدعم</h4>
-          <span class="badge" id="agentRoleBadge" style="color:var(--primary);">🟢 متصل الآن</span>
-        </div>
+        <div class="avatar">💬</div>
+        <div class="user-info"><h4 id="agentName">فريق الدعم</h4><span class="badge" style="color:var(--emerald-light);">🟢 متصل</span></div>
       </div>
       <nav class="sidebar-nav">
-        <a href="support.html" class="nav-item active">💬 شات الطلاب المباشر</a>
-        <a id="adminBackLink" href="admin.html" class="nav-item">🧪 لوحة الإدارة</a>
+        <a href="support.html" class="nav-item active">💬 شات الطلاب</a>
+        <a href="admin.html" class="nav-item">🧪 لوحة الإدارة</a>
         <a href="index.html" class="nav-item">🌐 عرض الموقع</a>
         <a href="javascript:void(0)" onclick="logout()" class="nav-item logout">🚪 تسجيل الخروج</a>
       </nav>
     </aside>
 
     <main class="main-content" style="padding: 20px 30px;">
-      <header class="topbar" style="margin-bottom: 15px;">
-        <div>
-          <h1>غرفة المحادثات الحية والدعم الفني 💬</h1>
-          <p class="subtitle">الرد الفوري والمباشر على استفسارات الطلاب لحظياً</p>
-        </div>
-      </header>
-
       <div class="chat-layout">
         <div class="chat-users-list">
-          <div style="padding: 12px 15px; font-weight: bold; color: var(--cyan); border-bottom: 1px solid var(--border-glass);">
-            محادثات الطلاب النشطة
-          </div>
+          <div style="padding: 12px 15px; font-weight: bold; color: var(--cyan); border-bottom: 1px solid var(--border);">المحادثات النشطة</div>
           <div id="usersListContainer"></div>
         </div>
 
         <div class="chat-main-area">
           <div class="chat-header">
             <div>
-              <h3 id="currentChatStudentName" style="color: #fff; font-size: 16px;">اختر طالباً لبدء المحادثة</h3>
-              <span id="currentChatStudentMeta" style="font-size: 12px; color: var(--primary);"></span>
+              <h3 id="currentChatStudentName" style="color: #fff; font-size: 16px;">اختر طالباً للرد عليه</h3>
+              <span id="currentChatStudentMeta" style="font-size: 12px; color: var(--emerald-light);"></span>
             </div>
             <button class="btn btn-outline" style="padding: 4px 10px; font-size: 12px;" onclick="loadMessages()">تحديث 🔄</button>
           </div>
 
           <div class="chat-messages" id="messagesContainer">
-            <p style="text-align:center; color:var(--text-muted); margin-top:50px;">يرجى اختيار طالب من القائمة الجانبية لعرض المحادثة والرد عليه.</p>
+            <p style="text-align:center; color:var(--text-muted); margin-top:50px;">اختر طالباً من القائمة لعرض المحادثة والرد عليه.</p>
           </div>
 
           <form class="chat-input-area" id="supportSendForm" style="display:none;">
@@ -155,129 +65,72 @@
     </main>
   </div>
 
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
   <script>
-    // السماح لكل من SUPER_ADMIN و ADMIN و SUPPORT بالدخول دون حظر
-    const user = getCurrentUser();
+    const user = JSON.parse(localStorage.getItem("current_user"));
     if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN" && user.role !== "SUPPORT")) {
-      alert("عذراً، هذه الصفحة مخصصة للمشرفين وفريق الدعم فقط!");
+      alert("مخصص للإدارة وفريق الدعم فقط!");
       window.location.href = "login.html";
     }
 
     document.getElementById("agentName").innerText = user.fullName;
-    document.getElementById("agentRoleBadge").innerText = (user.role === "SUPER_ADMIN") ? "المشرف العام 👑" : (user.role === "ADMIN") ? "مساعد إدارة 🧪" : "مسؤول دعم 💬";
-
-    let activeStudentEmail = null;
-    let activeStudentName = null;
+    let activeEmail = null;
+    let activeName = null;
 
     function renderActiveUsers() {
       const chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
-      const usersMap = {};
+      const map = {};
+      chats.forEach(c => { map[c.studentEmail] = { name: c.studentName || "طالب", email: c.studentEmail, lastMsg: c.text, time: c.time }; });
+      const container = document.getElementById("usersListContainer");
+      const emails = Object.keys(map);
+      if (emails.length === 0) { container.innerHTML = `<p style="color:var(--text-muted); padding:15px; font-size:13px;">لا توجد رسائل بعد.</p>`; return; }
 
-      chats.forEach(c => {
-        if (!usersMap[c.studentEmail]) {
-          usersMap[c.studentEmail] = {
-            name: c.studentName || "طالب",
-            email: c.studentEmail,
-            lastMsg: c.text,
-            time: c.time
-          };
-        } else {
-          usersMap[c.studentEmail].lastMsg = c.text;
-          usersMap[c.studentEmail].time = c.time;
-        }
-      });
-
-      const listContainer = document.getElementById("usersListContainer");
-      const userEmails = Object.keys(usersMap);
-
-      if (userEmails.length === 0) {
-        listContainer.innerHTML = `<p style="color:var(--text-muted); padding:15px; font-size:13px;">لا توجد أي محادثات حتى الآن.</p>`;
-        return;
-      }
-
-      listContainer.innerHTML = userEmails.map(email => {
-        const u = usersMap[email];
-        return `
-          <div class="chat-user-item ${activeStudentEmail === email ? 'active' : ''}" onclick="selectStudent('${u.email}', '${u.name}')">
-            <div class="avatar" style="width:36px; height:36px; font-size:12px; border-radius:8px;">${u.name.slice(0,2)}</div>
-            <div style="flex:1; overflow:hidden;">
-              <h4 style="font-size:13px; color:#fff; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${u.name}</h4>
-              <p style="font-size:11px; color:var(--text-muted); white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${u.lastMsg}</p>
-            </div>
-            <span style="font-size:10px; color:var(--cyan);">${u.time || ''}</span>
-          </div>
-        `;
-      }).join('');
+      container.innerHTML = emails.map(email => `
+        <div class="chat-user-item ${activeEmail === email ? 'active' : ''}" onclick="selectStudent('${email}', '${map[email].name}')">
+          <div class="avatar" style="width:36px; height:36px; font-size:12px;">${map[email].name.slice(0,2)}</div>
+          <div style="flex:1;"><h4 style="font-size:13px; color:#fff;">${map[email].name}</h4><p style="font-size:11px; color:var(--text-muted);">${map[email].lastMsg}</p></div>
+        </div>
+      `).join('');
     }
 
     function selectStudent(email, name) {
-      activeStudentEmail = email;
-      activeStudentName = name;
+      activeEmail = email;
+      activeName = name;
       document.getElementById("currentChatStudentName").innerText = `محادثة مع: ${name}`;
-      document.getElementById("currentChatStudentMeta").innerText = `البريد: ${email} | 🟢 متصل`;
+      document.getElementById("currentChatStudentMeta").innerText = `${email} | 🟢 مباشر`;
       document.getElementById("supportSendForm").style.display = "flex";
       renderActiveUsers();
       loadMessages();
     }
 
     function loadMessages() {
-      if (!activeStudentEmail) return;
-
+      if (!activeEmail) return;
       const chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
-      const studentMsgs = chats.filter(c => c.studentEmail === activeStudentEmail);
+      const msgs = chats.filter(c => c.studentEmail === activeEmail);
       const container = document.getElementById("messagesContainer");
-
-      if (studentMsgs.length === 0) {
-        container.innerHTML = `<p style="text-align:center; color:var(--text-muted); margin-top:30px;">لا توجد رسائل سابقة. أرسل ردك الآن.</p>`;
-      } else {
-        container.innerHTML = studentMsgs.map(m => `
-          <div class="message-bubble ${m.sender === 'support' ? 'msg-support' : 'msg-student'}">
-            <span style="font-size:11px; font-weight:bold; display:block; margin-bottom:2px; opacity:0.8;">
-              ${m.sender === 'support' ? 'فريق الدعم / المشرف' : activeStudentName}
-            </span>
-            ${m.text}
-            <span class="msg-time">${m.time || ''}</span>
-          </div>
-        `).join('');
-        container.scrollTop = container.scrollHeight;
-      }
+      container.innerHTML = msgs.map(m => `
+        <div class="message-bubble ${m.sender === 'support' ? 'msg-support' : 'msg-student'}">
+          <span style="font-size:10px; display:block; opacity:0.8;">${m.sender === 'support' ? 'أنت' : activeName}</span>
+          ${m.text}
+        </div>
+      `).join('');
+      container.scrollTop = container.scrollHeight;
     }
 
     document.getElementById("supportSendForm").addEventListener("submit", (e) => {
       e.preventDefault();
-      if (!activeStudentEmail) return;
-
       const input = document.getElementById("supportMsgInput");
       const text = input.value.trim();
-      if (!text) return;
-
+      if (!text || !activeEmail) return;
       const chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
-      const newMsg = {
-        id: Date.now(),
-        studentEmail: activeStudentEmail,
-        studentName: activeStudentName,
-        sender: "support",
-        text: text,
-        time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
-      };
-
-      chats.push(newMsg);
+      chats.push({ id: Date.now(), studentEmail: activeEmail, studentName: activeName, sender: "support", text: text, time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) });
       localStorage.setItem("edu_live_chats", JSON.stringify(chats));
       input.value = "";
       loadMessages();
       renderActiveUsers();
     });
 
-    window.addEventListener("storage", () => {
-      renderActiveUsers();
-      loadMessages();
-    });
-
-    setInterval(() => {
-      loadMessages();
-    }, 1500);
-
+    setInterval(() => { if (activeEmail) loadMessages(); renderActiveUsers(); }, 1500);
     renderActiveUsers();
   </script>
 </body>
