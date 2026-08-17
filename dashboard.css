@@ -1,0 +1,221 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+
+:root {
+  --bg: #05070d;
+  --surface: #0a0e1a;
+  --card-bg: rgba(13, 19, 33, 0.7);
+  --border: rgba(255, 255, 255, 0.08);
+  --emerald: #10b981;
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'IBM Plex Sans Arabic', 'Plus Jakarta Sans', sans-serif;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+.dashboard-wrapper {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* الشريط الجانبي */
+.sidebar {
+  width: 270px;
+  background-color: var(--surface);
+  border-left: 1px solid var(--border);
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.sidebar-brand h2 {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 24px;
+  padding-right: 8px;
+}
+
+.sidebar-brand span { color: var(--emerald); }
+
+.user-profile-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 24px;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  background: var(--emerald);
+  color: #03070a;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-item {
+  padding: 10px 14px;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s;
+}
+
+.nav-item:hover, .nav-item.active {
+  background: rgba(16, 185, 129, 0.08);
+  color: #34d399;
+}
+
+.nav-item.logout {
+  margin-top: auto;
+  color: #f43f5e;
+}
+
+.nav-item.logout:hover {
+  background: rgba(244, 63, 94, 0.08);
+}
+
+/* المحتوى الأساسي */
+.main-content {
+  flex: 1;
+  padding: 32px 38px;
+  overflow-y: auto;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.topbar h1 {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.school-tag {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* بطاقات الإحصائيات */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.stat-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  padding: 20px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  backdrop-filter: blur(10px);
+}
+
+.stat-icon {
+  font-size: 22px;
+  background: rgba(16, 185, 129, 0.08);
+  padding: 10px;
+  border-radius: var(--radius-sm);
+}
+
+.stat-card h3 {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.stat-card p {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* الجداول */
+.table-container {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  backdrop-filter: blur(10px);
+}
+
+.exams-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: right;
+  font-size: 14px;
+}
+
+.exams-table th, .exams-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.exams-table th {
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.badge-success {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.score-high { color: #34d399; font-weight: 700; }
+.score-mid { color: #f59e0b; font-weight: 700; }
+
+@media (max-width: 900px) {
+  .dashboard-wrapper { flex-direction: column; }
+  .sidebar { width: 100%; border-left: none; border-bottom: 1px solid var(--border); }
+  .main-content { padding: 20px; }
+}

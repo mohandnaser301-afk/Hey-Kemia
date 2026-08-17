@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الامتحان التفاعلي - منصتي</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .exam-container {
+      max-width: 800px;
+      margin: 40px auto;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 30px;
+    }
+    .question-block {
+      background: #0f172a;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 25px;
+    }
+    .option-label {
+      display: block;
+      background: #1e293b;
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin: 10px 0;
+      cursor: pointer;
+      border: 1px solid #334155;
+      transition: all 0.2s;
+    }
+    .option-label:hover { border-color: #38bdf8; }
+    .timer-badge {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+      border: 1px solid #ef4444;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 15px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="exam-container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+      <div>
+        <h2 id="examTitle" style="color: #38bdf8;">امتحان المادة</h2>
+        <p style="color: #94a3b8; font-size: 13px;">اختر الإجابة الصحيحة لكل سؤال ثم اضغط إنهاء وتسليم.</p>
+      </div>
+      <div class="timer-badge" id="timer">الوقت: 15:00</div>
+    </div>
+
+    <form id="examForm">
+      <div id="questionsContainer"></div>
+      <button type="submit" class="btn btn-primary btn-large" style="width: 100%; margin-top: 20px;">تسليم الامتحان وإنهاء 🎯</button>
+    </form>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    const user = getCurrentUser();
+    if (!user) window.location.href = "login.html";
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const examId = parseInt(urlParams.get("examId")) || 1;
+    const exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
+    const exam = exams.find(e => e.id === examId) || exams[0];
+
+    document.getElementById("examTitle").innerText = exam.title;
+
+    // عرض الأسئلة
+    const container = document.getElementById("questionsContainer");
+    container.innerHTML = exam.questions.map((q, qIndex) => `
+      <div class="question-block">
+        <h3 style="color:#fff; font-size:16px; margin-bottom:12px;">${qIndex + 1}. ${q.q}</h3>
+        ${q.options.map((opt, optIndex) => `
+          <label class="option-label">
+            <input type="radio" name="q_${qIndex}" value="${optIndex}" required>
+            <span style="margin-right: 8px; color:#cbd5e1;">${opt}</span>
+          </label>
+        `).join('')}
+      </div>
+    `).join('');
+
+    // مؤقت العد التنازلي
+    let timeLeft = exam.durationMinutes * 60;
+    const timerEl = document.getElementById("timer");
+    const interval = setInterval(() => {
+      let minutes = Math.floor(timeLeft / 60);
+      let seconds = timeLeft % 60;
+      timerEl.innerText = `الوقت المتبقي: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+      if (timeLeft <= 0) {
+        clearInterval(interval);
+        alert("انتهى الوقت المحدد للامتحان! سيتم تسليم إجاباتك تلقائياً.");
+        document.getElementById("examForm").requestSubmit();
+      }
+      timeLeft--;
+    }, 1000);
+
+    // تصحيح الامتحان وحفظ النتيجة
+    document.getElementById("examForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      clearInterval(interval);
+
+      let score = 0;
+      exam.questions.forEach((q, index) => {
+        const selected = document.querySelector(`input[name="q_${index}"]:checked`);
+        if (selected && parseInt(selected.value) === q.correct) {
+          score++;
+        }
+      });
+
+      const percentage = Math.round((score / exam.questions.length) * 100);
+      
+      // حفظ النتيجة في سجل الطالب
+      const submissions = JSON.parse(localStorage.getItem("edu_submissions")) || [];
+      submissions.push({
+        userEmail: user.email,
+        examTitle: exam.title,
+        subject: exam.subject,
+        score: score,
+        total: exam.questions.length,
+        percentage: percentage,
+        date: new Date().toLocaleDateString('ar-EG')
+      });
+      localStorage.setItem("edu_submissions", JSON.stringify(submissions));
+
+      alert(`تم الانتهاء من الامتحان بنجاح!\nدرجتك هي: ${score} من ${exam.questions.length} (${percentage}%)`);
+      window.location.href = "dashboard.html";
+    });
+  </script>
+</body>
+</html>

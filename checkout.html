@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تأكيد الاشتراك والدفع - منصتي</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .payment-box {
+      max-width: 520px;
+      margin: 40px auto;
+      padding: 30px;
+    }
+    .payment-instructions {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px dashed rgba(56, 189, 248, 0.3);
+      padding: 16px;
+      border-radius: 12px;
+      margin: 20px 0;
+    }
+    .instruction-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .instruction-row:last-child { margin-bottom: 0; }
+    .copy-tag {
+      background: rgba(56, 189, 248, 0.1);
+      color: var(--primary);
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-family: monospace;
+      font-size: 15px;
+    }
+  </style>
+</head>
+<body style="display: flex; flex-direction: column; min-height: 100vh;">
+
+  <header class="navbar">
+    <div class="container nav-container">
+      <div class="logo"><h2>منصتي<span>.</span></h2></div>
+      <a href="index.html#courses" class="btn btn-outline">إلغاء والعودة ✕</a>
+    </div>
+  </header>
+
+  <div class="container" style="flex: 1; display: flex; align-items: center;">
+    <div class="form-container payment-box">
+      <h2 style="color: #fff; font-size: 22px; margin-bottom: 4px; text-align: center;">إتمام الاشتراك والدفع</h2>
+      <p style="color: var(--text-muted); font-size: 13px; text-align: center; margin-bottom: 20px;">قم بالتحويل عبر فودافون كاش أو فوري وارفع صورة التحويل</p>
+
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 14px; border-radius: 10px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+          <span style="color: var(--text-muted); font-size: 14px;">الكورس المختار:</span>
+          <strong id="courseTitle" style="color: #fff; font-size: 14px;">جاري التحميل...</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted); font-size: 14px;">المبلغ المطلوب:</span>
+          <strong id="coursePrice" style="color: var(--primary); font-size: 16px;">---</strong>
+        </div>
+      </div>
+
+      <div class="payment-instructions">
+        <div class="instruction-row">
+          <span>📱 فودافون كاش:</span>
+          <span class="copy-tag">01012345678</span>
+        </div>
+        <div class="instruction-row">
+          <span>🏢 كود خدمة فوري:</span>
+          <span class="copy-tag">987654</span>
+        </div>
+      </div>
+
+      <form id="paymentForm">
+        <div class="form-group">
+          <label>طريقة التحويل المستخدمة:</label>
+          <select id="paymentMethod" required>
+            <option value="vodafone">فودافون كاش (Vodafone Cash)</option>
+            <option value="fawry">فوري (Fawry Pay)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>صورة إيصال التحويل / سكرين شوت العملية:</label>
+          <input type="file" id="receiptFile" accept="image/*" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 10px;">إرسال الإيصال وتأكيد الاشتراك 🚀</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

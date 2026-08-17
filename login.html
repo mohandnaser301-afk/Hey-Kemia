@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>هي كيميا ! - تسجيل الدخول السحابي</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body style="display: flex; flex-direction: column; min-height: 100vh;">
+
+  <header class="navbar">
+    <div class="container nav-container">
+      <div class="logo"><h2>هي كيميا<span>!</span></h2></div>
+      <a href="index.html" class="btn btn-outline">الرئيسية ↩</a>
+    </div>
+  </header>
+
+  <div class="container" style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 0;">
+    <div class="form-container" style="max-width: 440px; width: 100%;">
+      <h2 style="font-size: 22px; font-weight: 800; text-align: center; color: #fff; margin-bottom: 6px;">تسجيل الدخول للمنصة 👋</h2>
+      <p style="color: var(--text-muted); font-size: 13px; text-align: center; margin-bottom: 25px;">الاتصال بقاعدة بيانات منصة هي كيميا !</p>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label>البريد الإلكتروني:</label>
+          <input type="email" id="loginEmail" placeholder="student@example.com" required>
+        </div>
+
+        <div class="form-group">
+          <label>كلمة المرور:</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 10px;">تسجيل الدخول 🚀</button>
+      </form>
+
+      <div style="text-align: center; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px;">
+        <p style="font-size: 13px; color: var(--text-muted);">
+          ليس لديك حساب؟ <a href="register.html" style="color: var(--emerald-light); font-weight: bold; text-decoration: none;">إنشاء حساب طالب جديد</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { loginUser } from "./app.js";
+
+    document.getElementById("loginForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = document.getElementById("loginEmail").value.trim();
+      const pass = document.getElementById("loginPassword").value.trim();
+      loginUser(email, pass);
+    });
+  </script>
+</body>
+</html>

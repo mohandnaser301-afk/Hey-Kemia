@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>هي كيميا ! - إنشاء حساب طالب جديد</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .auth-wrapper {
+      max-width: 620px;
+      margin: 40px auto;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="navbar">
+    <div class="container nav-container">
+      <div class="logo"><h2>هي كيميا<span>!</span></h2></div>
+      <div class="auth-buttons">
+        <a href="login.html" class="btn btn-outline">تسجيل الدخول</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="form-container auth-wrapper">
+      <h2 style="color: #fff; font-size: 22px; text-align: center; margin-bottom: 6px;">إنشاء حساب طالب جديد 🎓</h2>
+      <p style="color: var(--text-muted); font-size: 13px; text-align: center; margin-bottom: 25px;">انضم لقاعدة بيانات كيمياء المرحلة الثانوية</p>
+
+      <form id="registerForm">
+        <div class="form-group">
+          <label>الاسم الرباعي للطالب:</label>
+          <input type="text" id="fullName" placeholder="مثال: أحمد محمد علي حسن" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="flex: 1;">
+            <label>البريد الإلكتروني:</label>
+            <input type="email" id="email" placeholder="student@example.com" required>
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label>كلمة المرور:</label>
+            <input type="password" id="password" placeholder="••••••••" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="flex: 1;">
+            <label>رقم هاتف الطالب:</label>
+            <input type="tel" id="studentPhone" placeholder="01xxxxxxxxx" required>
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label>رقم هاتف ولي الأمر:</label>
+            <input type="tel" id="parentPhone" placeholder="01xxxxxxxxx" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="flex: 1;">
+            <label>المحافظة:</label>
+            <select id="governorate" required>
+              <option value="" disabled selected>اختر المحافظة</option>
+              <option value="كفر الشيخ">كفر الشيخ</option>
+              <option value="القاهرة">القاهرة</option>
+              <option value="الإسكندرية">الإسكندرية</option>
+              <option value="الغربية">الغربية</option>
+              <option value="الدقهلية">الدقهلية</option>
+              <option value="الجيزة">الجيزة</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label>اسم المدرسة:</label>
+            <input type="text" id="schoolName" placeholder="اكتب اسم مدرستك" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>نوع التعليم:</label>
+          <div style="display: flex; gap: 20px; align-items: center; height: 42px;">
+            <label style="cursor: pointer; color: #fff; margin-bottom: 0;">
+              <input type="radio" name="educationType" value="GENERAL" checked> ثانوي عام
+            </label>
+            <label style="cursor: pointer; color: #fff; margin-bottom: 0;">
+              <input type="radio" name="educationType" value="AZHAR"> ثانوي أزهر
+            </label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 10px;">إنشاء الحساب والبدء</button>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { registerStudent } from "./app.js";
+
+    document.getElementById("registerForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      
+      const userData = {
+        fullName: document.getElementById("fullName").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        password: document.getElementById("password").value.trim(),
+        studentPhone: document.getElementById("studentPhone").value.trim(),
+        parentPhone: document.getElementById("parentPhone").value.trim(),
+        governorate: document.getElementById("governorate").value,
+        schoolName: document.getElementById("schoolName").value.trim(),
+        educationType: document.querySelector('input[name="educationType"]:checked').value
+      };
+
+      registerStudent(userData);
+    });
+  </script>
+</body>
+</html>
