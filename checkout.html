@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>هي كيميا ! - تأكيد الاشتراك والدفع</title>
+  <title>هي كيميا ! - تأكيد الاشتراك والدفع السحابي</title>
   <link rel="stylesheet" href="style.css">
   <style>
     .payment-box { max-width: 520px; margin: 40px auto; }
@@ -22,7 +22,7 @@
   <div class="container" style="flex: 1; display: flex; align-items: center;">
     <div class="form-container payment-box">
       <h2 style="color: #fff; font-size: 22px; text-align: center; margin-bottom: 4px;">إتمام الاشتراك والدفع</h2>
-      <p style="color: var(--text-muted); font-size: 13px; text-align: center; margin-bottom: 20px;">حول المبلغ عبر فودافون كاش أو فوري وارفع صورة الإيصال</p>
+      <p style="color: var(--text-muted); font-size: 13px; text-align: center; margin-bottom: 20px;">حول المبلغ وارفع الإيصال للتفعيل السحابي الفوري</p>
 
       <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 14px; border-radius: 10px;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
@@ -60,46 +60,52 @@
           <input type="file" id="receiptFile" accept="image/*" required>
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 10px;">إرسال الإيصال وتأكيد الاشتراك 🚀</button>
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 10px;">إرسال الإيصال للسحابة 🚀</button>
       </form>
     </div>
   </div>
 
-  <script type="module" src="app.js"></script>
-  <script>
-    const user = JSON.parse(localStorage.getItem("current_user"));
+  <script type="module">
+    import { db, doc, getDoc, collection, addDoc, logAction, getCurrentUser } from "./app.js";
+
+    const user = getCurrentUser();
     if (!user) window.location.href = "login.html";
 
     const urlParams = new URLSearchParams(window.location.search);
-    const courseId = urlParams.get("course") || "c1";
-    const courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-    const course = courses.find(c => c.id == courseId);
+    const courseId = urlParams.get("course");
+    let currentCourse = null;
 
-    if (course) {
-      document.getElementById("courseTitle").innerText = course.title;
-      document.getElementById("coursePrice").innerText = `${course.price} ج.م`;
+    async function loadCourse() {
+      const snap = await getDoc(doc(db, "courses", courseId));
+      if (snap.exists()) {
+        currentCourse = snap.data();
+        document.getElementById("courseTitle").innerText = currentCourse.title;
+        document.getElementById("coursePrice").innerText = `${currentCourse.price} ج.م`;
+      }
     }
+    loadCourse();
 
     document.getElementById("paymentForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const file = document.getElementById("receiptFile").files[0];
       const reader = new FileReader();
-      reader.onload = function (event) {
-        const payments = JSON.parse(localStorage.getItem("edu_payments")) || [];
-        payments.push({
-          id: Date.now(),
+      reader.onload = async function (event) {
+        await addDoc(collection(db, "payments"), {
+          userUid: user.uid,
           userEmail: user.email,
-          userName: user.fullName,
+          userName: user.fullName || "طالب",
           studentPhone: user.studentPhone || "01000000000",
           courseId: courseId,
-          courseTitle: course ? course.title : "كورس كيمياء",
-          amount: course ? course.price : 220,
+          courseTitle: currentCourse ? currentCourse.title : "كورس كيمياء",
+          amount: currentCourse ? currentCourse.price : 220,
           method: document.getElementById("paymentMethod").value,
           receipt: event.target.result,
-          status: "PENDING"
+          status: "PENDING",
+          createdAt: new Date().toISOString()
         });
-        localStorage.setItem("edu_payments", JSON.stringify(payments));
-        alert("✅ تم إرسال الإيصال بنجاح! سيتم تفعيله من قبل الإدارة فوراً.");
+
+        await logAction("إرسال طلب دفع", `قام الطالب ${user.fullName} برفع إيصال دفع لكورس "${currentCourse ? currentCourse.title : ''}".`);
+        alert("✅ تم إرسال الإيصال بنجاح إلى الإدارة وسيظهر في لوحة التحكم فوراً!");
         window.location.href = "dashboard.html";
       };
       if (file) reader.readAsDataURL(file);

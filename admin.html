@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>هي كيميا ! - لوحة الإدارة الشاملة للمشرف العام</title>
+  <title>هي كيميا ! - لوحة الإدارة السحابية المباشرة</title>
   <link rel="stylesheet" href="dashboard.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -24,17 +24,17 @@
         <div class="avatar">👑</div>
         <div class="user-info">
           <h4 id="adminUserName">المشرف العام</h4>
-          <span class="badge" style="color: var(--emerald-light);">Master Admin</span>
+          <span class="badge" style="color: var(--emerald-light);">متصل بالسحابة 🟢</span>
         </div>
       </div>
       <nav class="sidebar-nav">
         <a onclick="switchTab('overviewTab', this)" class="nav-item active">📊 التحليلات والرسوم</a>
-        <a onclick="switchTab('coursesTab', this)" class="nav-item">🧪 إدارة وتعديل الكورسات</a>
-        <a onclick="switchTab('examsTab', this)" class="nav-item">📝 منشئ ومحاولات الامتحانات</a>
-        <a onclick="switchTab('paymentsTab', this)" class="nav-item">💳 طلبات وتأكيد الدفع</a>
-        <a onclick="switchTab('studentsTab', this)" class="nav-item">👥 التحكم بالطلاب والتفعيل</a>
+        <a onclick="switchTab('coursesTab', this)" class="nav-item">🧪 الكورسات بالسحابة</a>
+        <a onclick="switchTab('examsTab', this)" class="nav-item">📝 منشئ الامتحانات</a>
+        <a onclick="switchTab('paymentsTab', this)" class="nav-item">💳 طلبات الدفع الواردة</a>
+        <a onclick="switchTab('studentsTab', this)" class="nav-item">👥 كل الطلاب المسجلين</a>
         <a onclick="switchTab('staffTab', this)" class="nav-item" style="color:var(--cyan);">🛡️ الطاقم الإداري</a>
-        <a onclick="switchTab('logsTab', this)" class="nav-item" style="color:var(--emerald-light);">📜 سجل اللوجات</a>
+        <a onclick="switchTab('logsTab', this)" class="nav-item" style="color:var(--emerald-light);">📜 سجل اللوجات اللحظي</a>
         <a href="support.html" class="nav-item">💬 شات الدعم الحي</a>
         <a href="index.html" class="nav-item">🌐 عرض الموقع</a>
         <a href="javascript:void(0)" onclick="logout()" class="nav-item logout">🚪 تسجيل الخروج</a>
@@ -46,16 +46,16 @@
       <div id="overviewTab" class="tab-content-section active">
         <header class="topbar">
           <div>
-            <h1>مؤشرات الأداء والتحليلات الشاملة 📊</h1>
-            <p class="subtitle">تحليل بصري لإيرادات الكورسات والطلاب والامتحانات</p>
+            <h1>مؤشرات الأداء السحابية المباشرة 📊</h1>
+            <p class="subtitle">تحديث فوري لكل العمليات والطلاب من جميع الأجهزة</p>
           </div>
-          <button class="btn btn-primary" onclick="openAddCourseModal()">+ كورس جديد بمحاضرات متعددة 🚀</button>
+          <button class="btn btn-primary" onclick="openAddCourseModal()">+ كورس جديد بالسحابة 🚀</button>
         </header>
 
         <section class="stats-grid">
           <div class="stat-card"><span class="stat-icon">💰</span><div><h3 id="totalRevenue">0 ج.م</h3><p>التحصيلات المؤكدة</p></div></div>
           <div class="stat-card"><span class="stat-icon">🧪</span><div><h3 id="totalCoursesCount">0</h3><p>الكورسات المنشورة</p></div></div>
-          <div class="stat-card"><span class="stat-icon">👥</span><div><h3 id="totalStudentsCount">0</h3><p>الطلاب المسجلين</p></div></div>
+          <div class="stat-card"><span class="stat-icon">👥</span><div><h3 id="totalStudentsCount">0</h3><p>الطلاب المسجلين بالسحابة</p></div></div>
           <div class="stat-card"><span class="stat-icon">📝</span><div><h3 id="totalExamsCount">0</h3><p>الامتحانات المتاحة</p></div></div>
         </section>
 
@@ -68,7 +68,7 @@
       <!-- 2. الكورسات -->
       <div id="coursesTab" class="tab-content-section">
         <header class="topbar">
-          <div><h1>إدارة وتعديل الكورسات 🧪</h1><p class="subtitle">تعديل الاسم، السعر، المحاضرات، وحدود الدخول</p></div>
+          <div><h1>الكورسات المنشورة بالسحابة 🧪</h1><p class="subtitle">تعديل الاسم، السعر، المحاضرات، وحدود المشاهدة</p></div>
           <button class="btn btn-primary" onclick="openAddCourseModal()">+ إضافة كورس 🖼️</button>
         </header>
         <div class="table-container">
@@ -81,26 +81,16 @@
         </div>
       </div>
 
-      <!-- 3. الامتحانات مع تحديد عدد المحاولات -->
+      <!-- 3. الامتحانات -->
       <div id="examsTab" class="tab-content-section">
         <header class="topbar">
-          <div>
-            <h1>منشئ الامتحانات وضبط عدد المحاولات 📝</h1>
-            <p class="subtitle">تحديد أقصى عدد مرات دخول مسموحة لكل طالب في كل امتحان</p>
-          </div>
-          <button class="btn btn-primary" onclick="openModal('addExamModal')">+ امتحان جديد مع تحديد المحاولات 📝</button>
+          <div><h1>الامتحانات والمحاولات بالسحابة 📝</h1><p class="subtitle">تحديد أقصى عدد محاولات دخول مسموحة لكل طالب</p></div>
+          <button class="btn btn-primary" onclick="openModal('addExamModal')">+ امتحان جديد 📝</button>
         </header>
         <div class="table-container">
           <table class="exams-table">
             <thead>
-              <tr>
-                <th>عنوان الامتحان</th>
-                <th>النطاق</th>
-                <th>المدة</th>
-                <th>أقصى محاولات مسموحة</th>
-                <th>الأسئلة</th>
-                <th>الإجراء</th>
-              </tr>
+              <tr><th>عنوان الامتحان</th><th>النطاق</th><th>المدة</th><th>أقصى محاولات</th><th>الأسئلة</th><th>الإجراء</th></tr>
             </thead>
             <tbody id="examsTableBody"></tbody>
           </table>
@@ -109,7 +99,7 @@
 
       <!-- 4. الدفع -->
       <div id="paymentsTab" class="tab-content-section">
-        <header class="topbar"><div><h1>طلبات الدفع 💳</h1><p class="subtitle">مراجعة الإيصالات والتفعيل</p></div></header>
+        <header class="topbar"><div><h1>طلبات الدفع والتحويلات الحية 💳</h1><p class="subtitle">مراجعة الإيصالات وتفعيل الكورسات فوراً</p></div></header>
         <div class="table-container">
           <table class="exams-table">
             <thead><tr><th>الطالب</th><th>الهاتف</th><th>الكورس</th><th>المبلغ</th><th>الإيصال</th><th>الإجراء</th></tr></thead>
@@ -120,7 +110,7 @@
 
       <!-- 5. الطلاب -->
       <div id="studentsTab" class="tab-content-section">
-        <header class="topbar"><div><h1>حسابات الطلاب 👥</h1><p class="subtitle">فتح الكورسات والتفعيل اليدوي</p></div></header>
+        <header class="topbar"><div><h1>الطلاب المسجلون في Firebase 👥</h1><p class="subtitle">فتح الكورسات والتفعيل المباشر</p></div></header>
         <div class="table-container">
           <table class="exams-table">
             <thead><tr><th>اسم الطالب</th><th>البريد</th><th>الهاتف</th><th>المحافظة</th><th>الكورسات المفتوحة</th><th>التحكم</th></tr></thead>
@@ -132,8 +122,7 @@
       <!-- 6. الطاقم -->
       <div id="staffTab" class="tab-content-section">
         <header class="topbar">
-          <div><h1>الطاقم الإداري 🛡️</h1><p class="subtitle">تعيين مشرفين ومسؤولي دعم</p></div>
-          <button class="btn btn-primary" onclick="openModal('addStaffModal')">+ عضو جديد 👤</button>
+          <div><h1>الطاقم الإداري والصلاحيات 🛡️</h1><p class="subtitle">المشرفون ومسؤولو الدعم المسجلون</p></div>
         </header>
         <div class="table-container">
           <table class="exams-table">
@@ -146,12 +135,11 @@
       <!-- 7. اللوجات -->
       <div id="logsTab" class="tab-content-section">
         <header class="topbar">
-          <div><h1>سجل اللوجات 📜</h1><p class="subtitle">تتبع العمليات الإدارية لحظياً</p></div>
-          <button class="btn btn-outline" onclick="clearLogs()">مسح السجل 🗑️</button>
+          <div><h1>سجل اللوجات السحابي المباشر 📜</h1><p class="subtitle">كل أكشن يحدث من أي جهاز يسجل هنا في التو واللحظة</p></div>
         </header>
         <div class="table-container">
           <table class="exams-table">
-            <thead><tr><th>التاريخ</th><th>المسؤول</th><th>الرتبة</th><th>العملية</th><th>التفاصيل</th></tr></thead>
+            <thead><tr><th>التاريخ</th><th>المسؤول / الطالب</th><th>الرتبة</th><th>العملية</th><th>التفاصيل</th></tr></thead>
             <tbody id="logsTableBody"></tbody>
           </table>
         </div>
@@ -159,58 +147,12 @@
     </main>
   </div>
 
-  <!-- مودال إضافة امتحان -->
-  <div id="addExamModal" class="modal">
-    <div class="modal-content">
-      <h3 style="color:var(--emerald-light); margin-bottom:15px;">إنشاء امتحان جديد وضبط المحاولات 📝</h3>
-      <form id="addExamForm">
-        <div class="form-group"><label>عنوان الامتحان:</label><input type="text" id="eTitle" placeholder="مثال: امتحان الباب الأول الشامل" required></div>
-        <div class="form-row">
-          <div class="form-group" style="flex:1;">
-            <label>نطاق الامتحان:</label>
-            <select id="eTypeSelect" onchange="document.getElementById('cLinkGrp').style.display = (this.value === 'COURSE') ? 'block' : 'none';" required>
-              <option value="COURSE">امتحان لكورس محدد 🧪</option>
-              <option value="GENERAL">امتحان شامل عام 🏆</option>
-            </select>
-          </div>
-          <div class="form-group" id="cLinkGrp" style="flex:1;"><label>الكورس المرتبط:</label><select id="eCourseSelect"></select></div>
-        </div>
-        <div class="form-row">
-          <div class="form-group" style="flex:1;"><label>المدة (بالدقائق):</label><input type="number" id="eDuration" value="20" min="1" required></div>
-          <div class="form-group" style="flex:1;">
-            <label>أقصى محاولات دخول للطالب:</label>
-            <input type="number" id="eMaxAttempts" value="1" min="1" placeholder="مثال: 1 أو 2" required>
-          </div>
-        </div>
-
-        <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:10px; margin:15px 0;">
-          <h4 style="color:var(--cyan); margin-bottom:10px;">إضافة سؤال اختياري:</h4>
-          <input type="text" id="qText" placeholder="نص السؤال" style="margin-bottom:8px;">
-          <div class="form-row"><input type="text" id="opt0" placeholder="الخيار (1)"><input type="text" id="opt1" placeholder="الخيار (2)"></div>
-          <div class="form-row" style="margin-top:8px;"><input type="text" id="opt2" placeholder="الخيار (3)"><input type="text" id="opt3" placeholder="الخيار (4)"></div>
-          <div class="form-group" style="margin-top:8px;">
-            <label>الإجابة الصحيحة:</label>
-            <select id="correctOpt">
-              <option value="0">الخيار (1)</option>
-              <option value="1">الخيار (2)</option>
-              <option value="2">الخيار (3)</option>
-              <option value="3">الخيار (4)</option>
-            </select>
-          </div>
-          <button type="button" class="btn btn-outline" onclick="pushTempQuestion()">+ إضافة السؤال للامتحان</button>
-        </div>
-        <p id="qCountNotice" style="color:var(--emerald-light); font-size:13px; margin-bottom:15px;">الأسئلة المضافة: 0</p>
-        <div style="display:flex; gap:10px;"><button type="submit" class="btn btn-primary" style="flex:1;">نشر الامتحان 🚀</button><button type="button" class="btn btn-secondary" onclick="closeModal('addExamModal')">إلغاء</button></div>
-      </form>
-    </div>
-  </div>
-
-  <!-- باقي المودالات -->
+  <!-- مودال إضافة كورس -->
   <div id="addCourseModal" class="modal">
     <div class="modal-content">
-      <h3 style="color:var(--emerald-light); margin-bottom:15px;">إضافة كورس جديد مع محاضرات متعددة 🎬</h3>
+      <h3 style="color:var(--emerald-light); margin-bottom:15px;">نشر كورس جديد في السحابة 🎬</h3>
       <form id="addCourseForm">
-        <div class="form-group"><label>صورة الغلاف:</label><input type="file" id="cImageFile" accept="image/*" required></div>
+        <div class="form-group"><label>رابط أو صورة الغلاف:</label><input type="file" id="cImageFile" accept="image/*"></div>
         <div class="form-group"><label>اسم الكورس:</label><input type="text" id="cTitle" required></div>
         <div class="form-row">
           <div class="form-group" style="flex:1;"><label>السعر (ج.م):</label><input type="number" id="cPrice" required></div>
@@ -224,96 +166,89 @@
           </div>
           <div id="addLessonsContainer"></div>
         </div>
-        <div style="display:flex; gap:10px;"><button type="submit" class="btn btn-primary" style="flex:1;">نشر الكورس 🚀</button><button type="button" class="btn btn-secondary" onclick="closeModal('addCourseModal')">إلغاء</button></div>
+        <div style="display:flex; gap:10px;"><button type="submit" class="btn btn-primary" style="flex:1;">رفع وحفظ بالسحابة 🚀</button><button type="button" class="btn btn-secondary" onclick="closeModal('addCourseModal')">إلغاء</button></div>
       </form>
     </div>
   </div>
 
-  <div id="fullEditCourseModal" class="modal">
+  <!-- مودال إضافة امتحان -->
+  <div id="addExamModal" class="modal">
     <div class="modal-content">
-      <h3 style="color:var(--cyan); margin-bottom:15px;">تعديل الكورس والمحاضرات ✏️</h3>
-      <form id="fullEditCourseForm">
-        <input type="hidden" id="editCId">
-        <div class="form-group"><label>تغيير الغلاف (اختياري):</label><input type="file" id="editCImageFile" accept="image/*"></div>
-        <div class="form-group"><label>العنوان:</label><input type="text" id="editCTitle" required></div>
+      <h3 style="color:var(--emerald-light); margin-bottom:15px;">إنشاء امتحان جديد في السحابة 📝</h3>
+      <form id="addExamForm">
+        <div class="form-group"><label>عنوان الامتحان:</label><input type="text" id="eTitle" required></div>
         <div class="form-row">
-          <div class="form-group" style="flex:1;"><label>السعر:</label><input type="number" id="editCPrice" required></div>
-          <div class="form-group" style="flex:1;"><label>مرات الدخول:</label><input type="number" id="editCMaxViews" required></div>
-        </div>
-        <div class="form-group"><label>الوصف:</label><input type="text" id="editCDesc" required></div>
-        <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:10px; margin:15px 0;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <h4 style="color:#fff; font-size:14px;">محاضرات الكورس:</h4>
-            <button type="button" class="btn btn-outline" style="padding:4px 10px; font-size:12px;" onclick="addLessonField('editLessonsContainer')">+ إضافة محاضرة</button>
+          <div class="form-group" style="flex:1;">
+            <label>النطاق:</label>
+            <select id="eTypeSelect" onchange="document.getElementById('cLinkGrp').style.display = (this.value === 'COURSE') ? 'block' : 'none';" required>
+              <option value="GENERAL">امتحان شامل عام 🏆</option>
+              <option value="COURSE">امتحان لكورس محدد 🧪</option>
+            </select>
           </div>
-          <div id="editLessonsContainer"></div>
+          <div class="form-group" id="cLinkGrp" style="flex:1; display:none;"><label>الكورس المرتبط:</label><select id="eCourseSelect"></select></div>
         </div>
-        <div style="display:flex; gap:10px;"><button type="submit" class="btn btn-primary" style="flex:1;">حفظ التعديلات ✅</button><button type="button" class="btn btn-secondary" onclick="closeModal('fullEditCourseModal')">إلغاء</button></div>
+        <div class="form-row">
+          <div class="form-group" style="flex:1;"><label>المدة (دقائق):</label><input type="number" id="eDuration" value="20" required></div>
+          <div class="form-group" style="flex:1;"><label>أقصى محاولات للطالب:</label><input type="number" id="eMaxAttempts" value="1" required></div>
+        </div>
+        <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:10px; margin:15px 0;">
+          <h4 style="color:var(--cyan); margin-bottom:10px;">إضافة سؤال:</h4>
+          <input type="text" id="qText" placeholder="نص السؤال" style="margin-bottom:8px;">
+          <div class="form-row"><input type="text" id="opt0" placeholder="الخيار (1)"><input type="text" id="opt1" placeholder="الخيار (2)"></div>
+          <div class="form-row" style="margin-top:8px;"><input type="text" id="opt2" placeholder="الخيار (3)"><input type="text" id="opt3" placeholder="الخيار (4)"></div>
+          <div class="form-group" style="margin-top:8px;">
+            <label>الإجابة الصحيحة:</label>
+            <select id="correctOpt">
+              <option value="0">الخيار (1)</option><option value="1">الخيار (2)</option><option value="2">الخيار (3)</option><option value="3">الخيار (4)</option>
+            </select>
+          </div>
+          <button type="button" class="btn btn-outline" onclick="pushTempQuestion()">+ إضافة السؤال</button>
+        </div>
+        <p id="qCountNotice" style="color:var(--emerald-light); font-size:13px; margin-bottom:15px;">الأسئلة المضافة: 0</p>
+        <div style="display:flex; gap:10px;"><button type="submit" class="btn btn-primary" style="flex:1;">نشر الامتحان بالسحابة 🚀</button><button type="button" class="btn btn-secondary" onclick="closeModal('addExamModal')">إلغاء</button></div>
       </form>
     </div>
   </div>
 
+  <!-- مودال تفعيل كورس لطالب -->
   <div id="assignCourseModal" class="modal">
     <div class="modal-content">
-      <h3 style="color:var(--emerald-light); margin-bottom:10px;">تفعيل كورس لطالب يدوياً 🎁</h3>
+      <h3 style="color:var(--emerald-light); margin-bottom:10px;">تفعيل كورس لطالب في السحابة 🎁</h3>
       <p id="assignStudentNotice" style="color:var(--text-muted); font-size:14px; margin-bottom:15px;"></p>
       <form id="assignCourseForm">
-        <input type="hidden" id="assignStudentEmail">
+        <input type="hidden" id="assignStudentUid">
         <div class="form-group"><label>اختر الكورس:</label><select id="assignCourseSelect" required></select></div>
         <div style="display:flex; gap:10px; margin-top:20px;"><button type="submit" class="btn btn-primary" style="flex:1;">تفعيل الآن ✅</button><button type="button" class="btn btn-secondary" onclick="closeModal('assignCourseModal')">إلغاء</button></div>
       </form>
     </div>
   </div>
 
-  <div id="addStaffModal" class="modal">
-    <div class="modal-content">
-      <h3 style="color:var(--emerald-light); margin-bottom:15px;">تعيين عضو طاقم جديد 🛡️</h3>
-      <form id="addStaffForm">
-        <div class="form-group"><label>الاسم الكامل:</label><input type="text" id="staffName" required></div>
-        <div class="form-row">
-          <div class="form-group" style="flex:1;"><label>البريد الإلكتروني:</label><input type="email" id="staffEmail" required></div>
-          <div class="form-group" style="flex:1;"><label>كلمة المرور:</label><input type="password" id="staffPassword" required></div>
-        </div>
-        <div class="form-row">
-          <div class="form-group" style="flex:1;"><label>الهاتف:</label><input type="tel" id="staffPhone" required></div>
-          <div class="form-group" style="flex:1;">
-            <label>الصلاحية:</label>
-            <select id="staffRole" required>
-              <option value="SUPPORT">دعم فني 💬</option>
-              <option value="ADMIN">مساعد إدارة 🧪</option>
-              <option value="SUPER_ADMIN">مشرف عام 👑</option>
-            </select>
-          </div>
-        </div>
-        <div style="display:flex; gap:10px; margin-top:20px;">
-          <button type="submit" class="btn btn-primary" style="flex:1;">حفظ وإضافة ✅</button>
-          <button type="button" class="btn btn-secondary" onclick="closeModal('addStaffModal')">إلغاء</button>
-        </div>
-      </form>
-    </div>
-  </div>
+  <script type="module">
+    import { db, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot, logAction, getCurrentUser } from "./app.js";
 
-  <script type="module" src="app.js"></script>
-  <script>
+    const user = getCurrentUser();
+    if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN")) {
+      alert("عذراً، هذه الصفحة مخصصة للإدارة فقط!");
+      window.location.href = "login.html";
+    }
+    document.getElementById("adminUserName").innerText = user.fullName;
+
+    let cloudCourses = [];
+    let cloudUsers = [];
+    let cloudPayments = [];
+    let cloudExams = [];
     let tempQuestions = [];
-    let barChartInstance = null;
-    let pieChartInstance = null;
 
-    function openModal(id) { document.getElementById(id).style.display = "flex"; }
-    function closeModal(id) { document.getElementById(id).style.display = "none"; }
-
-    function switchTab(tabId, element) {
+    window.openModal = (id) => document.getElementById(id).style.display = "flex";
+    window.closeModal = (id) => document.getElementById(id).style.display = "none";
+    window.switchTab = (tabId, element) => {
       document.querySelectorAll('.tab-content-section').forEach(tab => tab.classList.remove('active'));
       document.querySelectorAll('.sidebar-nav .nav-item').forEach(btn => btn.classList.remove('active'));
       document.getElementById(tabId).classList.add('active');
       if (element) element.classList.add('active');
-      if (tabId === 'overviewTab') renderCharts();
-    }
-    window.switchTab = switchTab;
-    window.openModal = openModal;
-    window.closeModal = closeModal;
+    };
 
-    function addLessonField(containerId, title='', url='', duration='') {
+    window.addLessonField = (containerId, title='', url='', duration='') => {
       const container = document.getElementById(containerId);
       const div = document.createElement("div");
       div.className = "lesson-item-box";
@@ -329,17 +264,15 @@
         </div>
       `;
       container.appendChild(div);
-    }
-    window.addLessonField = addLessonField;
+    };
 
-    function openAddCourseModal() {
+    window.openAddCourseModal = () => {
       document.getElementById("addLessonsContainer").innerHTML = "";
-      addLessonField("addLessonsContainer", "المحاضرة الأولى", "", "50 دقيقة");
-      openModal("addCourseModal");
-    }
-    window.openAddCourseModal = openAddCourseModal;
+      window.addLessonField("addLessonsContainer", "المحاضرة الأولى", "", "50 دقيقة");
+      window.openModal("addCourseModal");
+    };
 
-    function pushTempQuestion() {
+    window.pushTempQuestion = () => {
       const q = document.getElementById("qText").value.trim();
       const o0 = document.getElementById("opt0").value.trim();
       const o1 = document.getElementById("opt1").value.trim();
@@ -347,360 +280,238 @@
       const o3 = document.getElementById("opt3").value.trim();
       const corr = parseInt(document.getElementById("correctOpt").value);
       if (!q || !o0 || !o1) { alert("أدخل السؤال وخيارين على الأقل!"); return; }
-      tempQuestions.push({ q, options: [o0, o1, o2 || "لا شيء مما سبق", o3 || "جميع ما سبق"], correct: corr });
+      tempQuestions.push({ q, options: [o0, o1, o2 || "لا شيء", o3 || "جميع ما سبق"], correct: corr });
       document.getElementById("qCountNotice").innerText = `الأسئلة المضافة: ${tempQuestions.length}`;
       document.getElementById("qText").value = "";
       document.getElementById("opt0").value = "";
       document.getElementById("opt1").value = "";
       document.getElementById("opt2").value = "";
       document.getElementById("opt3").value = "";
-      alert("تمت إضافة السؤال بنجاح!");
-    }
-    window.pushTempQuestion = pushTempQuestion;
+    };
 
-    function renderAdminData() {
-      const user = JSON.parse(localStorage.getItem("current_user"));
-      if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN")) {
-        alert("عذراً، هذه الصفحة مخصصة للإدارة فقط!");
-        window.location.href = "login.html";
-        return;
-      }
-      document.getElementById("adminUserName").innerText = user.fullName;
-
-      const courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-      const payments = JSON.parse(localStorage.getItem("edu_payments")) || [];
-      const users = JSON.parse(localStorage.getItem("edu_users")) || [];
-      const exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
-      const logs = JSON.parse(localStorage.getItem("edu_activity_logs")) || [];
-
-      const revenue = payments.filter(p => p.status === "APPROVED").reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-      document.getElementById("totalRevenue").innerText = `${revenue} ج.م`;
-      document.getElementById("totalCoursesCount").innerText = courses.length;
-      document.getElementById("totalStudentsCount").innerText = users.filter(u => u.role === 'STUDENT').length;
-      document.getElementById("totalExamsCount").innerText = exams.length;
-
+    // الاستماع المباشر لجميع بيانات السحابة (Real-time Firestore Listeners)
+    // 1. الكورسات
+    onSnapshot(collection(db, "courses"), (snap) => {
+      cloudCourses = [];
+      snap.forEach(d => cloudCourses.push({ id: d.id, ...d.data() }));
+      document.getElementById("totalCoursesCount").innerText = cloudCourses.length;
+      
       const selectAssign = document.getElementById("assignCourseSelect");
       const selectExam = document.getElementById("eCourseSelect");
-      const opts = courses.map(c => `<option value="${c.id}">${c.title} (${c.price} ج.م)</option>`).join('');
+      const opts = cloudCourses.map(c => `<option value="${c.id}">${c.title} (${c.price} ج.م)</option>`).join('');
       if (selectAssign) selectAssign.innerHTML = opts;
       if (selectExam) selectExam.innerHTML = opts;
 
-      // الكورسات
-      const studentsList = users.filter(u => u.role === 'STUDENT');
-      document.getElementById("coursesTableBody").innerHTML = courses.map(c => {
-        const count = studentsList.filter(s => s.enrolledCourses && s.enrolledCourses.includes(c.id)).length;
-        return `
-          <tr>
-            <td><img src="${c.image || 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80'}" style="width:45px; height:32px; object-fit:cover; border-radius:6px;"></td>
-            <td style="color:#fff; font-weight:bold;">${c.title}</td>
-            <td><strong style="color:var(--emerald);">${c.price} ج.م</strong></td>
-            <td><span class="badge-success">👁️ ${c.maxViews || 5} مرات</span></td>
-            <td>🎬 ${c.lessons ? c.lessons.length : 1} محاضرات</td>
-            <td>👥 ${count} طالب</td>
-            <td>
-              <button class="btn-action" style="background:#0284c7; color:#fff;" onclick="openFullEditCourse('${c.id}')">تعديل ✏️</button>
-              <button class="btn-action" style="background:#ef4444; color:#fff;" onclick="deleteCourse('${c.id}')">حذف 🗑️</button>
-            </td>
-          </tr>
-        `;
-      }).join('');
+      document.getElementById("coursesTableBody").innerHTML = cloudCourses.map(c => `
+        <tr>
+          <td><img src="${c.image || 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80'}" style="width:45px; height:32px; object-fit:cover; border-radius:6px;"></td>
+          <td style="color:#fff; font-weight:bold;">${c.title}</td>
+          <td><strong style="color:var(--emerald);">${c.price} ج.م</strong></td>
+          <td><span class="badge-success">👁️ ${c.maxViews || 5} مرات</span></td>
+          <td>🎬 ${(c.lessons || []).length} محاضرات</td>
+          <td>👥 ${cloudUsers.filter(u => u.enrolledCourses && u.enrolledCourses.includes(c.id)).length} طالب</td>
+          <td><button class="btn-action" style="background:#ef4444; color:#fff;" onclick="deleteCloudDoc('courses', '${c.id}')">حذف 🗑️</button></td>
+        </tr>
+      `).join('');
+    });
 
-      // الامتحانات ومحاولاتها
-      document.getElementById("examsTableBody").innerHTML = exams.map(e => `
+    // 2. المستخدمون والطلاب
+    onSnapshot(collection(db, "users"), (snap) => {
+      cloudUsers = [];
+      snap.forEach(d => cloudUsers.push({ id: d.id, ...d.data() }));
+      const students = cloudUsers.filter(u => u.role === 'STUDENT');
+      const staff = cloudUsers.filter(u => u.role !== 'STUDENT');
+      document.getElementById("totalStudentsCount").innerText = students.length;
+
+      document.getElementById("studentsTableBody").innerHTML = students.map(s => `
+        <tr>
+          <td style="font-weight:bold; color:#fff;">${s.fullName}</td>
+          <td>${s.email}</td>
+          <td>📱 ${s.studentPhone}<br><small style="color:var(--text-muted);">ولي الأمر: ${s.parentPhone}</small></td>
+          <td>${s.governorate} - ${s.schoolName}</td>
+          <td><span class="badge-success">${(s.enrolledCourses || []).length} كورسات</span></td>
+          <td>
+            <button class="btn-action" style="background:#10b981; color:#fff;" onclick="openAssignModal('${s.id}', '${s.fullName}')">تفعيل كورس 🎁</button>
+            <button class="btn-action" style="background:#ef4444; color:#fff;" onclick="deleteCloudDoc('users', '${s.id}')">حذف 🗑️</button>
+          </td>
+        </tr>
+      `).join('');
+
+      document.getElementById("staffTableBody").innerHTML = staff.map(st => `
+        <tr>
+          <td style="font-weight:bold; color:#fff;">${st.fullName}</td>
+          <td>${st.email}</td>
+          <td>${st.studentPhone || '---'}</td>
+          <td><span class="badge-success">${st.role}</span></td>
+          <td><button class="btn-action" style="background:#ef4444; color:#fff;" onclick="deleteCloudDoc('users', '${st.id}')">حذف 🗑️</button></td>
+        </tr>
+      `).join('');
+    });
+
+    // 3. الامتحانات
+    onSnapshot(collection(db, "exams"), (snap) => {
+      cloudExams = [];
+      snap.forEach(d => cloudExams.push({ id: d.id, ...d.data() }));
+      document.getElementById("totalExamsCount").innerText = cloudExams.length;
+
+      document.getElementById("examsTableBody").innerHTML = cloudExams.map(e => `
         <tr>
           <td style="color:#fff; font-weight:bold;">${e.title}</td>
           <td>${e.isGeneral ? '<span class="badge-success">🏆 شامل عام</span>' : `كورس #${e.courseId}`}</td>
           <td>${e.durationMinutes} دقيقة</td>
           <td><span style="background:rgba(6,182,212,0.15); color:var(--cyan); padding:4px 8px; border-radius:6px; font-weight:bold;">🎯 ${e.maxAttempts || 1} محاولات</span></td>
-          <td><strong style="color:var(--emerald);">${e.questions ? e.questions.length : 0} أسئلة</strong></td>
-          <td><button class="btn-action" style="background:#ef4444; color:#fff;" onclick="deleteExam('${e.id}')">حذف 🗑️</button></td>
+          <td><strong style="color:var(--emerald);">${(e.questions || []).length} أسئلة</strong></td>
+          <td><button class="btn-action" style="background:#ef4444; color:#fff;" onclick="deleteCloudDoc('exams', '${e.id}')">حذف 🗑️</button></td>
         </tr>
       `).join('');
+    });
 
-      // المدفوعات
-      document.getElementById("paymentsTableBody").innerHTML = payments.map(p => `
+    // 4. المدفوعات والاشتراكات
+    onSnapshot(collection(db, "payments"), (snap) => {
+      cloudPayments = [];
+      snap.forEach(d => cloudPayments.push({ id: d.id, ...d.data() }));
+      const approved = cloudPayments.filter(p => p.status === "APPROVED");
+      const rev = approved.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+      document.getElementById("totalRevenue").innerText = `${rev} ج.م`;
+
+      document.getElementById("paymentsTableBody").innerHTML = cloudPayments.map(p => `
         <tr>
-          <td>${p.userName}</td><td>${p.studentPhone}</td><td>${p.courseTitle}</td>
+          <td>${p.userName}</td>
+          <td>${p.studentPhone}</td>
+          <td>${p.courseTitle}</td>
           <td><strong style="color:var(--emerald);">${p.amount} ج.م</strong></td>
-          <td><a href="${p.receipt}" target="_blank" style="color:var(--cyan);">عرض 🔍</a></td>
+          <td><a href="${p.receipt}" target="_blank" style="color:var(--cyan);">عرض الإيصال 🔍</a></td>
           <td>
             ${p.status === 'PENDING' ? `
-              <button class="btn-action" style="background:#10b981; color:#fff;" onclick="approvePayment(${p.id})">قبول ✅</button>
-              <button class="btn-action" style="background:#ef4444; color:#fff;" onclick="rejectPayment(${p.id})">رفض ❌</button>
-            ` : '<span class="badge-success">مكتمل</span>'}
+              <button class="btn-action" style="background:#10b981; color:#fff;" onclick="approveCloudPayment('${p.id}', '${p.userUid}', '${p.courseId}', '${p.userName}', '${p.courseTitle}')">قبول وتفعيل ✅</button>
+              <button class="btn-action" style="background:#ef4444; color:#fff;" onclick="rejectCloudPayment('${p.id}')">رفض ❌</button>
+            ` : '<span class="badge-success">مكتمل ومفعل</span>'}
           </td>
         </tr>
       `).reverse().join('');
-
-      // الطلاب
-      document.getElementById("studentsTableBody").innerHTML = studentsList.map(s => `
-        <tr>
-          <td style="font-weight:bold; color:#fff;">${s.fullName}</td><td>${s.email}</td><td>${s.studentPhone}</td><td>${s.governorate}</td>
-          <td><span class="badge-success">${s.enrolledCourses ? s.enrolledCourses.length : 0} كورسات</span></td>
-          <td>
-            <button class="btn-action" style="background:#10b981; color:#fff;" onclick="openAssignModal('${s.email}', '${s.fullName}')">تفعيل كورس 🎁</button>
-            <button class="btn-action" style="background:#ef4444; color:#fff;" onclick="deleteUser('${s.email}')">حذف 🗑️</button>
-          </td>
-        </tr>
-      `).join('');
-
-      // الطاقم
-      const staff = users.filter(u => u.role !== 'STUDENT');
-      document.getElementById("staffTableBody").innerHTML = staff.map(st => `
-        <tr>
-          <td style="font-weight:bold; color:#fff;">${st.fullName}</td><td>${st.email}</td><td>${st.studentPhone}</td><td><span class="badge-success">${st.role}</span></td>
-          <td><button class="btn-action" style="background:#ef4444; color:#fff;" onclick="deleteUser('${st.email}')">حذف 🗑️</button></td>
-        </tr>
-      `).join('');
-
-      // اللوجات
-      document.getElementById("logsTableBody").innerHTML = logs.map(l => `
-        <tr><td style="font-size:12px;">${l.timestamp}</td><td>${l.actorName}</td><td>${l.actorRole}</td><td style="color:var(--emerald);">${l.actionType}</td><td>${l.details}</td></tr>
-      `).join('');
-
-      renderCharts();
-    }
-
-    function renderCharts() {
-      const courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-      const users = JSON.parse(localStorage.getItem("edu_users")) || [];
-      const students = users.filter(u => u.role === 'STUDENT');
-      const labels = courses.map(c => c.title.substring(0, 16) + '..');
-      const counts = courses.map(c => students.filter(s => s.enrolledCourses && s.enrolledCourses.includes(c.id)).length);
-      const revenues = courses.map((c, i) => counts[i] * (Number(c.price) || 0));
-
-      const ctxBar = document.getElementById('coursesStudentsChart').getContext('2d');
-      if (barChartInstance) barChartInstance.destroy();
-      barChartInstance = new Chart(ctxBar, {
-        type: 'bar',
-        data: { labels, datasets: [{ label: 'الطلاب المشتركين', data: counts, backgroundColor: 'rgba(16, 185, 129, 0.75)', borderRadius: 6 }] },
-        options: { responsive: true, plugins: { legend: { labels: { color: '#cbd5e1' } } } }
-      });
-
-      const ctxPie = document.getElementById('revenuePieChart').getContext('2d');
-      if (pieChartInstance) pieChartInstance.destroy();
-      pieChartInstance = new Chart(ctxPie, {
-        type: 'doughnut',
-        data: { labels, datasets: [{ data: revenues.every(r => r === 0) ? [1] : revenues, backgroundColor: ['#10b981', '#06b6d4', '#6366f1', '#f43f5e'] }] },
-        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' } } } }
-      });
-    }
-
-    document.getElementById("addExamForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      if (tempQuestions.length === 0) { alert("أضف سؤالاً واحداً على الأقل!"); return; }
-      const exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
-      const title = document.getElementById("eTitle").value.trim();
-      const maxAttempts = Number(document.getElementById("eMaxAttempts").value) || 1;
-
-      exams.push({
-        id: "e_" + Date.now(),
-        isGeneral: (document.getElementById("eTypeSelect").value === "GENERAL"),
-        courseId: document.getElementById("eCourseSelect").value,
-        title: title,
-        durationMinutes: parseInt(document.getElementById("eDuration").value),
-        maxAttempts: maxAttempts,
-        questions: tempQuestions
-      });
-
-      localStorage.setItem("edu_exams", JSON.stringify(exams));
-      tempQuestions = [];
-      closeModal("addExamModal");
-      renderAdminData();
-      alert(`🎉 تم نشر الامتحان بنجاح مع تحديد ${maxAttempts} محاولات لكل طالب!`);
     });
 
-    function openFullEditCourse(courseId) {
-      const courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-      const c = courses.find(x => x.id == courseId);
-      if (c) {
-        document.getElementById("editCId").value = c.id;
-        document.getElementById("editCTitle").value = c.title;
-        document.getElementById("editCPrice").value = c.price;
-        document.getElementById("editCMaxViews").value = c.maxViews || 5;
-        document.getElementById("editCDesc").value = c.desc;
-        document.getElementById("editLessonsContainer").innerHTML = "";
-        (c.lessons || []).forEach(l => addLessonField("editLessonsContainer", l.title, l.videoUrl, l.duration));
-        openModal("fullEditCourseModal");
-      }
-    }
-    window.openFullEditCourse = openFullEditCourse;
-
-    document.getElementById("fullEditCourseForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const id = document.getElementById("editCId").value;
-      const courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-      const index = courses.findIndex(x => x.id == id);
-      if (index !== -1) {
-        const titles = document.querySelectorAll("#editLessonsContainer .lesson-title");
-        const urls = document.querySelectorAll("#editLessonsContainer .lesson-url");
-        const durations = document.querySelectorAll("#editLessonsContainer .lesson-duration");
-        const updatedLessons = [];
-        titles.forEach((t, i) => updatedLessons.push({ id: i + 1, title: t.value.trim(), videoUrl: urls[i].value.trim(), duration: durations[i].value.trim() }));
-
-        courses[index].title = document.getElementById("editCTitle").value.trim();
-        courses[index].price = Number(document.getElementById("editCPrice").value);
-        courses[index].maxViews = Number(document.getElementById("editCMaxViews").value) || 5;
-        courses[index].desc = document.getElementById("editCDesc").value.trim();
-        courses[index].lessons = updatedLessons;
-
-        const file = document.getElementById("editCImageFile").files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            courses[index].image = event.target.result;
-            localStorage.setItem("edu_courses", JSON.stringify(courses));
-            closeModal("fullEditCourseModal");
-            renderAdminData();
-          };
-          reader.readAsDataURL(file);
-        } else {
-          localStorage.setItem("edu_courses", JSON.stringify(courses));
-          closeModal("fullEditCourseModal");
-          renderAdminData();
-        }
-        alert("✅ تم حفظ التعديلات بنجاح!");
-      }
+    // 5. سجل اللوجات الحي
+    onSnapshot(collection(db, "activity_logs"), (snap) => {
+      const logs = [];
+      snap.forEach(d => logs.push({ id: d.id, ...d.data() }));
+      document.getElementById("logsTableBody").innerHTML = logs.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).map(l => `
+        <tr>
+          <td style="font-size:12px;">${l.timestamp}</td>
+          <td style="font-weight:bold; color:#fff;">${l.actorName}</td>
+          <td>${l.actorRole}</td>
+          <td style="color:var(--emerald); font-weight:bold;">${l.actionType}</td>
+          <td style="font-size:13px; color:#cbd5e1;">${l.details}</td>
+        </tr>
+      `).join('');
     });
 
-    document.getElementById("addCourseForm").addEventListener("submit", (e) => {
+    // إضافة كورس جديد
+    document.getElementById("addCourseForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const file = document.getElementById("cImageFile").files[0];
       const titles = document.querySelectorAll("#addLessonsContainer .lesson-title");
       const urls = document.querySelectorAll("#addLessonsContainer .lesson-url");
       const durations = document.querySelectorAll("#addLessonsContainer .lesson-duration");
       const lessons = [];
       titles.forEach((t, i) => lessons.push({ id: i + 1, title: t.value.trim(), videoUrl: urls[i].value.trim(), duration: durations[i].value.trim() }));
 
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        const courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-        courses.push({
-          id: "c_" + Date.now(),
-          title: document.getElementById("cTitle").value.trim(),
-          price: Number(document.getElementById("cPrice").value),
-          maxViews: Number(document.getElementById("cMaxViews").value) || 5,
-          desc: document.getElementById("cDesc").value.trim(),
-          image: event.target.result,
-          lessons: lessons,
-          attachments: []
+      const title = document.getElementById("cTitle").value.trim();
+      const price = Number(document.getElementById("cPrice").value);
+      const maxViews = Number(document.getElementById("cMaxViews").value) || 5;
+      const desc = document.getElementById("cDesc").value.trim();
+      const file = document.getElementById("cImageFile").files[0];
+
+      const saveCourse = async (img) => {
+        await addDoc(collection(db, "courses"), {
+          title, price, maxViews, desc,
+          image: img || "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80",
+          lessons, createdAt: new Date().toISOString()
         });
-        localStorage.setItem("edu_courses", JSON.stringify(courses));
-        closeModal("addCourseModal");
-        renderAdminData();
-        alert("🎉 تم نشر الكورس بنجاح!");
+        await logAction("نشر كورس جديد", `تم نشر كورس "${title}" بسعر ${price} ج.م في السحابة.`);
+        window.closeModal("addCourseModal");
+        alert("🎉 تم نشر الكورس سحابياً وسيظهر لكل الأجهزة فوراً!");
       };
-      if (file) reader.readAsDataURL(file);
-    });
 
-    function openAssignModal(email, name) {
-      document.getElementById("assignStudentEmail").value = email;
-      document.getElementById("assignStudentNotice").innerText = `تفعيل كورس للطالب: ${name}`;
-      openModal("assignCourseModal");
-    }
-    window.openAssignModal = openAssignModal;
-
-    document.getElementById("assignCourseForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const email = document.getElementById("assignStudentEmail").value;
-      const courseId = document.getElementById("assignCourseSelect").value;
-      let users = JSON.parse(localStorage.getItem("edu_users")) || [];
-      const userIndex = users.findIndex(u => u.email === email);
-      if (userIndex !== -1) {
-        if (!users[userIndex].enrolledCourses) users[userIndex].enrolledCourses = [];
-        if (!users[userIndex].enrolledCourses.includes(courseId)) {
-          users[userIndex].enrolledCourses.push(courseId);
-          localStorage.setItem("edu_users", JSON.stringify(users));
-          alert("🎉 تم تفعيل الكورس للطالب!");
-        }
-        closeModal("assignCourseModal");
-        renderAdminData();
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (ev) => saveCourse(ev.target.result);
+        reader.readAsDataURL(file);
+      } else {
+        saveCourse(null);
       }
     });
 
-    document.getElementById("addStaffForm").addEventListener("submit", (e) => {
+    // إضافة امتحان جديد
+    document.getElementById("addExamForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const email = document.getElementById("staffEmail").value.trim().toLowerCase();
-      let users = JSON.parse(localStorage.getItem("edu_users")) || [];
-      if (users.some(u => u.email.toLowerCase() === email)) { alert("هذا البريد مسجل بالفعل!"); return; }
-      const role = document.getElementById("staffRole").value;
-      const name = document.getElementById("staffName").value.trim();
+      if (tempQuestions.length === 0) { alert("أضف سؤالاً واحداً على الأقل!"); return; }
+      const title = document.getElementById("eTitle").value.trim();
+      const maxAttempts = Number(document.getElementById("eMaxAttempts").value) || 1;
 
-      users.push({
-        fullName: name, email: email, password: document.getElementById("staffPassword").value.trim(),
-        studentPhone: document.getElementById("staffPhone").value.trim(), parentPhone: "0000000000",
-        governorate: "الإدارة", schoolName: "إدارة المنصة", educationType: "GENERAL", role: role, enrolledCourses: []
+      await addDoc(collection(db, "exams"), {
+        title,
+        isGeneral: (document.getElementById("eTypeSelect").value === "GENERAL"),
+        courseId: document.getElementById("eCourseSelect").value || "0",
+        durationMinutes: parseInt(document.getElementById("eDuration").value),
+        maxAttempts: maxAttempts,
+        questions: tempQuestions,
+        createdAt: new Date().toISOString()
       });
 
-      localStorage.setItem("edu_users", JSON.stringify(users));
-      closeModal("addStaffModal");
-      document.getElementById("addStaffForm").reset();
-      renderAdminData();
-      alert("🎉 تم تعيين عضو الطاقم الإداري بنجاح!");
+      await logAction("إنشاء امتحان", `تم إنشاء امتحان سحابي "${title}" بـ ${maxAttempts} محاولات.`);
+      tempQuestions = [];
+      window.closeModal("addExamModal");
+      alert("🎉 تم نشر الامتحان في السحابة بنجاح!");
     });
 
-    function approvePayment(id) {
-      let payments = JSON.parse(localStorage.getItem("edu_payments")) || [];
-      let users = JSON.parse(localStorage.getItem("edu_users")) || [];
-      const p = payments.find(x => x.id === id);
-      if (p) {
-        p.status = "APPROVED";
-        const u = users.find(x => x.email === p.userEmail);
-        if (u) {
-          if (!u.enrolledCourses) u.enrolledCourses = [];
-          if (!u.enrolledCourses.includes(p.courseId)) u.enrolledCourses.push(p.courseId);
-        }
-        localStorage.setItem("edu_payments", JSON.stringify(payments));
-        localStorage.setItem("edu_users", JSON.stringify(users));
-        renderAdminData();
-        alert("✅ تم التفعيل بنجاح!");
+    // تفعيل كورس لطالب
+    window.openAssignModal = (uid, name) => {
+      document.getElementById("assignStudentUid").value = uid;
+      document.getElementById("assignStudentNotice").innerText = `تفعيل كورس للطالب: ${name}`;
+      window.openModal("assignCourseModal");
+    };
+
+    document.getElementById("assignCourseForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const uid = document.getElementById("assignStudentUid").value;
+      const courseId = document.getElementById("assignCourseSelect").value;
+      const targetUser = cloudUsers.find(u => u.id === uid);
+
+      if (targetUser) {
+        let enrolled = targetUser.enrolledCourses || [];
+        if (!enrolled.includes(courseId)) enrolled.push(courseId);
+        await updateDoc(doc(db, "users", uid), { enrolledCourses: enrolled });
+        await logAction("تفعيل كورس يدوي", `تم تفعيل كورس للطالب ${targetUser.fullName} في السحابة.`);
+        window.closeModal("assignCourseModal");
+        alert("🎉 تم تفعيل الكورس للطالب سحابياً!");
       }
-    }
-    window.approvePayment = approvePayment;
+    });
 
-    function rejectPayment(id) {
-      let payments = JSON.parse(localStorage.getItem("edu_payments")) || [];
-      const p = payments.find(x => x.id === id);
-      if (p) { p.status = "REJECTED"; localStorage.setItem("edu_payments", JSON.stringify(payments)); renderAdminData(); }
-    }
-    window.rejectPayment = rejectPayment;
-
-    function deleteCourse(id) {
-      if (confirm("حذف هذا الكورس؟")) {
-        let courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-        localStorage.setItem("edu_courses", JSON.stringify(courses.filter(x => x.id != id)));
-        renderAdminData();
+    // تأكيد الدفع
+    window.approveCloudPayment = async (pId, userUid, courseId, userName, courseTitle) => {
+      await updateDoc(doc(db, "payments", pId), { status: "APPROVED" });
+      const targetUser = cloudUsers.find(u => u.id === userUid);
+      if (targetUser) {
+        let enrolled = targetUser.enrolledCourses || [];
+        if (!enrolled.includes(courseId)) enrolled.push(courseId);
+        await updateDoc(doc(db, "users", userUid), { enrolledCourses: enrolled });
       }
-    }
-    window.deleteCourse = deleteCourse;
+      await logAction("قبول دفع وتفعيل", `تم قبول إيصال الدفع وتفعيل كورس "${courseTitle}" للطالب ${userName}.`);
+      alert("✅ تم تفعيل الكورس للطالب فوراً في السحابة!");
+    };
 
-    function deleteExam(id) {
-      if (confirm("حذف هذا الامتحان؟")) {
-        let exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
-        localStorage.setItem("edu_exams", JSON.stringify(exams.filter(x => x.id != id)));
-        renderAdminData();
+    window.rejectCloudPayment = async (pId) => {
+      if (confirm("رفض هذا الطلب؟")) {
+        await updateDoc(doc(db, "payments", pId), { status: "REJECTED" });
       }
-    }
-    window.deleteExam = deleteExam;
+    };
 
-    function deleteUser(email) {
-      if (confirm("حذف هذا الحساب؟")) {
-        let users = JSON.parse(localStorage.getItem("edu_users")) || [];
-        localStorage.setItem("edu_users", JSON.stringify(users.filter(u => u.email !== email)));
-        renderAdminData();
+    window.deleteCloudDoc = async (collName, id) => {
+      if (confirm("هل أنت متأكد من الحذف نهائياً من قاعدة البيانات السحابية؟")) {
+        await deleteDoc(doc(db, collName, id));
+        await logAction("حذف بيانات", `تم حذف عنصر من جدول (${collName}).`);
       }
-    }
-    window.deleteUser = deleteUser;
-
-    function clearLogs() {
-      if (confirm("مسح السجل؟")) {
-        localStorage.setItem("edu_activity_logs", JSON.stringify([]));
-        renderAdminData();
-      }
-    }
-    window.clearLogs = clearLogs;
-
-    document.addEventListener("DOMContentLoaded", renderAdminData);
+    };
   </script>
 </body>
 </html>

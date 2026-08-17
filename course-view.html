@@ -23,7 +23,7 @@
     <div class="container nav-container">
       <div class="logo"><h2>هي كيميا<span>!</span></h2></div>
       <div style="display:flex; align-items:center; gap:15px;">
-        <span class="views-badge" id="viewsDisplay">👁️ المتبقي لك: --</span>
+        <span class="views-badge" id="viewsDisplay">👁️ جاري التحقق من السحابة...</span>
         <a href="dashboard.html" class="btn btn-outline">لوحة التحكم ↩</a>
       </div>
     </div>
@@ -52,33 +52,39 @@
     <aside class="playlist-card">
       <h3 style="color:#fff; margin-bottom:15px; font-size:16px;">فهرس المحاضرات</h3>
       <div id="lessonsList"></div>
-      <div style="margin-top: 25px; border-top: 1px solid var(--border); padding-top: 15px;">
-        <a id="examLink" href="#" class="btn btn-primary" style="width: 100%; display: block; text-align: center;">📝 دخول امتحان الكورس</a>
-      </div>
     </aside>
   </div>
 
-  <script type="module" src="app.js"></script>
-  <script>
-    const user = JSON.parse(localStorage.getItem("current_user"));
+  <script type="module">
+    import { db, doc, getDoc, updateDoc, getCurrentUser } from "./app.js";
+
+    const user = getCurrentUser();
     if (!user) window.location.href = "login.html";
 
     const urlParams = new URLSearchParams(window.location.search);
-    const courseId = urlParams.get("id") || "c1";
-    const courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-    const course = courses.find(c => c.id == courseId);
+    const courseId = urlParams.get("id");
 
-    if (!course) { alert("الكورس غير متاح!"); window.location.href = "dashboard.html"; }
+    async function loadCourseCloud() {
+      const courseSnap = await getDoc(doc(db, "courses", courseId));
+      if (!courseSnap.exists()) {
+        alert("الكورس غير متاح!");
+        window.location.href = "dashboard.html";
+        return;
+      }
 
-    const maxAllowed = Number(course.maxViews) || 5;
-    let users = JSON.parse(localStorage.getItem("edu_users")) || [];
-    let uIdx = users.findIndex(u => u.email === user.email);
+      const course = courseSnap.data();
+      const maxAllowed = Number(course.maxViews) || 5;
 
-    if (uIdx !== -1) {
-      if (!users[uIdx].courseAccessCount) users[uIdx].courseAccessCount = {};
-      let currentViews = (users[uIdx].courseAccessCount[courseId] || 0) + 1;
-      users[uIdx].courseAccessCount[courseId] = currentViews;
-      localStorage.setItem("edu_users", JSON.stringify(users));
+      // جلب استهلاك المستخدم من السحابة
+      const userSnap = await getDoc(doc(db, "users", user.uid));
+      let accessCount = {};
+      if (userSnap.exists() && userSnap.data().courseAccessCount) {
+        accessCount = userSnap.data().courseAccessCount;
+      }
+
+      let currentViews = (accessCount[courseId] || 0) + 1;
+      accessCount[courseId] = currentViews;
+      await updateDoc(doc(db, "users", user.uid), { courseAccessCount: accessCount });
 
       if (currentViews > maxAllowed) {
         document.getElementById("playerLayout").style.display = "none";
@@ -86,30 +92,30 @@
       } else {
         document.getElementById("viewsDisplay").innerText = `👁️ الدخول (${currentViews} من ${maxAllowed}) | المتبقي: ${maxAllowed - currentViews}`;
       }
+
+      document.getElementById("courseDesc").innerText = course.desc || "";
+      const lessons = course.lessons || [];
+
+      document.getElementById("lessonsList").innerHTML = lessons.map((l, idx) => `
+        <div class="playlist-item ${idx === 0 ? 'active' : ''}" onclick="playLesson('${l.videoUrl}', '${l.title}', this)">
+          <div><h4 style="font-size:13px; color:#fff;">${idx + 1}. ${l.title}</h4><span style="font-size:11px; color:var(--text-muted);">⏱️ ${l.duration}</span></div>
+        </div>
+      `).join('');
+
+      if (lessons.length > 0) {
+        document.getElementById("mainPlayer").src = lessons[0].videoUrl;
+        document.getElementById("currentLessonTitle").innerText = lessons[0].title;
+      }
     }
 
-    document.getElementById("courseDesc").innerText = course.desc;
-    document.getElementById("examLink").href = `exam.html?examId=${course.examId || 'e1'}`;
-
-    const lessons = course.lessons || [];
-    document.getElementById("lessonsList").innerHTML = lessons.map((l, idx) => `
-      <div class="playlist-item ${idx === 0 ? 'active' : ''}" onclick="playLesson('${l.videoUrl}', '${l.title}', this)">
-        <div><h4 style="font-size:13px; color:#fff;">${idx + 1}. ${l.title}</h4><span style="font-size:11px; color:var(--text-muted);">⏱️ ${l.duration}</span></div>
-      </div>
-    `).join('');
-
-    if (lessons.length > 0) {
-      document.getElementById("mainPlayer").src = lessons[0].videoUrl;
-      document.getElementById("currentLessonTitle").innerText = lessons[0].title;
-    }
-
-    function playLesson(url, title, el) {
+    window.playLesson = (url, title, el) => {
       document.getElementById("mainPlayer").src = url;
       document.getElementById("currentLessonTitle").innerText = title;
       document.querySelectorAll(".playlist-item").forEach(item => item.classList.remove("active"));
       el.classList.add("active");
-    }
-    window.playLesson = playLesson;
+    };
+
+    loadCourseCloud();
   </script>
 </body>
 </html>

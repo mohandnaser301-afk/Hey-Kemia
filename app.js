@@ -1,7 +1,6 @@
-// --- تهيئة Firebase من خلال مكتبات الـ CDN المباشرة ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { 
-  getFirestore, collection, addDoc, getDocs, getDoc, doc, setDoc, updateDoc, deleteDoc 
+  getFirestore, collection, addDoc, getDocs, getDoc, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { 
   getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut 
@@ -21,12 +20,12 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 
-// تهيئة البيانات المحلية التلقائية للاحتياط
-export function initLocalData() {
-  if (!localStorage.getItem("edu_courses")) {
-    const defaultCourses = [
-      {
-        id: "c1",
+// تهيئة الكورسات والامتحانات الافتراضية في السحابة إذا كانت فارغة
+export async function seedInitialCloudData() {
+  try {
+    const coursesSnap = await getDocs(collection(db, "courses"));
+    if (coursesSnap.empty) {
+      await addDoc(collection(db, "courses"), {
         title: "كورس الباب الأول: العناصر الانتقالية والتأسيس",
         desc: "توزيع الإلكترونات، حالات التأكسد، خواص وتفاعلات الحديد ومركباته بالتفصيل.",
         price: 220,
@@ -34,84 +33,49 @@ export function initLocalData() {
         tag: "الصف الثالث الثانوي",
         image: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80",
         lessons: [
-          { id: 1, title: "المحاضرة 1: السلسلة الانتقالية الأولى وحالات التأكسد", videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", duration: "45 دقيقة" },
-          { id: 2, title: "المحاضرة 2: الخواص المغناطيسية والألوان والسبائك", videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", duration: "50 دقيقة" },
-          { id: 3, title: "المحاضرة 3: استخلاص وتفاعلات أكاسيد الحديد", videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", duration: "60 دقيقة" }
+          { id: 1, title: "المحاضرة 1: السلسلة الانتقالية الأولى", videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", duration: "45 دقيقة" },
+          { id: 2, title: "المحاضرة 2: تفاعلات أكاسيد الحديد", videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", duration: "60 دقيقة" }
         ],
-        attachments: [{ name: "مذكرة تفاعلات الحديد والأكاسيد (PDF)", size: "3.8 MB" }],
-        examId: "e1"
-      },
-      {
-        id: "c2",
-        title: "كورس الكيمياء العضوية المكثف 🧪",
-        desc: "تأسيس التسمية بنظام الأيوباك، الهيدروكربونات، وتفاعلات الكحولات والأحماض بالأفكار العالية.",
-        price: 300,
-        maxViews: 6,
-        tag: "الصف الثالث الثانوي",
-        image: "https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?auto=format&fit=crop&w=800&q=80",
-        lessons: [
-          { id: 1, title: "المحاضرة 1: مقدمة التسمية ونظام الأيوباك", videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", duration: "55 دقيقة" },
-          { id: 2, title: "المحاضرة 2: الألكانات والألكينات والتفاعلات الإضافية", videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", duration: "65 دقيقة" }
-        ],
-        attachments: [{ name: "مخطط التفاعلات العضوية الشامل", size: "6.2 MB" }],
-        examId: "e2"
-      }
-    ];
-    localStorage.setItem("edu_courses", JSON.stringify(defaultCourses));
-  }
+        createdAt: new Date().toISOString()
+      });
+    }
 
-  if (!localStorage.getItem("edu_exams")) {
-    const defaultExams = [
-      {
-        id: "e1",
-        courseId: "c1",
-        isGeneral: false,
+    const examsSnap = await getDocs(collection(db, "exams"));
+    if (examsSnap.empty) {
+      await addDoc(collection(db, "exams"), {
         title: "امتحان العناصر الانتقالية وتفاعلات الأكاسيد",
+        courseId: "0",
+        isGeneral: true,
         durationMinutes: 15,
-        maxAttempts: 1,
+        maxAttempts: 2,
         questions: [
           { q: "أي من الأيونات الآتية يعتبر دايامغناطيسي وغير ملون؟", options: ["Sc³⁺", "Fe²⁺", "Cu²⁺", "Cr³⁺"], correct: 0 },
           { q: "عند تسخين أوكسالات الحديد II بمعزل عن الهواء يتكون:", options: ["أكسيد الحديد III", "أكسيد الحديد II", "أكسيد الحديد المغناطيسي", "برادة الحديد"], correct: 1 }
-        ]
-      },
-      {
-        id: "e2",
-        courseId: "0",
-        isGeneral: true,
-        title: "الامتحان الشامل التجريبي الأول على منهج الكيمياء 🏆",
-        durationMinutes: 30,
-        maxAttempts: 2,
-        questions: [
-          { q: "المركب العضوي الناتج من تفاعل الإيثين مع الماء في وسط حمضي هو:", options: ["الإيثانول", "حمض الأسيتيك", "الإيثانال", "الأسيتون"], correct: 0 }
-        ]
-      }
-    ];
-    localStorage.setItem("edu_exams", JSON.stringify(defaultExams));
-  }
-
-  if (!localStorage.getItem("edu_payments")) localStorage.setItem("edu_payments", JSON.stringify([]));
-  if (!localStorage.getItem("edu_submissions")) localStorage.setItem("edu_submissions", JSON.stringify([]));
-  if (!localStorage.getItem("edu_live_chats")) localStorage.setItem("edu_live_chats", JSON.stringify([]));
-  if (!localStorage.getItem("edu_activity_logs")) {
-    localStorage.setItem("edu_activity_logs", JSON.stringify([
-      { id: Date.now(), actorName: "المشرف العام", actorRole: "SUPER_ADMIN", actionType: "تهيئة النظام", details: "تم تشغيل المنصة السحابية بنجاح.", timestamp: new Date().toLocaleString('ar-EG') }
-    ]));
+        ],
+        createdAt: new Date().toISOString()
+      });
+    }
+  } catch (e) {
+    console.error("Cloud seed check:", e);
   }
 }
-initLocalData();
+seedInitialCloudData();
 
-export function logAction(actionType, details) {
-  const user = getCurrentUser() || { fullName: "غير معروف", role: "GUEST" };
-  const logs = JSON.parse(localStorage.getItem("edu_activity_logs")) || [];
-  logs.unshift({
-    id: Date.now(),
-    actorName: user.fullName,
-    actorRole: user.role,
-    actionType: actionType,
-    details: details,
-    timestamp: new Date().toLocaleString('ar-EG')
-  });
-  localStorage.setItem("edu_activity_logs", JSON.stringify(logs));
+// تسجيل العمليات بالسحابة
+export async function logAction(actionType, details) {
+  const user = getCurrentUser() || { fullName: "زائر", role: "GUEST" };
+  try {
+    await addDoc(collection(db, "activity_logs"), {
+      actorName: user.fullName || "مستخدم",
+      actorRole: user.role || "GUEST",
+      actionType: actionType,
+      details: details,
+      timestamp: new Date().toLocaleString('ar-EG'),
+      createdAt: new Date().toISOString()
+    });
+  } catch (e) {
+    console.warn("Log failed to cloud:", e);
+  }
 }
 
 export function getCurrentUser() {
@@ -119,87 +83,58 @@ export function getCurrentUser() {
   return data ? JSON.parse(data) : null;
 }
 
-// تسجيل حساب جديد سحابياً ومحلياً
+// تسجيل حساب طالب في السحابة
 export async function registerStudent(userData) {
   try {
-    let uid = "usr_" + Date.now();
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password);
-      uid = userCredential.user.uid;
-      await setDoc(doc(db, "users", uid), {
-        fullName: userData.fullName,
-        email: userData.email,
-        studentPhone: userData.studentPhone,
-        parentPhone: userData.parentPhone,
-        governorate: userData.governorate,
-        schoolName: userData.schoolName,
-        educationType: userData.educationType,
-        role: "STUDENT",
-        enrolledCourses: [],
-        courseAccessCount: {},
-        createdAt: new Date().toISOString()
-      });
-    } catch(err) {
-      console.warn("Firebase Auth Error, Fallback to Local:", err.message);
-    }
+    const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password);
+    const uid = userCredential.user.uid;
 
-    let users = JSON.parse(localStorage.getItem("edu_users")) || [];
-    users.push({ uid, ...userData, role: "STUDENT", enrolledCourses: [], courseAccessCount: {} });
-    localStorage.setItem("edu_users", JSON.stringify(users));
+    const payload = {
+      fullName: userData.fullName,
+      email: userData.email.toLowerCase(),
+      studentPhone: userData.studentPhone,
+      parentPhone: userData.parentPhone,
+      governorate: userData.governorate,
+      schoolName: userData.schoolName,
+      educationType: userData.educationType,
+      role: "STUDENT",
+      enrolledCourses: [],
+      courseAccessCount: {},
+      createdAt: new Date().toISOString()
+    };
 
-    alert("🎉 تم إنشاء الحساب بنجاح في قاعدة البيانات!");
+    await setDoc(doc(db, "users", uid), payload);
+    await logAction("إنشاء حساب طالب", `قام ${userData.fullName} بالتسجيل من محافظة ${userData.governorate}.`);
+
+    alert("🎉 تم إنشاء الحساب بنجاح في قاعدة البيانات السحابية!");
     window.location.href = "login.html";
   } catch (error) {
     alert("❌ خطأ: " + error.message);
   }
 }
 
-// تسجيل الدخول والتحقق من الرتبة
+// تسجيل الدخول مع جلب الرتبة من السحابة
 export async function loginUser(email, password) {
   try {
+    const userCredential = await signInWithEmailAndPassword(auth, email.toLowerCase(), password);
+    const uid = userCredential.user.uid;
+    const userDoc = await getDoc(doc(db, "users", uid));
+
     let userData = null;
-    let uid = null;
-
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      uid = userCredential.user.uid;
-      const userDoc = await getDoc(doc(db, "users", uid));
-      if (userDoc.exists()) {
-        userData = userDoc.data();
-      }
-    } catch (err) {
-      console.warn("Cloud login failed, checking fallback local database...");
-    }
-
-    if (!userData) {
-      const localUsers = JSON.parse(localStorage.getItem("edu_users")) || [];
-      const matched = localUsers.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
-      if (matched) {
-        userData = matched;
-        uid = matched.uid || "local_" + Date.now();
-      }
-    }
-
-    // حساب الطوارئ للمشرف العام
-    if (!userData && email.toLowerCase() === "superadmin@platform.com" && password === "admin123") {
+    if (userDoc.exists()) {
+      userData = userDoc.data();
+    } else {
       userData = {
-        fullName: "أستاذ المادة (المشرف العام)",
-        email: "superadmin@platform.com",
-        role: "SUPER_ADMIN",
-        governorate: "كفر الشيخ",
-        enrolledCourses: ["c1", "c2"]
+        fullName: "مشرف النظام",
+        email: email,
+        role: "SUPER_ADMIN"
       };
-      uid = "admin_master";
-    }
-
-    if (!userData) {
-      alert("❌ البريد الإلكتروني أو كلمة المرور غير صحيحة!");
-      return;
+      await setDoc(doc(db, "users", uid), userData);
     }
 
     const sessionUser = { uid, ...userData };
     localStorage.setItem("current_user", JSON.stringify(sessionUser));
-    logAction("تسجيل دخول", `قام ${sessionUser.fullName} (${sessionUser.role}) بتسجيل الدخول.`);
+    await logAction("تسجيل دخول", `قام ${sessionUser.fullName} (${sessionUser.role}) بتسجيل الدخول.`);
 
     const redirect = new URLSearchParams(window.location.search).get("redirect");
     if (redirect) {
@@ -212,7 +147,7 @@ export async function loginUser(email, password) {
       window.location.href = "dashboard.html";
     }
   } catch (error) {
-    alert("❌ خطأ: " + error.message);
+    alert("❌ البريد الإلكتروني أو كلمة المرور غير صحيحة!");
   }
 }
 
