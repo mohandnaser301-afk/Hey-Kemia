@@ -12,9 +12,9 @@
 .user-profile-summary { display: flex; align-items: center; gap: 12px; background: rgba(255, 255, 255, 0.025); border: 1px solid var(--border); padding: 12px 14px; border-radius: 12px; margin-bottom: 24px; }
 .avatar { width: 42px; height: 42px; background: var(--emerald); color: #03070a; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; }
 .sidebar-nav { display: flex; flex-direction: column; gap: 6px; }
-.nav-item { padding: 11px 16px; color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 10px; transition: all 0.2s; }
+.nav-item { padding: 11px 16px; color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 10px; transition: all 0.2s; cursor: pointer; }
 .nav-item:hover, .nav-item.active { background: rgba(16, 185, 129, 0.08); color: var(--emerald-light); }
-.nav-item.logout { margin-top: auto; color: #f43f5e; }
+.nav-item.logout { margin-top: auto; color: var(--danger); }
 .main-content { flex: 1; padding: 32px 38px; overflow-y: auto; }
 .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 30px; }

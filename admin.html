@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>هي كيميا ! - لوحة الإدارة الشاملة</title>
+  <title>هي كيميا ! - لوحة الإدارة الشاملة للمشرف العام</title>
   <link rel="stylesheet" href="dashboard.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     .tab-content-section { display: none; }
     .tab-content-section.active { display: block; }
     .modal { display: none; position: fixed; inset: 0; background: rgba(3, 7, 10, 0.85); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(10px); }
-    .modal-content { background: var(--bg-card); border: 1px solid var(--border); padding: 28px; border-radius: 18px; max-width: 700px; width: 90%; max-height: 90vh; overflow-y: auto; }
+    .modal-content { background: var(--bg-card); border: 1px solid var(--border); padding: 28px; border-radius: 18px; max-width: 720px; width: 90%; max-height: 90vh; overflow-y: auto; }
     .btn-action { padding: 6px 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; font-size: 12px; margin: 2px; }
     .lesson-item-box { background: rgba(0, 0, 0, 0.3); border: 1px dashed var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
   </style>
@@ -30,8 +30,8 @@
       <nav class="sidebar-nav">
         <a onclick="switchTab('overviewTab', this)" class="nav-item active">📊 التحليلات والرسوم</a>
         <a onclick="switchTab('coursesTab', this)" class="nav-item">🧪 إدارة وتعديل الكورسات</a>
+        <a onclick="switchTab('examsTab', this)" class="nav-item">📝 منشئ ومحاولات الامتحانات</a>
         <a onclick="switchTab('paymentsTab', this)" class="nav-item">💳 طلبات وتأكيد الدفع</a>
-        <a onclick="switchTab('examsTab', this)" class="nav-item">📝 منشئ الامتحانات</a>
         <a onclick="switchTab('studentsTab', this)" class="nav-item">👥 التحكم بالطلاب والتفعيل</a>
         <a onclick="switchTab('staffTab', this)" class="nav-item" style="color:var(--cyan);">🛡️ الطاقم الإداري</a>
         <a onclick="switchTab('logsTab', this)" class="nav-item" style="color:var(--emerald-light);">📜 سجل اللوجات</a>
@@ -47,7 +47,7 @@
         <header class="topbar">
           <div>
             <h1>مؤشرات الأداء والتحليلات الشاملة 📊</h1>
-            <p class="subtitle">تحليل بصري لإيرادات الكورسات والطلاب والعمليات</p>
+            <p class="subtitle">تحليل بصري لإيرادات الكورسات والطلاب والامتحانات</p>
           </div>
           <button class="btn btn-primary" onclick="openAddCourseModal()">+ كورس جديد بمحاضرات متعددة 🚀</button>
         </header>
@@ -56,7 +56,7 @@
           <div class="stat-card"><span class="stat-icon">💰</span><div><h3 id="totalRevenue">0 ج.م</h3><p>التحصيلات المؤكدة</p></div></div>
           <div class="stat-card"><span class="stat-icon">🧪</span><div><h3 id="totalCoursesCount">0</h3><p>الكورسات المنشورة</p></div></div>
           <div class="stat-card"><span class="stat-icon">👥</span><div><h3 id="totalStudentsCount">0</h3><p>الطلاب المسجلين</p></div></div>
-          <div class="stat-card"><span class="stat-icon">📜</span><div><h3 id="totalLogsCount">0</h3><p>العمليات المسجلة</p></div></div>
+          <div class="stat-card"><span class="stat-icon">📝</span><div><h3 id="totalExamsCount">0</h3><p>الامتحانات المتاحة</p></div></div>
         </section>
 
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(400px, 1fr)); gap:20px;">
@@ -81,27 +81,39 @@
         </div>
       </div>
 
-      <!-- 3. الدفع -->
+      <!-- 3. الامتحانات مع تحديد عدد المحاولات -->
+      <div id="examsTab" class="tab-content-section">
+        <header class="topbar">
+          <div>
+            <h1>منشئ الامتحانات وضبط عدد المحاولات 📝</h1>
+            <p class="subtitle">تحديد أقصى عدد مرات دخول مسموحة لكل طالب في كل امتحان</p>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('addExamModal')">+ امتحان جديد مع تحديد المحاولات 📝</button>
+        </header>
+        <div class="table-container">
+          <table class="exams-table">
+            <thead>
+              <tr>
+                <th>عنوان الامتحان</th>
+                <th>النطاق</th>
+                <th>المدة</th>
+                <th>أقصى محاولات مسموحة</th>
+                <th>الأسئلة</th>
+                <th>الإجراء</th>
+              </tr>
+            </thead>
+            <tbody id="examsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 4. الدفع -->
       <div id="paymentsTab" class="tab-content-section">
         <header class="topbar"><div><h1>طلبات الدفع 💳</h1><p class="subtitle">مراجعة الإيصالات والتفعيل</p></div></header>
         <div class="table-container">
           <table class="exams-table">
             <thead><tr><th>الطالب</th><th>الهاتف</th><th>الكورس</th><th>المبلغ</th><th>الإيصال</th><th>الإجراء</th></tr></thead>
             <tbody id="paymentsTableBody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- 4. الامتحانات -->
-      <div id="examsTab" class="tab-content-section">
-        <header class="topbar">
-          <div><h1>منشئ الامتحانات 📝</h1><p class="subtitle">إنشاء امتحانات للكورسات أو امتحانات شاملة</p></div>
-          <button class="btn btn-primary" onclick="openModal('addExamModal')">+ امتحان جديد 📝</button>
-        </header>
-        <div class="table-container">
-          <table class="exams-table">
-            <thead><tr><th>عنوان الامتحان</th><th>النوع</th><th>المدة</th><th>الأسئلة</th><th>إجراء</th></tr></thead>
-            <tbody id="examsTableBody"></tbody>
           </table>
         </div>
       </div>
@@ -147,7 +159,53 @@
     </main>
   </div>
 
-  <!-- مودال إضافة كورس -->
+  <!-- مودال إضافة امتحان -->
+  <div id="addExamModal" class="modal">
+    <div class="modal-content">
+      <h3 style="color:var(--emerald-light); margin-bottom:15px;">إنشاء امتحان جديد وضبط المحاولات 📝</h3>
+      <form id="addExamForm">
+        <div class="form-group"><label>عنوان الامتحان:</label><input type="text" id="eTitle" placeholder="مثال: امتحان الباب الأول الشامل" required></div>
+        <div class="form-row">
+          <div class="form-group" style="flex:1;">
+            <label>نطاق الامتحان:</label>
+            <select id="eTypeSelect" onchange="document.getElementById('cLinkGrp').style.display = (this.value === 'COURSE') ? 'block' : 'none';" required>
+              <option value="COURSE">امتحان لكورس محدد 🧪</option>
+              <option value="GENERAL">امتحان شامل عام 🏆</option>
+            </select>
+          </div>
+          <div class="form-group" id="cLinkGrp" style="flex:1;"><label>الكورس المرتبط:</label><select id="eCourseSelect"></select></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="flex:1;"><label>المدة (بالدقائق):</label><input type="number" id="eDuration" value="20" min="1" required></div>
+          <div class="form-group" style="flex:1;">
+            <label>أقصى محاولات دخول للطالب:</label>
+            <input type="number" id="eMaxAttempts" value="1" min="1" placeholder="مثال: 1 أو 2" required>
+          </div>
+        </div>
+
+        <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:10px; margin:15px 0;">
+          <h4 style="color:var(--cyan); margin-bottom:10px;">إضافة سؤال اختياري:</h4>
+          <input type="text" id="qText" placeholder="نص السؤال" style="margin-bottom:8px;">
+          <div class="form-row"><input type="text" id="opt0" placeholder="الخيار (1)"><input type="text" id="opt1" placeholder="الخيار (2)"></div>
+          <div class="form-row" style="margin-top:8px;"><input type="text" id="opt2" placeholder="الخيار (3)"><input type="text" id="opt3" placeholder="الخيار (4)"></div>
+          <div class="form-group" style="margin-top:8px;">
+            <label>الإجابة الصحيحة:</label>
+            <select id="correctOpt">
+              <option value="0">الخيار (1)</option>
+              <option value="1">الخيار (2)</option>
+              <option value="2">الخيار (3)</option>
+              <option value="3">الخيار (4)</option>
+            </select>
+          </div>
+          <button type="button" class="btn btn-outline" onclick="pushTempQuestion()">+ إضافة السؤال للامتحان</button>
+        </div>
+        <p id="qCountNotice" style="color:var(--emerald-light); font-size:13px; margin-bottom:15px;">الأسئلة المضافة: 0</p>
+        <div style="display:flex; gap:10px;"><button type="submit" class="btn btn-primary" style="flex:1;">نشر الامتحان 🚀</button><button type="button" class="btn btn-secondary" onclick="closeModal('addExamModal')">إلغاء</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- باقي المودالات -->
   <div id="addCourseModal" class="modal">
     <div class="modal-content">
       <h3 style="color:var(--emerald-light); margin-bottom:15px;">إضافة كورس جديد مع محاضرات متعددة 🎬</h3>
@@ -171,7 +229,6 @@
     </div>
   </div>
 
-  <!-- مودال تعديل كورس -->
   <div id="fullEditCourseModal" class="modal">
     <div class="modal-content">
       <h3 style="color:var(--cyan); margin-bottom:15px;">تعديل الكورس والمحاضرات ✏️</h3>
@@ -196,7 +253,6 @@
     </div>
   </div>
 
-  <!-- مودال تفعيل كورس لطالب -->
   <div id="assignCourseModal" class="modal">
     <div class="modal-content">
       <h3 style="color:var(--emerald-light); margin-bottom:10px;">تفعيل كورس لطالب يدوياً 🎁</h3>
@@ -209,32 +265,35 @@
     </div>
   </div>
 
-  <!-- مودال إضافة امتحان -->
-  <div id="addExamModal" class="modal">
-    <div class="modal-content" style="max-width:700px;">
-      <h3 style="color:var(--emerald-light); margin-bottom:15px;">إنشاء امتحان جديد 📝</h3>
-      <form id="addExamForm">
-        <div class="form-group"><label>عنوان الامتحان:</label><input type="text" id="eTitle" required></div>
+  <div id="addStaffModal" class="modal">
+    <div class="modal-content">
+      <h3 style="color:var(--emerald-light); margin-bottom:15px;">تعيين عضو طاقم جديد 🛡️</h3>
+      <form id="addStaffForm">
+        <div class="form-group"><label>الاسم الكامل:</label><input type="text" id="staffName" required></div>
         <div class="form-row">
-          <div class="form-group" style="flex:1;"><label>النطاق:</label><select id="eTypeSelect" onchange="document.getElementById('cLinkGrp').style.display = (this.value === 'COURSE') ? 'block' : 'none';" required><option value="GENERAL">امتحان شامل عام 🏆</option><option value="COURSE">امتحان لكورس محدد 🧪</option></select></div>
-          <div class="form-group" id="cLinkGrp" style="flex:1; display:none;"><label>الكورس:</label><select id="eCourseSelect"></select></div>
-          <div class="form-group" style="flex:1;"><label>المدة (دقائق):</label><input type="number" id="eDuration" value="20" required></div>
+          <div class="form-group" style="flex:1;"><label>البريد الإلكتروني:</label><input type="email" id="staffEmail" required></div>
+          <div class="form-group" style="flex:1;"><label>كلمة المرور:</label><input type="password" id="staffPassword" required></div>
         </div>
-        <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:10px; margin:15px 0;">
-          <h4 style="color:var(--cyan); margin-bottom:10px;">إضافة سؤال:</h4>
-          <input type="text" id="qText" placeholder="نص السؤال" style="margin-bottom:8px;">
-          <div class="form-row"><input type="text" id="opt0" placeholder="الخيار (1)"><input type="text" id="opt1" placeholder="الخيار (2)"></div>
-          <div class="form-row" style="margin-top:8px;"><input type="text" id="opt2" placeholder="الخيار (3)"><input type="text" id="opt3" placeholder="الخيار (4)"></div>
-          <div class="form-group" style="margin-top:8px;"><label>الإجابة الصحيحة:</label><select id="correctOpt"><option value="0">الخيار (1)</option><option value="1">الخيار (2)</option><option value="2">الخيار (3)</option><option value="3">الخيار (4)</option></select></div>
-          <button type="button" class="btn btn-outline" onclick="pushTempQuestion()">+ إضافة السؤال للامتحان</button>
+        <div class="form-row">
+          <div class="form-group" style="flex:1;"><label>الهاتف:</label><input type="tel" id="staffPhone" required></div>
+          <div class="form-group" style="flex:1;">
+            <label>الصلاحية:</label>
+            <select id="staffRole" required>
+              <option value="SUPPORT">دعم فني 💬</option>
+              <option value="ADMIN">مساعد إدارة 🧪</option>
+              <option value="SUPER_ADMIN">مشرف عام 👑</option>
+            </select>
+          </div>
         </div>
-        <p id="qCountNotice" style="color:var(--emerald-light); font-size:13px; margin-bottom:15px;">الأسئلة المضافة: 0</p>
-        <div style="display:flex; gap:10px;"><button type="submit" class="btn btn-primary" style="flex:1;">نشر الامتحان 🚀</button><button type="button" class="btn btn-secondary" onclick="closeModal('addExamModal')">إلغاء</button></div>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+          <button type="submit" class="btn btn-primary" style="flex:1;">حفظ وإضافة ✅</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('addStaffModal')">إلغاء</button>
+        </div>
       </form>
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
   <script>
     let tempQuestions = [];
     let barChartInstance = null;
@@ -250,6 +309,9 @@
       if (element) element.classList.add('active');
       if (tabId === 'overviewTab') renderCharts();
     }
+    window.switchTab = switchTab;
+    window.openModal = openModal;
+    window.closeModal = closeModal;
 
     function addLessonField(containerId, title='', url='', duration='') {
       const container = document.getElementById(containerId);
@@ -268,12 +330,14 @@
       `;
       container.appendChild(div);
     }
+    window.addLessonField = addLessonField;
 
     function openAddCourseModal() {
       document.getElementById("addLessonsContainer").innerHTML = "";
       addLessonField("addLessonsContainer", "المحاضرة الأولى", "", "50 دقيقة");
       openModal("addCourseModal");
     }
+    window.openAddCourseModal = openAddCourseModal;
 
     function pushTempQuestion() {
       const q = document.getElementById("qText").value.trim();
@@ -283,7 +347,7 @@
       const o3 = document.getElementById("opt3").value.trim();
       const corr = parseInt(document.getElementById("correctOpt").value);
       if (!q || !o0 || !o1) { alert("أدخل السؤال وخيارين على الأقل!"); return; }
-      tempQuestions.push({ q, options: [o0, o1, o2 || "لا شيء", o3 || "جميع ما سبق"], correct: corr });
+      tempQuestions.push({ q, options: [o0, o1, o2 || "لا شيء مما سبق", o3 || "جميع ما سبق"], correct: corr });
       document.getElementById("qCountNotice").innerText = `الأسئلة المضافة: ${tempQuestions.length}`;
       document.getElementById("qText").value = "";
       document.getElementById("opt0").value = "";
@@ -292,8 +356,17 @@
       document.getElementById("opt3").value = "";
       alert("تمت إضافة السؤال بنجاح!");
     }
+    window.pushTempQuestion = pushTempQuestion;
 
     function renderAdminData() {
+      const user = JSON.parse(localStorage.getItem("current_user"));
+      if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN")) {
+        alert("عذراً، هذه الصفحة مخصصة للإدارة فقط!");
+        window.location.href = "login.html";
+        return;
+      }
+      document.getElementById("adminUserName").innerText = user.fullName;
+
       const courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
       const payments = JSON.parse(localStorage.getItem("edu_payments")) || [];
       const users = JSON.parse(localStorage.getItem("edu_users")) || [];
@@ -304,7 +377,7 @@
       document.getElementById("totalRevenue").innerText = `${revenue} ج.م`;
       document.getElementById("totalCoursesCount").innerText = courses.length;
       document.getElementById("totalStudentsCount").innerText = users.filter(u => u.role === 'STUDENT').length;
-      document.getElementById("totalLogsCount").innerText = logs.length;
+      document.getElementById("totalExamsCount").innerText = exams.length;
 
       const selectAssign = document.getElementById("assignCourseSelect");
       const selectExam = document.getElementById("eCourseSelect");
@@ -312,6 +385,7 @@
       if (selectAssign) selectAssign.innerHTML = opts;
       if (selectExam) selectExam.innerHTML = opts;
 
+      // الكورسات
       const studentsList = users.filter(u => u.role === 'STUDENT');
       document.getElementById("coursesTableBody").innerHTML = courses.map(c => {
         const count = studentsList.filter(s => s.enrolledCourses && s.enrolledCourses.includes(c.id)).length;
@@ -331,6 +405,19 @@
         `;
       }).join('');
 
+      // الامتحانات ومحاولاتها
+      document.getElementById("examsTableBody").innerHTML = exams.map(e => `
+        <tr>
+          <td style="color:#fff; font-weight:bold;">${e.title}</td>
+          <td>${e.isGeneral ? '<span class="badge-success">🏆 شامل عام</span>' : `كورس #${e.courseId}`}</td>
+          <td>${e.durationMinutes} دقيقة</td>
+          <td><span style="background:rgba(6,182,212,0.15); color:var(--cyan); padding:4px 8px; border-radius:6px; font-weight:bold;">🎯 ${e.maxAttempts || 1} محاولات</span></td>
+          <td><strong style="color:var(--emerald);">${e.questions ? e.questions.length : 0} أسئلة</strong></td>
+          <td><button class="btn-action" style="background:#ef4444; color:#fff;" onclick="deleteExam('${e.id}')">حذف 🗑️</button></td>
+        </tr>
+      `).join('');
+
+      // المدفوعات
       document.getElementById("paymentsTableBody").innerHTML = payments.map(p => `
         <tr>
           <td>${p.userName}</td><td>${p.studentPhone}</td><td>${p.courseTitle}</td>
@@ -345,16 +432,7 @@
         </tr>
       `).reverse().join('');
 
-      document.getElementById("examsTableBody").innerHTML = exams.map(e => `
-        <tr>
-          <td style="color:#fff; font-weight:bold;">${e.title}</td>
-          <td>${e.isGeneral ? '🏆 شامل عام' : `كورس #${e.courseId}`}</td>
-          <td>${e.durationMinutes} دقيقة</td>
-          <td><strong style="color:var(--emerald);">${e.questions ? e.questions.length : 0} أسئلة</strong></td>
-          <td><button class="btn-action" style="background:#ef4444; color:#fff;" onclick="deleteExam('${e.id}')">حذف 🗑️</button></td>
-        </tr>
-      `).join('');
-
+      // الطلاب
       document.getElementById("studentsTableBody").innerHTML = studentsList.map(s => `
         <tr>
           <td style="font-weight:bold; color:#fff;">${s.fullName}</td><td>${s.email}</td><td>${s.studentPhone}</td><td>${s.governorate}</td>
@@ -366,6 +444,7 @@
         </tr>
       `).join('');
 
+      // الطاقم
       const staff = users.filter(u => u.role !== 'STUDENT');
       document.getElementById("staffTableBody").innerHTML = staff.map(st => `
         <tr>
@@ -374,6 +453,7 @@
         </tr>
       `).join('');
 
+      // اللوجات
       document.getElementById("logsTableBody").innerHTML = logs.map(l => `
         <tr><td style="font-size:12px;">${l.timestamp}</td><td>${l.actorName}</td><td>${l.actorRole}</td><td style="color:var(--emerald);">${l.actionType}</td><td>${l.details}</td></tr>
       `).join('');
@@ -406,6 +486,30 @@
       });
     }
 
+    document.getElementById("addExamForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (tempQuestions.length === 0) { alert("أضف سؤالاً واحداً على الأقل!"); return; }
+      const exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
+      const title = document.getElementById("eTitle").value.trim();
+      const maxAttempts = Number(document.getElementById("eMaxAttempts").value) || 1;
+
+      exams.push({
+        id: "e_" + Date.now(),
+        isGeneral: (document.getElementById("eTypeSelect").value === "GENERAL"),
+        courseId: document.getElementById("eCourseSelect").value,
+        title: title,
+        durationMinutes: parseInt(document.getElementById("eDuration").value),
+        maxAttempts: maxAttempts,
+        questions: tempQuestions
+      });
+
+      localStorage.setItem("edu_exams", JSON.stringify(exams));
+      tempQuestions = [];
+      closeModal("addExamModal");
+      renderAdminData();
+      alert(`🎉 تم نشر الامتحان بنجاح مع تحديد ${maxAttempts} محاولات لكل طالب!`);
+    });
+
     function openFullEditCourse(courseId) {
       const courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
       const c = courses.find(x => x.id == courseId);
@@ -420,6 +524,7 @@
         openModal("fullEditCourseModal");
       }
     }
+    window.openFullEditCourse = openFullEditCourse;
 
     document.getElementById("fullEditCourseForm").addEventListener("submit", (e) => {
       e.preventDefault();
@@ -493,6 +598,7 @@
       document.getElementById("assignStudentNotice").innerText = `تفعيل كورس للطالب: ${name}`;
       openModal("assignCourseModal");
     }
+    window.openAssignModal = openAssignModal;
 
     document.getElementById("assignCourseForm").addEventListener("submit", (e) => {
       e.preventDefault();
@@ -512,23 +618,25 @@
       }
     });
 
-    document.getElementById("addExamForm").addEventListener("submit", (e) => {
+    document.getElementById("addStaffForm").addEventListener("submit", (e) => {
       e.preventDefault();
-      if (tempQuestions.length === 0) { alert("أضف سؤالاً على الأقل!"); return; }
-      const exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
-      exams.push({
-        id: "e_" + Date.now(),
-        isGeneral: (document.getElementById("eTypeSelect").value === "GENERAL"),
-        courseId: document.getElementById("eCourseSelect").value,
-        title: document.getElementById("eTitle").value.trim(),
-        durationMinutes: parseInt(document.getElementById("eDuration").value),
-        questions: tempQuestions
+      const email = document.getElementById("staffEmail").value.trim().toLowerCase();
+      let users = JSON.parse(localStorage.getItem("edu_users")) || [];
+      if (users.some(u => u.email.toLowerCase() === email)) { alert("هذا البريد مسجل بالفعل!"); return; }
+      const role = document.getElementById("staffRole").value;
+      const name = document.getElementById("staffName").value.trim();
+
+      users.push({
+        fullName: name, email: email, password: document.getElementById("staffPassword").value.trim(),
+        studentPhone: document.getElementById("staffPhone").value.trim(), parentPhone: "0000000000",
+        governorate: "الإدارة", schoolName: "إدارة المنصة", educationType: "GENERAL", role: role, enrolledCourses: []
       });
-      localStorage.setItem("edu_exams", JSON.stringify(exams));
-      tempQuestions = [];
-      closeModal("addExamModal");
+
+      localStorage.setItem("edu_users", JSON.stringify(users));
+      closeModal("addStaffModal");
+      document.getElementById("addStaffForm").reset();
       renderAdminData();
-      alert("🎉 تم نشر الامتحان بنجاح!");
+      alert("🎉 تم تعيين عضو الطاقم الإداري بنجاح!");
     });
 
     function approvePayment(id) {
@@ -548,12 +656,14 @@
         alert("✅ تم التفعيل بنجاح!");
       }
     }
+    window.approvePayment = approvePayment;
 
     function rejectPayment(id) {
       let payments = JSON.parse(localStorage.getItem("edu_payments")) || [];
       const p = payments.find(x => x.id === id);
       if (p) { p.status = "REJECTED"; localStorage.setItem("edu_payments", JSON.stringify(payments)); renderAdminData(); }
     }
+    window.rejectPayment = rejectPayment;
 
     function deleteCourse(id) {
       if (confirm("حذف هذا الكورس؟")) {
@@ -562,6 +672,7 @@
         renderAdminData();
       }
     }
+    window.deleteCourse = deleteCourse;
 
     function deleteExam(id) {
       if (confirm("حذف هذا الامتحان؟")) {
@@ -570,6 +681,7 @@
         renderAdminData();
       }
     }
+    window.deleteExam = deleteExam;
 
     function deleteUser(email) {
       if (confirm("حذف هذا الحساب؟")) {
@@ -578,6 +690,7 @@
         renderAdminData();
       }
     }
+    window.deleteUser = deleteUser;
 
     function clearLogs() {
       if (confirm("مسح السجل؟")) {
@@ -585,6 +698,7 @@
         renderAdminData();
       }
     }
+    window.clearLogs = clearLogs;
 
     document.addEventListener("DOMContentLoaded", renderAdminData);
   </script>

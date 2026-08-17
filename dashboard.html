@@ -121,7 +121,7 @@
         <div class="course-card-body">
           <span class="card-tag">امتحان شامل</span>
           <h3 style="color:#fff; font-size:18px; margin-bottom:6px;">${ge.title}</h3>
-          <p style="color:var(--text-muted); font-size:13px; margin-bottom:15px;">المدة: ${ge.durationMinutes} دقيقة</p>
+          <p style="color:var(--text-muted); font-size:13px; margin-bottom:15px;">المدة: ${ge.durationMinutes} دقيقة | المحاولات: ${ge.maxAttempts || 1}</p>
           <a href="exam.html?examId=${ge.id}" class="btn btn-primary" style="width:100%;">بدء الامتحان 🎯</a>
         </div>
       </div>
