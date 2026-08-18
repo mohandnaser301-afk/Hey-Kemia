@@ -75,14 +75,14 @@
     </div>
   </footer>
 
-  <script type="module" src="app.js"></script>
+  <script src="app.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
       const container = document.getElementById("homeCoursesContainer");
 
       if (courses.length === 0) {
-        container.innerHTML = `<p style="color:var(--text-muted); text-align:center; grid-column:1/-1;">لا توجد كورسات متاحة حالياً.</p>`;
+        container.innerHTML = '<p style="color:var(--text-muted); text-align:center; grid-column:1/-1;">لا توجد كورسات متاحة حالياً.</p>';
       } else {
         container.innerHTML = courses.map((c) => `
           <div class="course-card">
@@ -92,9 +92,9 @@
               <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 8px; color:#fff;">${c.title}</h3>
               <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 18px;">${c.desc}</p>
               <ul style="list-style: none; color: var(--text-muted); font-size: 13px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px;">
-                <li>🎬 المحاضرات: <strong style="color:#fff;">${c.lessons ? c.lessons.length : 1} محاضرات</strong></li>
+                <li>🎬 المحاضرات: <strong style="color:#fff;">${(c.lessons || []).length} محاضرات</strong></li>
                 <li>👁️ مرات الدخول: <strong style="color:#fff;">${c.maxViews || 5} مرات</strong></li>
-                <li>📄 المذكرات: <strong style="color:#fff;">${c.attachments ? c.attachments.length : 0} ملفات PDF</strong></li>
+                <li>📄 المذكرات: <strong style="color:#fff;">${(c.attachments || []).length} ملفات PDF</strong></li>
               </ul>
               <div class="course-price">
                 <div>${c.price} <span style="font-size: 13px; color: var(--text-muted);">ج.م</span></div>

@@ -83,9 +83,9 @@
     </form>
   </div>
 
-  <script type="module" src="app.js"></script>
+  <script src="app.js"></script>
   <script>
-    const user = JSON.parse(localStorage.getItem("current_user"));
+    const user = getCurrentUser();
     if (!user) window.location.href = "login.html";
 
     document.getElementById("dashName").innerText = user.fullName;
@@ -100,7 +100,7 @@
 
     const coursesCont = document.getElementById("coursesContainer");
     if (myCourses.length === 0) {
-      coursesCont.innerHTML = `<div style="background:var(--bg-card); padding:20px; border-radius:14px; text-align:center; border:1px dashed var(--border); grid-column:1/-1;"><p style="color:var(--text-muted); margin-bottom:10px;">لست مشتركاً في أي كورس حالياً.</p><a href="index.html#courses" class="btn btn-primary">تصفح الكورسات</a></div>`;
+      coursesCont.innerHTML = '<div style="background:var(--bg-card); padding:20px; border-radius:14px; text-align:center; border:1px dashed var(--border); grid-column:1/-1;"><p style="color:var(--text-muted); margin-bottom:10px;">لست مشتركاً في أي كورس حالياً.</p><a href="index.html#courses" class="btn btn-primary">تصفح الكورسات</a></div>';
     } else {
       coursesCont.innerHTML = myCourses.map(c => `
         <div class="course-card">
@@ -144,7 +144,6 @@
       win.style.display = (win.style.display === "flex") ? "none" : "flex";
       if (win.style.display === "flex") renderLiveMessages();
     }
-    window.toggleChatWindow = toggleChatWindow;
 
     function renderLiveMessages() {
       const chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
