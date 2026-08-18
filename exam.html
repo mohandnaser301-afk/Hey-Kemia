@@ -3,45 +3,46 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>هي كيميا ! - منصة الاختبارات التفاعلية</title>
+  <title>هي كيميا ! - منصة الاختبارات</title>
   <link rel="stylesheet" href="style.css">
   <style>
     .exam-wrapper { max-width: 800px; margin: 40px auto; }
-    .question-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 24px; margin-bottom: 20px; }
-    .opt-label { display: flex; align-items: center; gap: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 14px 18px; border-radius: var(--radius-sm); margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
-    .opt-label:hover { border-color: var(--emerald); background: rgba(16, 185, 129, 0.08); }
-    .timer-badge { background: rgba(244, 63, 94, 0.15); border: 1px solid #f43f5e; color: #f43f5e; padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 13px; }
-    .attempts-badge { background: rgba(6, 182, 212, 0.15); border: 1px solid var(--cyan); color: var(--cyan); padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 13px; }
-    .blocked-screen { display: none; text-align: center; padding: 50px 24px; background: var(--bg-card); border: 1px solid #ef4444; border-radius: 18px; max-width: 600px; margin: 60px auto; }
+    .question-card { background: #fff; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+    .opt-label { display: flex; align-items: center; gap: 12px; background: #F8FAFC; border: 1px solid var(--border-subtle); padding: 14px 18px; border-radius: var(--radius-sm); margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+    .opt-label:hover { border-color: var(--chem-gold); background: rgba(197, 136, 56, 0.08); }
+    .timer-badge { background: rgba(239, 68, 68, 0.1); border: 1px solid #EF4444; color: #EF4444; padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 13px; }
+    .attempts-badge { background: rgba(197, 136, 56, 0.1); border: 1px solid var(--chem-gold); color: var(--chem-gold); padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 13px; }
+    .blocked-screen { display: none; text-align: center; padding: 50px 24px; background: #fff; border: 1px solid #EF4444; border-radius: 18px; max-width: 600px; margin: 60px auto; }
   </style>
 </head>
 <body>
 
-  <header class="navbar">
-    <div class="container nav-container">
-      <div class="logo"><h2>هي كيميا<span>!</span></h2></div>
+  <div class="navbar-capsule-wrapper">
+    <nav class="navbar-capsule">
+      <a href="index.html" class="capsule-brand">
+        <div class="capsule-logo">HK</div>
+        <span class="brand-text">هي كيميا<span>!</span></span>
+      </a>
       <div style="display:flex; align-items:center; gap:12px;">
         <span class="attempts-badge" id="attemptsDisplay">🎯 المحاولة: --</span>
         <span class="timer-badge" id="timerDisplay">⏱️ --:--</span>
-        <a href="dashboard.html" class="btn btn-outline" style="padding:6px 14px; font-size:12px;">خروج ✕</a>
+        <a href="dashboard.html" class="nav-btn-link">خروج ✕</a>
       </div>
-    </div>
-  </header>
+    </nav>
+  </div>
 
   <div class="container">
     <div class="blocked-screen" id="blockedScreen">
       <div style="font-size: 52px; margin-bottom: 15px;">🛑</div>
-      <h2 style="color: #ef4444; margin-bottom: 12px; font-size: 22px;">عذراً، لقد استنفدت عدد المحاولات المسموحة لهذا الامتحان!</h2>
+      <h2 style="color: #EF4444; margin-bottom: 12px; font-size: 22px;">عذراً، لقد استنفدت عدد المحاولات المسموحة لهذا الامتحان!</h2>
       <p id="blockedDetails" style="color: var(--text-muted); font-size: 14px; margin-bottom: 25px; line-height: 1.8;"></p>
-      <div style="display:flex; justify-content:center; gap:12px;">
-        <a href="dashboard.html" class="btn btn-primary">العودة للوحة التحكم 📊</a>
-      </div>
+      <a href="dashboard.html" class="btn btn-primary">العودة للوحة التحكم 📊</a>
     </div>
   </div>
 
   <div class="container exam-wrapper" id="examLayout">
     <div style="margin-bottom:25px; text-align:center;">
-      <h1 id="examTitle" style="color:#fff; font-size:24px; margin-bottom:6px;">جاري تحميل الامتحان...</h1>
+      <h1 id="examTitle" style="color:var(--primary-navy); font-size:24px; font-weight:900; margin-bottom:6px;">جاري تحميل الامتحان...</h1>
       <p id="examSubDetails" style="color:var(--text-muted); font-size:14px;"></p>
     </div>
 
@@ -51,87 +52,83 @@
     </form>
   </div>
 
-  <script type="module" src="app.js"></script>
+  <script src="app.js"></script>
   <script>
-    const user = JSON.parse(localStorage.getItem("current_user"));
+    var user = getCurrentUser();
     if (!user) window.location.href = "login.html";
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const examId = urlParams.get("examId") || "e1";
-    const exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
-    const exam = exams.find(e => e.id == examId) || exams[0];
+    var urlParams = new URLSearchParams(window.location.search);
+    var examId = urlParams.get("examId") || "e1";
+    var exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
+    var exam = exams.find(function(e) { return e.id == examId; }) || exams[0];
 
     if (!exam) {
       alert("الامتحان غير متاح!");
       window.location.href = "dashboard.html";
     }
 
-    const maxAttempts = Number(exam.maxAttempts) || 1;
-    const submissions = JSON.parse(localStorage.getItem("edu_submissions")) || [];
-    const myExamSubmissions = submissions.filter(s => s.userEmail === user.email && s.examId == exam.id);
-    const usedAttempts = myExamSubmissions.length;
+    var maxAttempts = Number(exam.maxAttempts) || 1;
+    var submissions = JSON.parse(localStorage.getItem("edu_submissions")) || [];
+    var myExamSubmissions = submissions.filter(function(s) { return s.userEmail === user.email && s.examId == exam.id; });
+    var usedAttempts = myExamSubmissions.length;
 
     if (usedAttempts >= maxAttempts) {
       document.getElementById("examLayout").style.display = "none";
       document.getElementById("blockedScreen").style.display = "block";
-      const highestScore = Math.max(...myExamSubmissions.map(s => s.percentage));
-      document.getElementById("blockedDetails").innerHTML = `
-        الحد الأقصى المسموح به: <strong>${maxAttempts} محاولة</strong><br>
-        عدد مرات خوضك للاختبار: <strong>${usedAttempts} مرات</strong><br>
-        أعلى نسبة حققتها: <strong style="color:var(--emerald-light);">${highestScore}%</strong>
-      `;
-      document.getElementById("attemptsDisplay").innerText = `🛑 المحاولات: (${usedAttempts}/${maxAttempts})`;
+      var highestScore = Math.max.apply(Math, myExamSubmissions.map(function(s) { return s.percentage; }));
+      document.getElementById("blockedDetails").innerHTML = "الحد الأقصى المسموح به: <strong>" + maxAttempts + " محاولة</strong><br>عدد مرات خوضك للاختبار: <strong>" + usedAttempts + " مرات</strong><br>أعلى نسبة حققتها: <strong style='color:var(--chem-gold);'>" + highestScore + "%</strong>";
+      document.getElementById("attemptsDisplay").innerText = "🛑 المحاولات: (" + usedAttempts + "/" + maxAttempts + ")";
     } else {
-      const currentAttemptNumber = usedAttempts + 1;
-      document.getElementById("attemptsDisplay").innerText = `🎯 المحاولة (${currentAttemptNumber} من ${maxAttempts})`;
+      var currentAttemptNumber = usedAttempts + 1;
+      document.getElementById("attemptsDisplay").innerText = "🎯 المحاولة (" + currentAttemptNumber + " من " + maxAttempts + ")";
     }
 
     document.getElementById("examTitle").innerText = exam.title;
-    document.getElementById("examSubDetails").innerText = `المدة: ${exam.durationMinutes} دقيقة | عدد الأسئلة: ${(exam.questions || []).length} | الحد الأقصى للمحاولات: ${maxAttempts}`;
+    document.getElementById("examSubDetails").innerText = "المدة: " + exam.durationMinutes + " دقيقة | عدد الأسئلة: " + (exam.questions || []).length + " | الحد الأقصى للمحاولات: " + maxAttempts;
 
-    let timeLeft = (exam.durationMinutes || 15) * 60;
-    const timerElem = document.getElementById("timerDisplay");
-    const timerInterval = setInterval(() => {
-      const mins = Math.floor(timeLeft / 60);
-      const secs = timeLeft % 60;
-      timerElem.innerText = `⏱️ ${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    var timeLeft = (exam.durationMinutes || 15) * 60;
+    var timerElem = document.getElementById("timerDisplay");
+    var timerInterval = setInterval(function() {
+      var mins = Math.floor(timeLeft / 60);
+      var secs = timeLeft % 60;
+      timerElem.innerText = "⏱️ " + mins.toString().padStart(2, '0') + ":" + secs.toString().padStart(2, '0');
       if (timeLeft <= 0) {
         clearInterval(timerInterval);
-        alert("⏱️ انتهى وقت الامتحان! سيتم تسليم إجاباتك الحالية تلقائياً.");
+        alert("⏱️ انتهى وقت الامتحان! سيتم تسليم إجاباتك تلقائياً.");
         document.getElementById("examForm").requestSubmit();
       }
       timeLeft--;
     }, 1000);
 
-    const questions = exam.questions || [];
-    document.getElementById("questionsContainer").innerHTML = questions.map((q, qIdx) => `
-      <div class="question-card">
-        <h3 style="color:#fff; font-size:16px; margin-bottom:15px; line-height:1.6;">${qIdx + 1}. ${q.q}</h3>
-        <div>
-          ${q.options.map((opt, oIdx) => `
-            <label class="opt-label">
-              <input type="radio" name="q_${qIdx}" value="${oIdx}" required>
-              <span style="color:#cbd5e1; font-size:14px;">${opt}</span>
-            </label>
-          `).join('')}
-        </div>
-      </div>
-    `).join('');
+    var questions = exam.questions || [];
+    document.getElementById("questionsContainer").innerHTML = questions.map(function(q, qIdx) {
+      return '<div class="question-card">' +
+        '<h3 style="color:var(--primary-navy); font-size:16px; font-weight:800; margin-bottom:15px; line-height:1.6;">' + (qIdx + 1) + '. ' + q.q + '</h3>' +
+        '<div>' +
+          q.options.map(function(opt, oIdx) {
+            return '<label class="opt-label">' +
+              '<input type="radio" name="q_' + qIdx + '" value="' + oIdx + '" required>' +
+              '<span style="color:var(--text-dark); font-size:14px; font-weight:700;">' + opt + '</span>' +
+            '</label>';
+          }).join('') +
+        '</div>' +
+      '</div>';
+    }).join('');
 
-    document.getElementById("examForm").addEventListener("submit", (e) => {
+    document.getElementById("examForm").addEventListener("submit", function(e) {
       e.preventDefault();
       clearInterval(timerInterval);
 
-      let score = 0;
-      questions.forEach((q, qIdx) => {
-        const selected = document.querySelector(`input[name="q_${qIdx}"]:checked`);
+      var score = 0;
+      questions.forEach(function(q, qIdx) {
+        var selected = document.querySelector('input[name="q_' + qIdx + '"]:checked');
         if (selected && parseInt(selected.value) === q.correct) score++;
       });
 
-      const total = questions.length;
-      const percentage = Math.round((score / total) * 100);
+      var total = questions.length;
+      var percentage = Math.round((score / total) * 100);
 
-      const allSubs = JSON.parse(localStorage.getItem("edu_submissions")) || [];
+      var allSubs = JSON.parse(localStorage.getItem("edu_submissions")) || [];
       allSubs.push({
         id: Date.now(),
         examId: exam.id,
@@ -147,7 +144,7 @@
       });
       localStorage.setItem("edu_submissions", JSON.stringify(allSubs));
 
-      alert(`🎉 تم إنهاء الامتحان بنجاح!\nالدرجة: ${score} من ${total} (${percentage}%)\nالمحاولات المستهلكة: ${usedAttempts + 1} من ${maxAttempts}`);
+      alert("🎉 تم إنهاء الامتحان بنجاح!\nالدرجة: " + score + " من " + total + " (" + percentage + "%)\nالمحاولات المستهلكة: " + (usedAttempts + 1) + " من " + maxAttempts);
       window.location.href = "dashboard.html";
     });
   </script>

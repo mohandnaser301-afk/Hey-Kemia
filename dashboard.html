@@ -6,13 +6,13 @@
   <title>هي كيميا ! - بروفايل الطالب</title>
   <link rel="stylesheet" href="dashboard.css">
   <style>
-    .live-chat-bubble-btn { position: fixed; bottom: 25px; left: 25px; background: var(--emerald); color: #03070a; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; z-index: 9999; }
-    .live-chat-window { display: none; position: fixed; bottom: 90px; left: 25px; width: 350px; height: 460px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 18px; z-index: 9999; flex-direction: column; overflow: hidden; backdrop-filter: blur(20px); }
-    .chat-win-header { background: rgba(6, 9, 17, 0.85); padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
-    .chat-win-messages { flex: 1; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-    .student-bubble { align-self: flex-end; background: var(--emerald); color: #03070a; font-weight: 700; padding: 8px 12px; border-radius: 12px; max-width: 80%; font-size: 13px; }
-    .support-bubble { align-self: flex-start; background: #1e293b; color: #fff; padding: 8px 12px; border-radius: 12px; max-width: 80%; font-size: 13px; }
-    .chat-win-input { padding: 10px 14px; background: rgba(6, 9, 17, 0.85); border-top: 1px solid var(--border); display: flex; gap: 8px; }
+    .live-chat-bubble-btn { position: fixed; bottom: 25px; left: 25px; background: var(--chem-gold); color: #fff; width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; z-index: 9999; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    .live-chat-window { display: none; position: fixed; bottom: 90px; left: 25px; width: 350px; height: 460px; background: #fff; border: 1px solid var(--border-subtle); border-radius: 18px; z-index: 9999; flex-direction: column; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
+    .chat-win-header { background: var(--primary-navy); color:#fff; padding: 12px 16px; display: flex; justify-content: space-between; align-items:center; }
+    .chat-win-messages { flex: 1; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #F8FAFC; }
+    .student-bubble { align-self: flex-end; background: var(--chem-gold); color: #fff; font-weight: 700; padding: 8px 12px; border-radius: 12px; max-width: 80%; font-size: 13px; }
+    .support-bubble { align-self: flex-start; background: #E2E8F0; color: #0F172A; padding: 8px 12px; border-radius: 12px; max-width: 80%; font-size: 13px; }
+    .chat-win-input { padding: 10px 14px; background: #fff; border-top: 1px solid var(--border-subtle); display: flex; gap: 8px; }
   </style>
 </head>
 <body>
@@ -22,14 +22,13 @@
       <div class="sidebar-brand"><h2>هي كيميا<span>!</span></h2></div>
       <div class="user-profile-summary">
         <div class="avatar" id="dashAvatar">ط</div>
-        <div class="user-info"><h4 id="dashName">اسم الطالب</h4><span class="badge" id="dashMeta">طالب مسجل</span></div>
+        <div class="user-info"><h4 id="dashName" style="color:#fff; font-size:14px;">اسم الطالب</h4><span class="badge" id="dashMeta" style="color:var(--chem-gold-light); font-size:11px;">طالب مسجل</span></div>
       </div>
       <nav class="sidebar-nav">
         <a href="dashboard.html" class="nav-item active">📊 لوحة التحكم</a>
         <a href="#my-courses" class="nav-item">📚 كورساتي المفعلة</a>
-        <a href="#general-exams" class="nav-item">🏆 الامتحانات الشاملة</a>
-        <a href="#exams" class="nav-item">📝 سجل درجاتي</a>
-        <a href="javascript:void(0)" onclick="toggleChatWindow()" class="nav-item" style="color:var(--cyan);">💬 الدعم الفني</a>
+        <a href="#exams" class="nav-item">📝 درجات الامتحانات</a>
+        <a href="javascript:void(0)" onclick="toggleChatWindow()" class="nav-item" style="color:var(--chem-gold-light);">💬 شات الدعم الفني</a>
         <a href="index.html#courses" class="nav-item">🛒 تصفح الكورسات</a>
         <a href="javascript:void(0)" onclick="logout()" class="nav-item logout">🚪 تسجيل الخروج</a>
       </nav>
@@ -37,29 +36,24 @@
 
     <main class="main-content">
       <header class="topbar">
-        <div><h1>مرحباً بك يا <span id="welcomeName">بطل</span> 👋</h1><p class="subtitle">المختبر التعليمي لكيمياء الثانوية العامة</p></div>
-        <span class="school-tag" id="dashSchool">🏫 المدرسة</span>
+        <div><h1 style="font-size:24px; font-weight:900; color:var(--primary-navy);">مرحباً بك يا <span id="welcomeName">بطل</span> 👋</h1><p class="subtitle" style="color:var(--text-muted); font-size:13px;">المنظومة المتخصصة لكيمياء الثانوية العامة</p></div>
+        <span class="school-tag" id="dashSchool" style="background:#fff; border:1px solid var(--border-subtle); padding:6px 14px; border-radius:20px; font-size:13px; font-weight:700;">🏫 المدرسة</span>
       </header>
 
       <section class="stats-grid">
-        <div class="stat-card"><span class="stat-icon">📚</span><div><h3 id="enrolledCount">0</h3><p>الكورسات المفعلة</p></div></div>
-        <div class="stat-card"><span class="stat-icon">🎯</span><div><h3 id="averageScore">0%</h3><p>متوسط الامتحانات</p></div></div>
-        <div class="stat-card"><span class="stat-icon">📝</span><div><h3 id="completedExamsCount">0</h3><p>الامتحانات المكتملة</p></div></div>
-        <div class="stat-card"><span class="stat-icon">🏆</span><div><h3 id="studentRating">مستجد</h3><p>التقييم العام</p></div></div>
+        <div class="stat-card"><span class="stat-icon">📚</span><div><h3 id="enrolledCount" style="font-size:22px; font-weight:900;">0</h3><p style="font-size:12px; color:var(--text-muted);">الكورسات المفعلة</p></div></div>
+        <div class="stat-card"><span class="stat-icon">🎯</span><div><h3 id="averageScore" style="font-size:22px; font-weight:900;">0%</h3><p style="font-size:12px; color:var(--text-muted);">متوسط الامتحانات</p></div></div>
+        <div class="stat-card"><span class="stat-icon">📝</span><div><h3 id="completedExamsCount" style="font-size:22px; font-weight:900;">0</h3><p style="font-size:12px; color:var(--text-muted);">الامتحانات المكتملة</p></div></div>
+        <div class="stat-card"><span class="stat-icon">🏆</span><div><h3 id="studentRating" style="font-size:18px; font-weight:900; color:var(--chem-gold);">مستجد</h3><p style="font-size:12px; color:var(--text-muted);">التقييم العام</p></div></div>
       </section>
 
       <section id="my-courses" style="margin-bottom:30px;">
-        <h2 style="font-size:18px; margin-bottom:15px;">الكورسات المفعلة بحسابك</h2>
-        <div class="courses-grid" id="coursesContainer"></div>
-      </section>
-
-      <section id="general-exams" style="margin-bottom:30px;">
-        <h2 style="font-size:18px; margin-bottom:15px;">🏆 الامتحانات الشاملة</h2>
-        <div class="courses-grid" id="generalExamsContainer"></div>
+        <h2 style="font-size:18px; font-weight:900; color:var(--primary-navy); margin-bottom:15px;">الكورسات المفعلة بحسابك</h2>
+        <div class="courses-grid-layout" id="coursesContainer"></div>
       </section>
 
       <section id="exams">
-        <h2 style="font-size:18px; margin-bottom:15px;">نتائج الامتحانات والتقييمات</h2>
+        <h2 style="font-size:18px; font-weight:900; color:var(--primary-navy); margin-bottom:15px;">سجل درجات الامتحانات</h2>
         <div class="table-container">
           <table class="exams-table">
             <thead><tr><th>اسم الامتحان</th><th>المادة</th><th>التاريخ</th><th>الدرجة</th><th>النسبة</th><th>الحالة</th></tr></thead>
@@ -73,100 +67,87 @@
   <div class="live-chat-bubble-btn" onclick="toggleChatWindow()">💬</div>
   <div class="live-chat-window" id="liveChatWindow">
     <div class="chat-win-header">
-      <h4 style="font-size:13px; color:#fff;">شات الدعم والمعلم 🟢</h4>
-      <button onclick="toggleChatWindow()" style="background:none; border:none; color:#fff; cursor:pointer;">✕</button>
+      <h4 style="font-size:13px; font-weight:800;">شات المعلم والدعم الفني 🟢</h4>
+      <button onclick="toggleChatWindow()" style="background:none; border:none; color:#fff; cursor:pointer; font-size:16px;">✕</button>
     </div>
     <div class="chat-win-messages" id="studentChatMessages"></div>
     <form class="chat-win-input" id="studentSendForm">
       <input type="text" id="studentMsgInput" placeholder="اكتب سؤالك وسنرد فوراً..." required>
-      <button type="submit" class="btn btn-primary" style="padding:6px 12px;">إرسال</button>
+      <button type="submit" class="btn btn-primary" style="padding:6px 14px; font-size:13px;">إرسال</button>
     </form>
   </div>
 
   <script src="app.js"></script>
   <script>
-    const user = getCurrentUser();
+    var user = getCurrentUser();
     if (!user) window.location.href = "login.html";
 
     document.getElementById("dashName").innerText = user.fullName;
     document.getElementById("dashAvatar").innerText = user.fullName.slice(0, 2);
-    document.getElementById("dashMeta").innerText = `${user.educationType === 'AZHAR' ? 'أزهر' : 'عام'} - ${user.governorate || 'مصر'}`;
-    document.getElementById("dashSchool").innerText = `🏫 ${user.schoolName || 'المنصة'}`;
+    document.getElementById("dashMeta").innerText = (user.educationType === 'AZHAR' ? 'أزهر' : 'عام') + ' - ' + (user.governorate || 'مصر');
+    document.getElementById("dashSchool").innerText = '🏫 ' + (user.schoolName || 'المنصة');
     document.getElementById("welcomeName").innerText = user.fullName.split(" ")[0];
 
-    const allCourses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-    const myCourses = allCourses.filter(c => user.enrolledCourses && user.enrolledCourses.includes(c.id));
+    var allCourses = JSON.parse(localStorage.getItem("edu_courses")) || [];
+    var myCourses = allCourses.filter(function(c) { return user.enrolledCourses && user.enrolledCourses.includes(c.id); });
     document.getElementById("enrolledCount").innerText = myCourses.length;
 
-    const coursesCont = document.getElementById("coursesContainer");
+    var coursesCont = document.getElementById("coursesContainer");
     if (myCourses.length === 0) {
-      coursesCont.innerHTML = '<div style="background:var(--bg-card); padding:20px; border-radius:14px; text-align:center; border:1px dashed var(--border); grid-column:1/-1;"><p style="color:var(--text-muted); margin-bottom:10px;">لست مشتركاً في أي كورس حالياً.</p><a href="index.html#courses" class="btn btn-primary">تصفح الكورسات</a></div>';
+      coursesCont.innerHTML = '<div style="background:#fff; padding:25px; border-radius:14px; text-align:center; border:1px dashed var(--border-subtle); grid-column:1/-1;"><p style="color:var(--text-muted); margin-bottom:12px;">لست مشتركاً في أي كورس حالياً.</p><a href="index.html#courses" class="btn btn-primary">تصفح الكورسات المتاحة</a></div>';
     } else {
-      coursesCont.innerHTML = myCourses.map(c => `
-        <div class="course-card">
-          <div class="course-card-body">
-            <span class="card-tag">كورس مفعّل</span>
-            <h3 style="color:#fff; font-size:18px; margin-bottom:6px;">${c.title}</h3>
-            <p style="color:var(--text-muted); font-size:13px; margin-bottom:15px;">${c.desc}</p>
-            <a href="course-view.html?id=${c.id}" class="btn btn-primary" style="width:100%;">دخول المحاضرات 🎬</a>
-          </div>
-        </div>
-      `).join('');
+      coursesCont.innerHTML = myCourses.map(function(c) {
+        return '<div class="course-clean-card">' +
+          '<div class="course-clean-body">' +
+            '<span class="course-clean-tag">كورس مفعّل</span>' +
+            '<h3 style="color:var(--primary-navy); font-size:18px; margin-bottom:8px;">' + c.title + '</h3>' +
+            '<p style="color:var(--text-muted); font-size:13px; margin-bottom:15px;">' + c.desc + '</p>' +
+            '<a href="course-view.html?id=' + c.id + '" class="btn btn-primary" style="width:100%;">دخول المحاضرات 🎬</a>' +
+          '</div>' +
+        '</div>';
+      }).join('');
     }
 
-    const allExams = JSON.parse(localStorage.getItem("edu_exams")) || [];
-    const generalExams = allExams.filter(e => e.isGeneral);
-    document.getElementById("generalExamsContainer").innerHTML = generalExams.map(ge => `
-      <div class="course-card">
-        <div class="course-card-body">
-          <span class="card-tag">امتحان شامل</span>
-          <h3 style="color:#fff; font-size:18px; margin-bottom:6px;">${ge.title}</h3>
-          <p style="color:var(--text-muted); font-size:13px; margin-bottom:15px;">المدة: ${ge.durationMinutes} دقيقة | المحاولات: ${ge.maxAttempts || 1}</p>
-          <a href="exam.html?examId=${ge.id}" class="btn btn-primary" style="width:100%;">بدء الامتحان 🎯</a>
-        </div>
-      </div>
-    `).join('');
-
-    const submissions = JSON.parse(localStorage.getItem("edu_submissions")) || [];
-    const mySubs = submissions.filter(s => s.userEmail === user.email);
+    var submissions = JSON.parse(localStorage.getItem("edu_submissions")) || [];
+    var mySubs = submissions.filter(function(s) { return s.userEmail === user.email; });
     document.getElementById("completedExamsCount").innerText = mySubs.length;
     if (mySubs.length > 0) {
-      const avg = Math.round(mySubs.reduce((acc, curr) => acc + curr.percentage, 0) / mySubs.length);
-      document.getElementById("averageScore").innerText = `${avg}%`;
+      var avg = Math.round(mySubs.reduce(function(acc, curr) { return acc + curr.percentage; }, 0) / mySubs.length);
+      document.getElementById("averageScore").innerText = avg + "%";
       document.getElementById("studentRating").innerText = avg >= 85 ? "ممتاز 🌟" : avg >= 65 ? "جيد جداً 👍" : "مستمر بالتدريب";
-      document.getElementById("examsTableBody").innerHTML = mySubs.map(s => `
-        <tr><td>${s.examTitle}</td><td>${s.subject}</td><td>${s.date}</td><td>${s.score}/${s.total}</td><td>${s.percentage}%</td><td><span class="badge-success">تم التسليم</span></td></tr>
-      `).join('');
+      document.getElementById("examsTableBody").innerHTML = mySubs.map(function(s) {
+        return '<tr><td>' + s.examTitle + '</td><td>' + s.subject + '</td><td>' + s.date + '</td><td>' + s.score + '/' + s.total + '</td><td>' + s.percentage + '%</td><td><span class="badge-success">تم التسليم</span></td></tr>';
+      }).join('');
     }
 
     function toggleChatWindow() {
-      const win = document.getElementById("liveChatWindow");
+      var win = document.getElementById("liveChatWindow");
       win.style.display = (win.style.display === "flex") ? "none" : "flex";
       if (win.style.display === "flex") renderLiveMessages();
     }
 
     function renderLiveMessages() {
-      const chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
-      const myChats = chats.filter(c => c.studentEmail === user.email);
-      const container = document.getElementById("studentChatMessages");
-      container.innerHTML = myChats.map(c => `
-        <div class="${c.sender === 'student' ? 'student-bubble' : 'support-bubble'}">${c.text}</div>
-      `).join('');
+      var chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
+      var myChats = chats.filter(function(c) { return c.studentEmail === user.email; });
+      var container = document.getElementById("studentChatMessages");
+      container.innerHTML = myChats.map(function(c) {
+        return '<div class="' + (c.sender === 'student' ? 'student-bubble' : 'support-bubble') + '">' + c.text + '</div>';
+      }).join('');
       container.scrollTop = container.scrollHeight;
     }
 
-    document.getElementById("studentSendForm").addEventListener("submit", (e) => {
+    document.getElementById("studentSendForm").addEventListener("submit", function(e) {
       e.preventDefault();
-      const input = document.getElementById("studentMsgInput");
-      const text = input.value.trim();
+      var input = document.getElementById("studentMsgInput");
+      var text = input.value.trim();
       if (!text) return;
-      const chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
+      var chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
       chats.push({ id: Date.now(), studentEmail: user.email, studentName: user.fullName, sender: "student", text: text, time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) });
       localStorage.setItem("edu_live_chats", JSON.stringify(chats));
       input.value = "";
       renderLiveMessages();
     });
-    setInterval(() => { if (document.getElementById("liveChatWindow").style.display === "flex") renderLiveMessages(); }, 1500);
+    setInterval(function() { if (document.getElementById("liveChatWindow").style.display === "flex") renderLiveMessages(); }, 1500);
   </script>
 </body>
 </html>

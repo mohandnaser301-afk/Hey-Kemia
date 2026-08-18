@@ -3,46 +3,49 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>هي كيميا ! - تأكيد الاشتراك والدفع السحابي</title>
+  <title>هي كيميا ! - تأكيد الاشتراك والدفع</title>
   <link rel="stylesheet" href="style.css">
   <style>
     .payment-box { max-width: 520px; margin: 40px auto; }
-    .payment-instructions { background: rgba(15, 23, 42, 0.8); border: 1px dashed rgba(16, 185, 129, 0.3); padding: 16px; border-radius: 12px; margin: 20px 0; }
+    .payment-instructions { background: #F8FAFC; border: 1.5px dashed var(--chem-gold); padding: 16px; border-radius: 12px; margin: 20px 0; }
   </style>
 </head>
 <body style="display: flex; flex-direction: column; min-height: 100vh;">
 
-  <header class="navbar">
-    <div class="container nav-container">
-      <div class="logo"><h2>هي كيميا<span>!</span></h2></div>
-      <a href="index.html#courses" class="btn btn-outline">إلغاء ✕</a>
-    </div>
-  </header>
+  <div class="navbar-capsule-wrapper">
+    <nav class="navbar-capsule">
+      <a href="index.html" class="capsule-brand">
+        <div class="capsule-logo">HK</div>
+        <span class="brand-text">هي كيميا<span>!</span></span>
+      </a>
+      <a href="index.html#courses" class="nav-btn-link">إلغاء ✕</a>
+    </nav>
+  </div>
 
   <div class="container" style="flex: 1; display: flex; align-items: center;">
     <div class="form-container payment-box">
-      <h2 style="color: #fff; font-size: 22px; text-align: center; margin-bottom: 4px;">إتمام الاشتراك والدفع</h2>
-      <p style="color: var(--text-muted); font-size: 13px; text-align: center; margin-bottom: 20px;">حول المبلغ وارفع الإيصال للتفعيل السحابي الفوري</p>
+      <h2 style="color: var(--primary-navy); font-size: 22px; font-weight: 900; text-align: center; margin-bottom: 4px;">إتمام الاشتراك والدفع</h2>
+      <p style="color: var(--text-muted); font-size: 13px; text-align: center; margin-bottom: 20px;">حول المبلغ عبر فودافون كاش أو فوري وارفع صورة الإيصال</p>
 
-      <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 14px; border-radius: 10px;">
+      <div style="background: #F8FAFC; border: 1px solid var(--border-subtle); padding: 14px; border-radius: 10px;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
           <span style="color: var(--text-muted);">الكورس:</span>
-          <strong id="courseTitle" style="color: #fff;">جاري التحميل...</strong>
+          <strong id="courseTitle" style="color: var(--primary-navy);">جاري التحميل...</strong>
         </div>
         <div style="display: flex; justify-content: space-between;">
           <span style="color: var(--text-muted);">المبلغ المطلوب:</span>
-          <strong id="coursePrice" style="color: var(--emerald-light); font-size: 16px;">---</strong>
+          <strong id="coursePrice" style="color: var(--chem-gold); font-size: 16px;">---</strong>
         </div>
       </div>
 
       <div class="payment-instructions">
         <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
           <span>📱 فودافون كاش:</span>
-          <strong style="color:var(--emerald-light);">01012345678</strong>
+          <strong style="color:var(--chem-gold);">01012345678</strong>
         </div>
         <div style="display:flex; justify-content:space-between;">
           <span>🏢 كود خدمة فوري:</span>
-          <strong style="color:var(--emerald-light);">987654</strong>
+          <strong style="color:var(--chem-gold);">987654</strong>
         </div>
       </div>
 
@@ -60,52 +63,47 @@
           <input type="file" id="receiptFile" accept="image/*" required>
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 10px;">إرسال الإيصال للسحابة 🚀</button>
+        <button type="submit" class="btn btn-gold" style="width: 100%; padding: 12px; margin-top: 10px;">إرسال الإيصال وتأكيد الاشتراك 🚀</button>
       </form>
     </div>
   </div>
 
-  <script type="module">
-    import { db, doc, getDoc, collection, addDoc, logAction, getCurrentUser } from "./app.js";
-
-    const user = getCurrentUser();
+  <script src="app.js"></script>
+  <script>
+    var user = getCurrentUser();
     if (!user) window.location.href = "login.html";
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const courseId = urlParams.get("course");
-    let currentCourse = null;
+    var urlParams = new URLSearchParams(window.location.search);
+    var courseId = urlParams.get("course") || "c1";
+    var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
+    var course = courses.find(function(c) { return c.id == courseId; });
 
-    async function loadCourse() {
-      const snap = await getDoc(doc(db, "courses", courseId));
-      if (snap.exists()) {
-        currentCourse = snap.data();
-        document.getElementById("courseTitle").innerText = currentCourse.title;
-        document.getElementById("coursePrice").innerText = `${currentCourse.price} ج.م`;
-      }
+    if (course) {
+      document.getElementById("courseTitle").innerText = course.title;
+      document.getElementById("coursePrice").innerText = course.price + " ج.م";
     }
-    loadCourse();
 
-    document.getElementById("paymentForm").addEventListener("submit", (e) => {
+    document.getElementById("paymentForm").addEventListener("submit", function(e) {
       e.preventDefault();
-      const file = document.getElementById("receiptFile").files[0];
-      const reader = new FileReader();
-      reader.onload = async function (event) {
-        await addDoc(collection(db, "payments"), {
-          userUid: user.uid,
+      var file = document.getElementById("receiptFile").files[0];
+      var reader = new FileReader();
+      reader.onload = function(event) {
+        var payments = JSON.parse(localStorage.getItem("edu_payments")) || [];
+        payments.push({
+          id: Date.now(),
           userEmail: user.email,
-          userName: user.fullName || "طالب",
+          userName: user.fullName,
           studentPhone: user.studentPhone || "01000000000",
           courseId: courseId,
-          courseTitle: currentCourse ? currentCourse.title : "كورس كيمياء",
-          amount: currentCourse ? currentCourse.price : 220,
+          courseTitle: course ? course.title : "كورس كيمياء",
+          amount: course ? course.price : 220,
           method: document.getElementById("paymentMethod").value,
           receipt: event.target.result,
-          status: "PENDING",
-          createdAt: new Date().toISOString()
+          status: "PENDING"
         });
-
-        await logAction("إرسال طلب دفع", `قام الطالب ${user.fullName} برفع إيصال دفع لكورس "${currentCourse ? currentCourse.title : ''}".`);
-        alert("✅ تم إرسال الإيصال بنجاح إلى الإدارة وسيظهر في لوحة التحكم فوراً!");
+        localStorage.setItem("edu_payments", JSON.stringify(payments));
+        logAdminAction("إرسال طلب دفع", "قام الطالب " + user.fullName + " برفع إيصال دفع.");
+        alert("✅ تم إرسال الإيصال بنجاح! سيتم تفعيله من قبل الإدارة فوراً.");
         window.location.href = "dashboard.html";
       };
       if (file) reader.readAsDataURL(file);

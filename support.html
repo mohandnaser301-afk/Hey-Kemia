@@ -6,17 +6,17 @@
   <title>هي كيميا ! - شات الدعم الحي</title>
   <link rel="stylesheet" href="dashboard.css">
   <style>
-    .chat-layout { display: grid; grid-template-columns: 320px 1fr; gap: 20px; height: calc(100vh - 125px); background: var(--bg-card); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
-    .chat-users-list { background: rgba(6, 9, 17, 0.65); border-left: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column; }
-    .chat-user-item { padding: 15px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; gap: 12px; }
-    .chat-user-item.active { background: rgba(16, 185, 129, 0.1); border-right: 4px solid var(--emerald); }
-    .chat-main-area { display: flex; flex-direction: column; height: 100%; }
-    .chat-header { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(6, 9, 17, 0.5); }
-    .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+    .chat-layout { display: grid; grid-template-columns: 300px 1fr; gap: 20px; height: calc(100vh - 120px); background: #fff; border: 1px solid var(--border-subtle); border-radius: 18px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+    .chat-users-list { background: #F8FAFC; border-left: 1px solid var(--border-subtle); overflow-y: auto; display: flex; flex-direction: column; }
+    .chat-user-item { padding: 15px; border-bottom: 1px solid var(--border-subtle); cursor: pointer; display: flex; align-items: center; gap: 12px; }
+    .chat-user-item.active { background: #fff; border-right: 4px solid var(--chem-gold); }
+    .chat-main-area { display: flex; flex-direction: column; height: 100%; background: #fff; }
+    .chat-header { padding: 15px 20px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: #fff; }
+    .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: #F8FAFC; }
     .message-bubble { max-width: 70%; padding: 12px 16px; border-radius: 14px; font-size: 14px; }
-    .msg-student { align-self: flex-start; background: #1e293b; color: #fff; }
-    .msg-support { align-self: flex-end; background: var(--emerald); color: #03070a; font-weight: 700; }
-    .chat-input-area { padding: 14px 20px; border-top: 1px solid var(--border); background: rgba(6, 9, 17, 0.65); display: flex; gap: 10px; }
+    .msg-student { align-self: flex-start; background: #E2E8F0; color: #0F172A; }
+    .msg-support { align-self: flex-end; background: var(--chem-gold); color: #fff; font-weight: 700; }
+    .chat-input-area { padding: 14px 20px; border-top: 1px solid var(--border-subtle); background: #fff; display: flex; gap: 10px; }
   </style>
 </head>
 <body>
@@ -26,7 +26,7 @@
       <div class="sidebar-brand"><h2>هي كيميا<span>!</span></h2></div>
       <div class="user-profile-summary">
         <div class="avatar">💬</div>
-        <div class="user-info"><h4 id="agentName">فريق الدعم</h4><span class="badge" style="color:var(--emerald-light);">🟢 متصل</span></div>
+        <div class="user-info"><h4 id="agentName" style="color:#fff; font-size:14px;">فريق الدعم</h4><span class="badge" style="color:var(--chem-gold-light); font-size:11px;">🟢 متصل</span></div>
       </div>
       <nav class="sidebar-nav">
         <a href="support.html" class="nav-item active">💬 شات الطلاب</a>
@@ -39,15 +39,15 @@
     <main class="main-content" style="padding: 20px 30px;">
       <div class="chat-layout">
         <div class="chat-users-list">
-          <div style="padding: 12px 15px; font-weight: bold; color: var(--cyan); border-bottom: 1px solid var(--border);">المحادثات النشطة</div>
+          <div style="padding: 14px 18px; font-weight: 800; color: var(--primary-navy); border-bottom: 1px solid var(--border-subtle);">المحادثات النشطة</div>
           <div id="usersListContainer"></div>
         </div>
 
         <div class="chat-main-area">
           <div class="chat-header">
             <div>
-              <h3 id="currentChatStudentName" style="color: #fff; font-size: 16px;">اختر طالباً للرد عليه</h3>
-              <span id="currentChatStudentMeta" style="font-size: 12px; color: var(--emerald-light);"></span>
+              <h3 id="currentChatStudentName" style="color: var(--primary-navy); font-size: 16px; font-weight: 800;">اختر طالباً للرد عليه</h3>
+              <span id="currentChatStudentMeta" style="font-size: 12px; color: var(--chem-gold);"></span>
             </div>
             <button class="btn btn-outline" style="padding: 4px 10px; font-size: 12px;" onclick="loadMessages()">تحديث 🔄</button>
           </div>
@@ -65,40 +65,39 @@
     </main>
   </div>
 
-  <script type="module" src="app.js"></script>
+  <script src="app.js"></script>
   <script>
-    const user = JSON.parse(localStorage.getItem("current_user"));
+    var user = getCurrentUser();
     if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN" && user.role !== "SUPPORT")) {
       alert("مخصص للإدارة وفريق الدعم فقط!");
       window.location.href = "login.html";
     }
 
     document.getElementById("agentName").innerText = user.fullName;
-    let activeEmail = null;
-    let activeName = null;
+    var activeEmail = null;
+    var activeName = null;
 
     function renderActiveUsers() {
-      const chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
-      const map = {};
-      chats.forEach(c => { map[c.studentEmail] = { name: c.studentName || "طالب", email: c.studentEmail, lastMsg: c.text, time: c.time }; });
-      const container = document.getElementById("usersListContainer");
-      const emails = Object.keys(map);
-      if (emails.length === 0) { container.innerHTML = `<p style="color:var(--text-muted); padding:15px; font-size:13px;">لا توجد رسائل بعد.</p>`; return; }
+      var chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
+      var map = {};
+      chats.forEach(function(c) { map[c.studentEmail] = { name: c.studentName || "طالب", email: c.studentEmail, lastMsg: c.text, time: c.time }; });
+      var container = document.getElementById("usersListContainer");
+      var emails = Object.keys(map);
+      if (emails.length === 0) { container.innerHTML = '<p style="color:var(--text-muted); padding:15px; font-size:13px;">لا توجد رسائل بعد.</p>'; return; }
 
-      container.innerHTML = emails.map(email => `
-        <div class="chat-user-item ${activeEmail === email ? 'active' : ''}" onclick="selectStudent('${email}', '${map[email].name}')">
-          <div class="avatar" style="width:36px; height:36px; font-size:12px;">${map[email].name.slice(0,2)}</div>
-          <div style="flex:1;"><h4 style="font-size:13px; color:#fff;">${map[email].name}</h4><p style="font-size:11px; color:var(--text-muted);">${map[email].lastMsg}</p></div>
-        </div>
-      `).join('');
+      container.innerHTML = emails.map(function(email) {
+        return '<div class="chat-user-item ' + (activeEmail === email ? 'active' : '') + '" onclick="selectStudent(\'' + email + '\', \'' + map[email].name + '\')">' +
+          '<div class="avatar" style="width:36px; height:36px; font-size:12px;">' + map[email].name.slice(0,2) + '</div>' +
+          '<div style="flex:1;"><h4 style="font-size:13px; color:var(--primary-navy); font-weight:800;">' + map[email].name + '</h4><p style="font-size:11px; color:var(--text-muted);">' + map[email].lastMsg + '</p></div>' +
+        '</div>';
+      }).join('');
     }
-    window.selectStudent = selectStudent;
 
     function selectStudent(email, name) {
       activeEmail = email;
       activeName = name;
-      document.getElementById("currentChatStudentName").innerText = `محادثة مع: ${name}`;
-      document.getElementById("currentChatStudentMeta").innerText = `${email} | 🟢 مباشر`;
+      document.getElementById("currentChatStudentName").innerText = "محادثة مع: " + name;
+      document.getElementById("currentChatStudentMeta").innerText = email + " | 🟢 مباشر";
       document.getElementById("supportSendForm").style.display = "flex";
       renderActiveUsers();
       loadMessages();
@@ -106,25 +105,24 @@
 
     function loadMessages() {
       if (!activeEmail) return;
-      const chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
-      const msgs = chats.filter(c => c.studentEmail === activeEmail);
-      const container = document.getElementById("messagesContainer");
-      container.innerHTML = msgs.map(m => `
-        <div class="message-bubble ${m.sender === 'support' ? 'msg-support' : 'msg-student'}">
-          <span style="font-size:10px; display:block; opacity:0.8;">${m.sender === 'support' ? 'أنت' : activeName}</span>
-          ${m.text}
-        </div>
-      `).join('');
+      var chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
+      var msgs = chats.filter(function(c) { return c.studentEmail === activeEmail; });
+      var container = document.getElementById("messagesContainer");
+      container.innerHTML = msgs.map(function(m) {
+        return '<div class="message-bubble ' + (m.sender === 'support' ? 'msg-support' : 'msg-student') + '">' +
+          '<span style="font-size:10px; display:block; opacity:0.8;">' + (m.sender === 'support' ? 'أنت' : activeName) + '</span>' +
+          m.text +
+        '</div>';
+      }).join('');
       container.scrollTop = container.scrollHeight;
     }
-    window.loadMessages = loadMessages;
 
-    document.getElementById("supportSendForm").addEventListener("submit", (e) => {
+    document.getElementById("supportSendForm").addEventListener("submit", function(e) {
       e.preventDefault();
-      const input = document.getElementById("supportMsgInput");
-      const text = input.value.trim();
+      var input = document.getElementById("supportMsgInput");
+      var text = input.value.trim();
       if (!text || !activeEmail) return;
-      const chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
+      var chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
       chats.push({ id: Date.now(), studentEmail: activeEmail, studentName: activeName, sender: "support", text: text, time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) });
       localStorage.setItem("edu_live_chats", JSON.stringify(chats));
       input.value = "";
@@ -132,7 +130,7 @@
       renderActiveUsers();
     });
 
-    setInterval(() => { if (activeEmail) loadMessages(); renderActiveUsers(); }, 1500);
+    setInterval(function() { if (activeEmail) loadMessages(); renderActiveUsers(); }, 1500);
     renderActiveUsers();
   </script>
 </body>

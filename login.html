@@ -8,17 +8,20 @@
 </head>
 <body style="display: flex; flex-direction: column; min-height: 100vh;">
 
-  <header class="navbar">
-    <div class="container nav-container">
-      <div class="logo"><h2>هي كيميا<span>!</span></h2></div>
-      <a href="index.html" class="btn btn-outline">الرئيسية ↩</a>
-    </div>
-  </header>
+  <div class="navbar-capsule-wrapper">
+    <nav class="navbar-capsule">
+      <a href="index.html" class="capsule-brand">
+        <div class="capsule-logo">HK</div>
+        <span class="brand-text">هي كيميا<span>!</span></span>
+      </a>
+      <a href="index.html" class="nav-btn-link">الرئيسية ↩</a>
+    </nav>
+  </div>
 
   <div class="container" style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 0;">
     <div class="form-container" style="max-width: 440px; width: 100%;">
-      <h2 style="font-size: 22px; font-weight: 800; text-align: center; color: #fff; margin-bottom: 6px;">تسجيل الدخول للمنصة 👋</h2>
-      <p style="color: var(--text-muted); font-size: 13px; text-align: center; margin-bottom: 25px;">ادخل بيانات حسابك للوصول للمحاضرات</p>
+      <h2 style="font-size: 22px; font-weight: 900; text-align: center; color: var(--primary-navy); margin-bottom: 6px;">تسجيل الدخول للمنصة 👋</h2>
+      <p style="color: var(--text-muted); font-size: 13px; text-align: center; margin-bottom: 25px;">ادخل بيانات حسابك للوصول إلى المحاضرات والامتحانات</p>
 
       <form id="loginForm">
         <div class="form-group">
@@ -34,17 +37,53 @@
         <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 10px;">تسجيل الدخول 🚀</button>
       </form>
 
-      <div style="text-align: center; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px;">
+      <div style="text-align: center; margin-top: 20px; border-top: 1px solid var(--border-subtle); padding-top: 15px;">
         <p style="font-size: 13px; color: var(--text-muted);">
-          ليس لديك حساب؟ <a href="register.html" style="color: var(--emerald-light); font-weight: bold; text-decoration: none;">إنشاء حساب طالب جديد</a>
-        </p>
-        <p style="font-size: 12px; color: #64748b; margin-top: 8px;">
-          (حساب المشرف: superadmin@platform.com | كلمة المرور: admin123)
+          ليس لديك حساب؟ <a href="register.html" style="color: var(--chem-gold); font-weight: bold; text-decoration: none;">إنشاء حساب طالب جديد</a>
         </p>
       </div>
     </div>
   </div>
 
   <script src="app.js"></script>
+  <script>
+    document.getElementById("loginForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      var emailInput = document.getElementById("loginEmail").value.trim().toLowerCase();
+      var passInput = document.getElementById("loginPassword").value.trim();
+
+      var users = JSON.parse(localStorage.getItem("edu_users")) || [];
+      var user = users.find(function(u) { return u.email.toLowerCase() === emailInput && u.password === passInput; });
+
+      if (!user && emailInput === "superadmin@platform.com" && passInput === "admin123") {
+        user = {
+          fullName: "أستاذ المادة (المشرف العام)",
+          email: "superadmin@platform.com",
+          role: "SUPER_ADMIN",
+          governorate: "كفر الشيخ",
+          enrolledCourses: ["c1", "c2"]
+        };
+      }
+
+      if (!user) {
+        alert("❌ البريد الإلكتروني أو كلمة المرور غير صحيحة!");
+        return;
+      }
+
+      localStorage.setItem("current_user", JSON.stringify(user));
+      logAdminAction("تسجيل دخول", "قام " + user.fullName + " (" + user.role + ") بالدخول للمنصة.");
+
+      var redirect = new URLSearchParams(window.location.search).get("redirect");
+      if (redirect) {
+        window.location.href = redirect;
+      } else if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") {
+        window.location.href = "admin.html";
+      } else if (user.role === "SUPPORT") {
+        window.location.href = "support.html";
+      } else {
+        window.location.href = "dashboard.html";
+      }
+    });
+  </script>
 </body>
 </html>
