@@ -9,9 +9,27 @@
   <style>
     .tab-content-section { display: none; }
     .tab-content-section.active { display: block; }
-    .modal { display: none; position: fixed; inset: 0; background: rgba(8, 10, 33, 0.8); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(10px); }
-    .modal-content { background: #fff; color: #191b26; border: 1px solid var(--border-subtle); padding: 26px; border-radius: 16px; max-width: 800px; width: 92%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.25); }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(8, 10, 33, 0.82); z-index: 99999; justify-content: center; align-items: center; backdrop-filter: blur(12px); }
+    .modal-content { background: #fff; color: #191b26; border: 1px solid var(--border-subtle); padding: 26px; border-radius: 16px; max-width: 800px; width: 92%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
     
+    .sidebar-badge-count {
+      background: #ef4444;
+      color: #ffffff;
+      font-size: 10.5px;
+      font-weight: 900;
+      padding: 2px 7px;
+      border-radius: 12px;
+      margin-right: auto;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+      animation: pulseBadge 1.8s infinite;
+    }
+
+    @keyframes pulseBadge {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
     .charts-grid {
       display: grid;
       grid-template-columns: 2fr 1fr;
@@ -46,14 +64,6 @@
       border-radius: 12px;
       border: 1px solid var(--border-subtle);
     }
-    .student-filter-bar input {
-      flex: 2;
-      background: rgba(255, 255, 255, 0.7);
-    }
-    .student-filter-bar select {
-      flex: 1;
-      background: rgba(255, 255, 255, 0.7);
-    }
 
     .lesson-item-row {
       background: #F8F9FC;
@@ -76,22 +86,6 @@
       display: block;
     }
 
-    .student-detail-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 10px 0;
-      border-bottom: 1px solid #f1f3f9;
-      font-size: 13.5px;
-    }
-    .student-detail-row span:first-child {
-      color: var(--text-muted);
-      font-weight: 700;
-    }
-    .student-detail-row span:last-child {
-      font-weight: 800;
-      color: var(--royal-indigo-base);
-    }
-
     .hacker-badge {
       display: inline-block;
       padding: 3px 8px;
@@ -103,17 +97,19 @@
     .hacker-badge.HIGH { background: #ffedd5; color: #ea580c; border: 1px solid #fdba74; }
     .hacker-badge.MEDIUM { background: #fef9c3; color: #ca8a04; border: 1px solid #fde047; }
 
+    .exam-q-box {
+      background: #f8f9fc;
+      border: 1px solid #e2e8f0;
+      padding: 14px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+    }
+
     @media print {
       body * { visibility: hidden; }
       #printableStudentCard, #printableStudentCard *, #printableWatchStats, #printableWatchStats * { visibility: visible; }
       #printableStudentCard, #printableWatchStats {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        padding: 30px;
-        background: #fff;
-        border: none;
+        position: absolute; left: 0; top: 0; width: 100%; padding: 30px; background: #fff; border: none;
       }
       .no-print { display: none !important; }
     }
@@ -131,24 +127,45 @@
     <aside class="sidebar">
       <div class="sidebar-brand"><h2>هي كيميا<span>!</span></h2></div>
       <div class="user-profile-summary">
-        <div class="avatar">👑</div>
+        <div class="avatar" id="adminAvatarRole">👑</div>
         <div class="user-info">
           <h4 id="adminUserName" style="color:#fff; font-size:13.5px;">أ/ محمد السعيد</h4>
-          <span class="badge" style="color: var(--cyan-accent); font-size:11px;">المشرف العام</span>
+          <span class="badge" id="adminRoleDisplay" style="color: var(--cyan-accent); font-size:11px;">المشرف العام</span>
         </div>
       </div>
       <nav class="sidebar-nav">
-        <a onclick="switchTab('overviewTab', this)" class="nav-item active">الرسوم البيانية والإحصائيات</a>
-        <a onclick="switchTab('coursesTab', this)" class="nav-item">المناهج والكورسات</a>
-        <a onclick="switchTab('studentsTab', this)" class="nav-item">إدارة وسجلات الطلاب</a>
-        <a onclick="switchTab('examsTab', this)" class="nav-item">الامتحانات والمحاولات</a>
-        <a onclick="switchTab('paymentsTab', this)" class="nav-item">طلبات الدفع والتفعيل</a>
-        <a onclick="switchTab('hackersTab', this)" class="nav-item" style="color:#f87171;">🛡️ سجل الهاكرز والأمان</a>
-        <a onclick="switchTab('staffTab', this)" class="nav-item">الطاقم الإداري</a>
-        <a onclick="switchTab('logsTab', this)" class="nav-item">سجل النشاطات</a>
-        <a href="support.html" class="nav-item">شات الطلاب</a>
-        <a href="index.html" class="nav-item">عرض الموقع</a>
-        <a href="javascript:void(0)" onclick="logout()" class="nav-item logout">تسجيل الخروج</a>
+        <a onclick="switchTab('overviewTab', this)" class="nav-item active">
+          <span>الرسوم البيانية والإحصائيات</span>
+        </a>
+        <a onclick="switchTab('coursesTab', this)" class="nav-item">
+          <span>المناهج والكورسات</span>
+        </a>
+        <a onclick="switchTab('studentsTab', this)" class="nav-item">
+          <span>إدارة وسجلات الطلاب</span>
+        </a>
+        <a onclick="switchTab('examsTab', this)" class="nav-item">
+          <span>الامتحانات والمحاولات</span>
+        </a>
+        <a onclick="switchTab('paymentsTab', this)" class="nav-item">
+          <span>طلبات الدفع والتفعيل</span>
+          <span class="sidebar-badge-count" id="badgePaymentsCount" style="display:none;">0</span>
+        </a>
+        <a id="navHackerLogsItem" onclick="switchTab('hackersTab', this)" class="nav-item" style="color:#f87171; display:none;">
+          <span>🛡️ سجل الهاكرز والأمان</span>
+          <span class="sidebar-badge-count" id="badgeHackersCount" style="display:none;">0</span>
+        </a>
+        <a onclick="switchTab('staffTab', this)" class="nav-item">
+          <span>الطاقم الإداري</span>
+        </a>
+        <a onclick="switchTab('logsTab', this)" class="nav-item">
+          <span>سجل النشاطات</span>
+        </a>
+        <a href="support.html" class="nav-item" onclick="markSupportAsSeen()">
+          <span>شات الطلاب والدعم</span>
+          <span class="sidebar-badge-count" id="badgeSupportCount" style="display:none;">0</span>
+        </a>
+        <a href="index.html" class="nav-item"><span>عرض الموقع</span></a>
+        <a href="javascript:void(0)" onclick="logout()" class="nav-item logout"><span>تسجيل الخروج</span></a>
       </nav>
     </aside>
 
@@ -185,7 +202,7 @@
               <p style="font-size:12px; color:var(--text-muted);">الكورسات المنشورة</p>
             </div>
           </div>
-          <div class="stat-card">
+          <div class="stat-card" id="cardBreachesStat" style="display:none;">
             <span class="stat-icon">🛡️</span>
             <div>
               <h3 id="totalBreachesCount" style="font-size:20px; font-weight:900; color:#ef4444;">0</h3>
@@ -244,7 +261,7 @@
         </div>
       </div>
 
-      <!-- 3. إدارة الطلاب مع جميع محافظات مصر -->
+      <!-- 3. إدارة الطلاب -->
       <div id="studentsTab" class="tab-content-section">
         <header class="topbar">
           <div>
@@ -309,9 +326,9 @@
         <header class="topbar">
           <div>
             <h1 style="font-size:22px; font-weight:900; color:var(--royal-indigo-base);">الامتحانات وضبط المحاولات</h1>
-            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">تحديد أقصى عدد مرات دخول مسموحة لكل طالب</p>
+            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">إضافة امتحانات سلسة ومباشرة وضبط محاولات الطلاب</p>
           </div>
-          <button class="btn btn-primary" onclick="openModal('addExamModal')">+ امتحان جديد</button>
+          <button class="btn btn-primary" onclick="openAddExamModalFresh()">+ إنشاء امتحان جديد</button>
         </header>
         <div class="table-container">
           <table class="exams-table">
@@ -335,7 +352,7 @@
         <header class="topbar">
           <div>
             <h1 style="font-size:22px; font-weight:900; color:var(--royal-indigo-base);">طلبات الدفع والتحصيل</h1>
-            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">مراجعة الإيصالات والتفعيل الفوري للكورسات</p>
+            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">مراجعة الإيصالات بالصورة والتفعيل الفوري للكورسات</p>
           </div>
         </header>
         <div class="table-container">
@@ -346,7 +363,7 @@
                 <th>الهاتف</th>
                 <th>الكورس</th>
                 <th>المبلغ</th>
-                <th>الإيصال</th>
+                <th>صورة الإيصال</th>
                 <th>الإجراء</th>
               </tr>
             </thead>
@@ -355,11 +372,11 @@
         </div>
       </div>
 
-      <!-- 6. سجل الهاكرز ومحاولات الاختراق -->
+      <!-- 6. سجل الهاكرز (خاص بالماستر أدمن) -->
       <div id="hackersTab" class="tab-content-section">
         <header class="topbar">
           <div>
-            <h1 style="font-size:22px; font-weight:900; color:#ef4444;">🛡️ سجل رصد محاولات الاختراق والهاكرز</h1>
+            <h1 style="font-size:22px; font-weight:900; color:#ef4444;">🛡️ سجل رصد محاولات الاختراق والهاكرز (خاص بالماستر أدمن)</h1>
             <p class="subtitle" style="color:var(--text-muted); font-size:13px;">تتبع فوري لأي محاولات لفحص الكود، تزوير الصلاحيات، أو القرصنة</p>
           </div>
           <button class="btn btn-action-danger" onclick="clearHackerLogs()">مسح السجل</button>
@@ -381,23 +398,24 @@
         </div>
       </div>
 
-      <!-- 7. الطاقم -->
+      <!-- 7. الطاقم الإداري -->
       <div id="staffTab" class="tab-content-section">
         <header class="topbar">
           <div>
             <h1 style="font-size:22px; font-weight:900; color:var(--royal-indigo-base);">الطاقم الإداري والدعم</h1>
-            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">تعيين مشرفين ومسؤولي دعم للمنصة</p>
+            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">إضافة أعضاء جدد وإدارة رتب الفريق (تحكم الماستر أدمن)</p>
           </div>
+          <button id="btnAddStaffBtn" class="btn btn-primary" onclick="openAddStaffModal()" style="display:none;">+ إضافة فرد للطاقم</button>
         </header>
         <div class="table-container">
           <table class="exams-table">
             <thead>
               <tr>
                 <th>الاسم</th>
-                <th>البريد</th>
-                <th>الهاتف</th>
-                <th>الدور</th>
-                <th>الإجراء</th>
+                <th>البريد الإلكتروني</th>
+                <th>رقم الهاتف</th>
+                <th>الرتبة الحالية</th>
+                <th>الإجراءات وتعديل الرتبة</th>
               </tr>
             </thead>
             <tbody id="staffTableBody"></tbody>
@@ -431,7 +449,184 @@
     </main>
   </div>
 
-  <!-- مودال تقرير مدة مشاهدات الطلاب للكورس مع شريط البحث -->
+  <!-- مودال إضافة امتحان جديد -->
+  <div id="addExamModal" class="modal">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid var(--border-subtle); padding-bottom:10px;">
+        <h3 style="color:var(--royal-indigo-base); font-size:17px; font-weight:900;">📝 إنشاء ونشر امتحان جديد</h3>
+        <button type="button" onclick="closeModal('addExamModal')" style="background:none; border:none; font-size:18px; cursor:pointer;">✕</button>
+      </div>
+
+      <form id="addExamSmoothForm">
+        <div class="form-group">
+          <label>عنوان الامتحان:</label>
+          <input type="text" id="newExamTitle" placeholder="مثال: امتحان الباب الأول: العناصر الانتقالية وتفاعلات الحديد" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="flex:1;">
+            <label>نطاق الامتحان:</label>
+            <select id="newExamTypeSelect" onchange="document.getElementById('newExamCourseSelectGrp').style.display = (this.value === 'COURSE') ? 'flex' : 'none';" required>
+              <option value="COURSE">امتحان مخصص لكورس معين</option>
+              <option value="GENERAL">امتحان شامل عام لجميع الطلاب</option>
+            </select>
+          </div>
+          <div class="form-group" id="newExamCourseSelectGrp" style="flex:1;">
+            <label>اختيار الكورس المرتبط:</label>
+            <select id="newExamCourseSelect"></select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="flex:1;">
+            <label>مدة الامتحان (بالدقائق):</label>
+            <input type="number" id="newExamDuration" value="25" min="5" required>
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>أقصى محاولات مسموحة لكل طالب:</label>
+            <input type="number" id="newExamMaxAttempts" value="2" min="1" required>
+          </div>
+        </div>
+
+        <div style="background:#f8f9fc; border:1px solid var(--border-subtle); padding:16px; border-radius:12px; margin:16px 0;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h4 style="font-size:14px; font-weight:800; color:var(--royal-indigo-base);">بنك أسئلة الامتحان:</h4>
+            <button type="button" class="btn btn-outline" style="padding:5px 12px; font-size:12px;" onclick="appendNewExamQuestionBlock()">+ إضافة سؤال آخر</button>
+          </div>
+          <div id="newExamQuestionsContainer"></div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:15px;">
+          <button type="submit" class="btn btn-primary" style="flex:1; padding:12px; font-size:14px;">نشر الامتحان فوراً للطلاب ✓</button>
+          <button type="button" class="btn btn-outline" onclick="closeModal('addExamModal')">إلغاء</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- مودال تعديل الامتحان -->
+  <div id="editExamModal" class="modal">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid var(--border-subtle); padding-bottom:10px;">
+        <h3 style="color:var(--royal-indigo-base); font-size:17px; font-weight:900;">تعديل بيانات وأسئلة الامتحان</h3>
+        <button type="button" onclick="closeModal('editExamModal')" style="background:none; border:none; font-size:18px; cursor:pointer;">✕</button>
+      </div>
+      <div>
+        <input type="hidden" id="editExamIdHidden">
+        <div class="form-group">
+          <label>عنوان الامتحان:</label>
+          <input type="text" id="editExamTitleInput">
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="flex:1;">
+            <label>المدة بالدقائق:</label>
+            <input type="number" id="editExamDurationInput" min="1">
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>المحاولات المسموحة للطالب:</label>
+            <input type="number" id="editExamMaxAttemptsInput" min="1">
+          </div>
+        </div>
+
+        <div style="background:#F8F9FC; border:1px solid var(--border-subtle); padding:15px; border-radius:10px; margin:14px 0;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h4 style="font-size:13.5px; font-weight:800; color:var(--royal-indigo-base);">الأسئلة الحالية:</h4>
+            <button type="button" class="btn btn-outline" style="padding:4px 10px; font-size:11.5px;" onclick="appendEditExamQuestionRow()">+ إضافة سؤال إضافي</button>
+          </div>
+          <div id="editExamQuestionsContainer"></div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:15px;">
+          <button type="button" class="btn btn-primary" style="flex:1;" onclick="saveEditedExam()">حفظ تعديلات الامتحان</button>
+          <button type="button" class="btn btn-outline" onclick="closeModal('editExamModal')">إلغاء</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- مودال عرض صورة الإيصال -->
+  <div id="receiptViewerModal" class="modal">
+    <div class="modal-content" style="max-width:550px; text-align:center;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-subtle); padding-bottom:10px; margin-bottom:15px;">
+        <h3 style="color:var(--royal-indigo-base); font-size:16px;">معاينة إيصال التحويل</h3>
+        <button type="button" onclick="closeModal('receiptViewerModal')" style="background:none; border:none; font-size:16px; cursor:pointer;">✕</button>
+      </div>
+      <div style="background:#f8f9fc; border:1px solid var(--border-subtle); border-radius:10px; padding:10px; margin-bottom:15px;">
+        <img id="receiptModalImg" src="" style="width:100%; max-height:420px; object-fit:contain; border-radius:8px;" alt="صورة الإيصال">
+      </div>
+      <div style="display:flex; gap:10px;">
+        <a id="receiptDownloadLink" href="#" target="_blank" class="btn btn-primary" style="flex:1;">فتح الصورة الأصلية</a>
+        <button type="button" class="btn btn-outline" onclick="closeModal('receiptViewerModal')">إغلاق</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- مودال إضافة فرد للطاقم الإداري -->
+  <div id="addStaffModal" class="modal">
+    <div class="modal-content" style="max-width:500px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 style="color:var(--royal-indigo-base); font-size:16px;">إضافة فرد جديد للطاقم الإداري</h3>
+        <button type="button" onclick="closeModal('addStaffModal')" style="background:none; border:none; font-size:16px; cursor:pointer;">✕</button>
+      </div>
+      <form id="addStaffForm">
+        <div class="form-group">
+          <label>الاسم بالكامل:</label>
+          <input type="text" id="staffFullName" placeholder="اسم المسؤول" required>
+        </div>
+        <div class="form-group">
+          <label>البريد الإلكتروني (لتسجيل الدخول):</label>
+          <input type="email" id="staffEmail" placeholder="staff@platform.com" required>
+        </div>
+        <div class="form-group">
+          <label>كلمة المرور:</label>
+          <input type="password" id="staffPassword" placeholder="••••••••" required>
+        </div>
+        <div class="form-group">
+          <label>رقم الهاتف:</label>
+          <input type="tel" id="staffPhone" placeholder="010xxxxxxxx" required>
+        </div>
+        <div class="form-group">
+          <label>الرتبة والصلاحيات:</label>
+          <select id="staffRoleSelect" required>
+            <option value="ADMIN">أدمن إدارة محتوى وامتحانات (ADMIN)</option>
+            <option value="SUPPORT">مسؤول دعم فني وشات (SUPPORT)</option>
+          </select>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:15px;">
+          <button type="submit" class="btn btn-primary" style="flex:1;">إضافة المسؤول فوراً</button>
+          <button type="button" class="btn btn-outline" onclick="closeModal('addStaffModal')">إلغاء</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- مودال تعديل رتبة فرد بالطاقم -->
+  <div id="editStaffRoleModal" class="modal">
+    <div class="modal-content" style="max-width:450px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 style="color:var(--royal-indigo-base); font-size:16px;">تعديل رتبة وصلاحية المسؤول</h3>
+        <button type="button" onclick="closeModal('editStaffRoleModal')" style="background:none; border:none; font-size:16px; cursor:pointer;">✕</button>
+      </div>
+      <div>
+        <input type="hidden" id="editStaffTargetEmail">
+        <p style="margin-bottom:12px; font-size:13.5px; color:var(--text-muted);">تعديل رتبة: <strong id="editStaffTargetName" style="color:var(--royal-indigo-base);"></strong></p>
+        <div class="form-group">
+          <label>الرتبة الجديدة:</label>
+          <select id="editStaffNewRoleSelect">
+            <option value="ADMIN">مشرف إدارة (ADMIN)</option>
+            <option value="SUPPORT">دعم فني وشات (SUPPORT)</option>
+            <option value="STUDENT">تحويل لطالب عادي (STUDENT)</option>
+          </select>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:15px;">
+          <button type="button" class="btn btn-primary" style="flex:1;" onclick="saveStaffRoleChange()">حفظ الرتبة</button>
+          <button type="button" class="btn btn-outline" onclick="closeModal('editStaffRoleModal')">إلغاء</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- مودال تقرير مدة مشاهدات الطلاب للكورس -->
   <div id="courseWatchStatsModal" class="modal">
     <div class="modal-content" id="printableWatchStats">
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--cyan-accent); padding-bottom:12px; margin-bottom:18px;">
@@ -632,49 +827,12 @@
           <button class="btn btn-outline" onclick="closeModal('studentDetailsModal')" style="padding:6px 14px; font-size:12px;">إغلاق</button>
         </div>
       </div>
-
       <div id="studentModalDetailsBody"></div>
-    </div>
-  </div>
-
-  <!-- مودال إضافة امتحان -->
-  <div id="addExamModal" class="modal">
-    <div class="modal-content">
-      <h3 style="color:var(--royal-indigo-base); margin-bottom:15px; font-size:16px;">إنشاء امتحان جديد وضبط المحاولات</h3>
-      <form id="addExamForm">
-        <div class="form-group"><label>عنوان الامتحان:</label><input type="text" id="eTitle" required></div>
-        <div class="form-row">
-          <div class="form-group" style="flex:1;">
-            <label>النطاق:</label>
-            <select id="eTypeSelect" onchange="document.getElementById('cLinkGrp').style.display = (this.value === 'COURSE') ? 'block' : 'none';" required>
-              <option value="COURSE">امتحان لكورس محدد</option>
-              <option value="GENERAL">امتحان شامل عام</option>
-            </select>
-          </div>
-          <div class="form-group" id="cLinkGrp" style="flex:1;"><label>الكورس:</label><select id="eCourseSelect"></select></div>
-        </div>
-        <div class="form-row">
-          <div class="form-group" style="flex:1;"><label>المدة (دقائق):</label><input type="number" id="eDuration" value="20" required></div>
-          <div class="form-group" style="flex:1;"><label>أقصى محاولات للطالب:</label><input type="number" id="eMaxAttempts" value="1" min="1" required></div>
-        </div>
-        <div style="background:#F8F9FC; padding:15px; border-radius:10px; margin:15px 0; border:1px solid var(--border-subtle);">
-          <input type="text" id="qText" placeholder="نص السؤال" style="margin-bottom:8px;">
-          <div class="form-row"><input type="text" id="opt0" placeholder="الخيار (1)"><input type="text" id="opt1" placeholder="الخيار (2)"></div>
-          <div class="form-row" style="margin-top:8px;"><input type="text" id="opt2" placeholder="الخيار (3)"><input type="text" id="opt3" placeholder="الخيار (4)"></div>
-          <div class="form-group" style="margin-top:8px;">
-            <label>الإجابة الصحيحة:</label>
-            <select id="correctOpt"><option value="0">الخيار (1)</option><option value="1">الخيار (2)</option><option value="2">الخيار (3)</option><option value="3">الخيار (4)</option></select>
-          </div>
-          <button type="button" class="btn btn-outline" onclick="pushTempQuestion()">+ إضافة السؤال للامتحان</button>
-        </div>
-        <div style="display:flex; gap:10px;"><button type="submit" class="btn btn-primary" style="flex:1;">نشر الامتحان</button><button type="button" class="btn btn-outline" onclick="closeModal('addExamModal')">إلغاء</button></div>
-      </form>
     </div>
   </div>
 
   <script src="app.js"></script>
   <script>
-    var tempQuestions = [];
     var allStudentsCache = [];
     var currentWatchStatsList = [];
     var revenueChartInstance = null;
@@ -691,17 +849,292 @@
       if (m) m.style.display = "none"; 
     }
 
+    // --- نظام الإشعارات الذكي (يختفي فور الزيارة ويبدأ العد فقط عند حدوث جديد) ---
+    function markSectionAsSeen(sectionKey) {
+      var seenTimes = JSON.parse(localStorage.getItem("edu_seen_badges_time")) || {};
+      seenTimes[sectionKey] = Date.now();
+      localStorage.setItem("edu_seen_badges_time", JSON.stringify(seenTimes));
+      renderAdmin();
+    }
+
+    function markSupportAsSeen() {
+      markSectionAsSeen("support");
+    }
+
     function switchTab(tabId, element) {
       document.querySelectorAll('.tab-content-section').forEach(function(el) { el.classList.remove('active'); });
       document.querySelectorAll('.sidebar-nav .nav-item').forEach(function(btn) { btn.classList.remove('active'); });
       document.getElementById(tabId).classList.add('active');
       if (element) element.classList.add('active');
 
+      if (tabId === "paymentsTab") markSectionAsSeen("payments");
+      if (tabId === "hackersTab") markSectionAsSeen("hackers");
+
       if (tabId === 'overviewTab') {
         renderCharts();
       }
     }
 
+    function updateNotificationBadges(payments, hackerLogs, chats) {
+      var seenTimes = JSON.parse(localStorage.getItem("edu_seen_badges_time")) || {};
+
+      // 1. حساب طلبات الدفع الجديدة منذ آخر زيارة للقسم
+      var lastSeenPayTime = seenTimes.payments || 0;
+      var newPendingPayments = payments.filter(function(p) { 
+        return p.status === 'PENDING' && (p.id > lastSeenPayTime || !lastSeenPayTime); 
+      }).length;
+
+      var badgePay = document.getElementById("badgePaymentsCount");
+      if (badgePay) {
+        badgePay.innerText = newPendingPayments;
+        badgePay.style.display = newPendingPayments > 0 ? 'inline-block' : 'none';
+      }
+
+      // 2. حساب محاولات الهاكرز الجديدة منذ آخر زيارة
+      var lastSeenHckTime = seenTimes.hackers || 0;
+      var newHackers = hackerLogs.filter(function(h) {
+        var hTime = typeof h.id === 'string' && h.id.startsWith('HCK_') ? parseInt(h.id.replace('HCK_', '')) : 0;
+        return hTime > lastSeenHckTime || !lastSeenHckTime;
+      }).length;
+
+      var badgeHck = document.getElementById("badgeHackersCount");
+      if (badgeHck) {
+        badgeHck.innerText = newHackers;
+        badgeHck.style.display = newHackers > 0 ? 'inline-block' : 'none';
+      }
+
+      // 3. حساب رسائل الشات الجديدة
+      var lastSeenSupTime = seenTimes.support || 0;
+      var newStudentMessages = chats.filter(function(c) {
+        return c.senderRole === "STUDENT" && ((c.id > lastSeenSupTime) || !lastSeenSupTime);
+      }).length;
+
+      var badgeSup = document.getElementById("badgeSupportCount");
+      if (badgeSup) {
+        badgeSup.innerText = newStudentMessages;
+        badgeSup.style.display = newStudentMessages > 0 ? 'inline-block' : 'none';
+      }
+    }
+
+    // ==========================================
+    // نظام إنشاء وتعديل الامتحانات السلس والمباشر
+    // ==========================================
+    function openAddExamModalFresh() {
+      document.getElementById("newExamTitle").value = "";
+      document.getElementById("newExamDuration").value = "25";
+      document.getElementById("newExamMaxAttempts").value = "2";
+      document.getElementById("newExamTypeSelect").value = "COURSE";
+      document.getElementById("newExamCourseSelectGrp").style.display = "flex";
+
+      var container = document.getElementById("newExamQuestionsContainer");
+      container.innerHTML = "";
+
+      appendNewExamQuestionBlock("السؤال الأول: ...", ["خيار (أ)", "خيار (ب)", "خيار (ج)", "خيار (د)"], 0);
+      appendNewExamQuestionBlock("السؤال الثاني: ...", ["خيار (أ)", "خيار (ب)", "خيار (ج)", "خيار (د)"], 1);
+
+      openModal("addExamModal");
+    }
+
+    function appendNewExamQuestionBlock(qText, options, correctIdx) {
+      options = options || ["", "", "", ""];
+      correctIdx = correctIdx || 0;
+      var container = document.getElementById("newExamQuestionsContainer");
+      var qNum = container.children.length + 1;
+
+      var div = document.createElement("div");
+      div.className = "exam-q-box";
+      div.innerHTML = 
+        '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+          '<label style="font-weight:bold; font-size:13px; color:var(--royal-indigo-base);">السؤال رقم (' + qNum + '):</label>' +
+          '<button type="button" class="btn-action btn-action-danger" onclick="this.closest(\'.exam-q-box\').remove()">حذف السؤال ✕</button>' +
+        '</div>' +
+        '<input type="text" class="nq-text" placeholder="اكتب نص السؤال هنا..." value="' + (qText || '') + '" style="margin-bottom:8px;" required>' +
+        '<div class="form-row">' +
+          '<input type="text" class="nq-opt0" placeholder="الخيار الأول (1)" value="' + (options[0] || '') + '" required>' +
+          '<input type="text" class="nq-opt1" placeholder="الخيار الثاني (2)" value="' + (options[1] || '') + '" required>' +
+        '</div>' +
+        '<div class="form-row" style="margin-top:6px;">' +
+          '<input type="text" class="nq-opt2" placeholder="الخيار الثالث (3)" value="' + (options[2] || '') + '" required>' +
+          '<input type="text" class="nq-opt3" placeholder="الخيار الرابع (4)" value="' + (options[3] || '') + '" required>' +
+        '</div>' +
+        '<div style="margin-top:8px;">' +
+          '<label style="font-size:12px; margin-bottom:3px; color:var(--text-muted);">الإجابة الصحيحة المعتمدة:</label>' +
+          '<select class="nq-correct" style="padding:7px; font-weight:bold; color:#059669;">' +
+            '<option value="0" ' + (correctIdx == 0 ? 'selected' : '') + '>الخيار الأول (1)</option>' +
+            '<option value="1" ' + (correctIdx == 1 ? 'selected' : '') + '>الخيار الثاني (2)</option>' +
+            '<option value="2" ' + (correctIdx == 2 ? 'selected' : '') + '>الخيار الثالث (3)</option>' +
+            '<option value="3" ' + (correctIdx == 3 ? 'selected' : '') + '>الخيار الرابع (4)</option>' +
+          '</select>' +
+        '</div>';
+
+      container.appendChild(div);
+    }
+
+    document.getElementById("addExamSmoothForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      var title = document.getElementById("newExamTitle").value.trim();
+      var duration = parseInt(document.getElementById("newExamDuration").value) || 25;
+      var maxAttempts = parseInt(document.getElementById("newExamMaxAttempts").value) || 2;
+      var isGeneral = document.getElementById("newExamTypeSelect").value === "GENERAL";
+      var courseId = isGeneral ? "" : document.getElementById("newExamCourseSelect").value;
+
+      var qBoxes = document.querySelectorAll("#newExamQuestionsContainer .exam-q-box");
+      var questionsArr = [];
+
+      qBoxes.forEach(function(box) {
+        var qt = box.querySelector(".nq-text").value.trim();
+        var o0 = box.querySelector(".nq-opt0").value.trim();
+        var o1 = box.querySelector(".nq-opt1").value.trim();
+        var o2 = box.querySelector(".nq-opt2").value.trim();
+        var o3 = box.querySelector(".nq-opt3").value.trim();
+        var corr = parseInt(box.querySelector(".nq-correct").value) || 0;
+
+        if (qt && o0 && o1) {
+          questionsArr.push({
+            q: qt,
+            options: [o0, o1, o2 || "لا شيء مما سبق", o3 || "جميع ما سبق"],
+            correct: corr
+          });
+        }
+      });
+
+      if (questionsArr.length === 0) {
+        showToast("يرجى كتابة سؤال واحد على الأقل داخل الامتحان", "error");
+        return;
+      }
+
+      var exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
+      var newExam = {
+        id: "e_" + Date.now(),
+        isGeneral: isGeneral,
+        courseId: courseId,
+        title: title,
+        durationMinutes: duration,
+        maxAttempts: maxAttempts,
+        questions: questionsArr
+      };
+
+      exams.push(newExam);
+      localStorage.setItem("edu_exams", JSON.stringify(exams));
+      logAdminAction("إنشاء امتحان", "تم نشر امتحان جديد: " + title);
+      closeModal("addExamModal");
+      renderAdmin();
+      showToast("تم نشر الامتحان الجديد للطلاب بنجاح ✓", "success");
+    });
+
+    // تعديل الامتحان
+    function openEditExamModal(examId) {
+      var exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
+      var exam = exams.find(function(e) { return e.id === examId; });
+      if (!exam) {
+        showToast("لم يتم العثور على الامتحان", "error");
+        return;
+      }
+
+      document.getElementById("editExamIdHidden").value = exam.id;
+      document.getElementById("editExamTitleInput").value = exam.title || "";
+      document.getElementById("editExamDurationInput").value = exam.durationMinutes || 20;
+      document.getElementById("editExamMaxAttemptsInput").value = exam.maxAttempts || 1;
+
+      var container = document.getElementById("editExamQuestionsContainer");
+      container.innerHTML = "";
+
+      var questions = exam.questions || [];
+      if (questions.length === 0) {
+        appendEditExamQuestionRow("سؤال جديد", ["خيار 1", "خيار 2", "خيار 3", "خيار 4"], 0);
+      } else {
+        questions.forEach(function(q) {
+          appendEditExamQuestionRow(q.q, q.options, q.correct);
+        });
+      }
+
+      openModal("editExamModal");
+    }
+
+    function appendEditExamQuestionRow(qText, options, correctIdx) {
+      options = options || ["", "", "", ""];
+      correctIdx = correctIdx || 0;
+      var container = document.getElementById("editExamQuestionsContainer");
+      var div = document.createElement("div");
+      div.className = "exam-q-edit-block";
+      div.style.cssText = "background:#fff; border:1px solid var(--border-subtle); padding:12px; border-radius:8px; margin-bottom:10px;";
+      div.innerHTML = 
+        '<div style="display:flex; justify-content:space-between; margin-bottom:6px;">' +
+          '<label style="font-weight:bold; font-size:12px;">نص السؤال:</label>' +
+          '<button type="button" class="btn-action btn-action-danger" onclick="this.closest(\'.exam-q-edit-block\').remove()">حذف السؤال ✕</button>' +
+        '</div>' +
+        '<input type="text" class="eq-text" value="' + (qText || '') + '" style="margin-bottom:8px;" required>' +
+        '<div class="form-row"><input type="text" class="eq-opt0" placeholder="خيار 1" value="' + (options[0] || '') + '" required><input type="text" class="eq-opt1" placeholder="خيار 2" value="' + (options[1] || '') + '" required></div>' +
+        '<div class="form-row" style="margin-top:6px;"><input type="text" class="eq-opt2" placeholder="خيار 3" value="' + (options[2] || '') + '" required><input type="text" class="eq-opt3" placeholder="خيار 4" value="' + (options[3] || '') + '" required></div>' +
+        '<div style="margin-top:8px;">' +
+          '<label style="font-size:11.5px; margin-bottom:3px;">الإجابة الصحيحة:</label>' +
+          '<select class="eq-correct" style="padding:6px; font-weight:bold; color:#059669;">' +
+            '<option value="0" ' + (correctIdx == 0 ? 'selected' : '') + '>الخيار (1)</option>' +
+            '<option value="1" ' + (correctIdx == 1 ? 'selected' : '') + '>الخيار (2)</option>' +
+            '<option value="2" ' + (correctIdx == 2 ? 'selected' : '') + '>الخيار (3)</option>' +
+            '<option value="3" ' + (correctIdx == 3 ? 'selected' : '') + '>الخيار (4)</option>' +
+          '</select>' +
+        '</div>';
+      container.appendChild(div);
+    }
+
+    function saveEditedExam() {
+      var examId = document.getElementById("editExamIdHidden").value;
+      var exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
+      var eIdx = exams.findIndex(function(e) { return e.id === examId; });
+
+      if (eIdx === -1) {
+        showToast("خطأ في تحديد الامتحان", "error");
+        return;
+      }
+
+      var title = document.getElementById("editExamTitleInput").value.trim();
+      var duration = parseInt(document.getElementById("editExamDurationInput").value) || 20;
+      var maxAttempts = parseInt(document.getElementById("editExamMaxAttemptsInput").value) || 1;
+
+      if (!title) {
+        showToast("يرجى إدخال عنوان الامتحان", "error");
+        return;
+      }
+
+      var qBlocks = document.querySelectorAll(".exam-q-edit-block");
+      var updatedQuestions = [];
+      qBlocks.forEach(function(block) {
+        var qt = block.querySelector(".eq-text").value.trim();
+        var o0 = block.querySelector(".eq-opt0").value.trim();
+        var o1 = block.querySelector(".eq-opt1").value.trim();
+        var o2 = block.querySelector(".eq-opt2").value.trim();
+        var o3 = block.querySelector(".eq-opt3").value.trim();
+        var corr = parseInt(block.querySelector(".eq-correct").value) || 0;
+
+        if (qt && o0 && o1) {
+          updatedQuestions.push({
+            q: qt,
+            options: [o0, o1, o2 || "لا شيء مما سبق", o3 || "جميع ما سبق"],
+            correct: corr
+          });
+        }
+      });
+
+      if (updatedQuestions.length === 0) {
+        showToast("يجب أن يحتوي الامتحان على سؤال واحد صحيح على الأقل", "error");
+        return;
+      }
+
+      exams[eIdx].title = title;
+      exams[eIdx].durationMinutes = duration;
+      exams[eIdx].maxAttempts = maxAttempts;
+      exams[eIdx].questions = updatedQuestions;
+
+      localStorage.setItem("edu_exams", JSON.stringify(exams));
+      logAdminAction("تعديل امتحان", "تم تعديل بيانات وأسئلة الامتحان: " + title);
+      closeModal("editExamModal");
+      renderAdmin();
+      showToast("تم حفظ تعديلات الامتحان والأسئلة بنجاح", "success");
+    }
+
+    // --- بقية الوظائف الإدارية ---
     function togglePricingInput(mode) {
       var select = document.getElementById(mode === 'add' ? 'addCoursePricingType' : 'editCoursePricingType');
       var priceInput = document.getElementById(mode === 'add' ? 'addCoursePrice' : 'editCoursePrice');
@@ -789,14 +1222,35 @@
       }
       document.getElementById("adminUserName").innerText = user.fullName;
 
+      var isSuperAdmin = user.role === "SUPER_ADMIN";
+      document.getElementById("adminRoleDisplay").innerText = isSuperAdmin ? "المشرف العام (Master Admin)" : "مشرف إدارة (Admin)";
+      document.getElementById("adminAvatarRole").innerText = isSuperAdmin ? "👑" : "🛡️";
+
+      var hackerNavItem = document.getElementById("navHackerLogsItem");
+      var breachesCard = document.getElementById("cardBreachesStat");
+      var btnAddStaff = document.getElementById("btnAddStaffBtn");
+
+      if (isSuperAdmin) {
+        if (hackerNavItem) hackerNavItem.style.display = "flex";
+        if (breachesCard) breachesCard.style.display = "flex";
+        if (btnAddStaff) btnAddStaff.style.display = "inline-flex";
+      } else {
+        if (hackerNavItem) hackerNavItem.style.display = "none";
+        if (breachesCard) breachesCard.style.display = "none";
+        if (btnAddStaff) btnAddStaff.style.display = "none";
+      }
+
       var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
       var payments = JSON.parse(localStorage.getItem("edu_payments")) || [];
       var users = JSON.parse(localStorage.getItem("edu_users")) || [];
       var exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
       var logs = JSON.parse(localStorage.getItem("edu_activity_logs")) || [];
       var hackerLogs = JSON.parse(localStorage.getItem("edu_hacker_logs")) || [];
+      var chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
 
       allStudentsCache = users.filter(function(u) { return u.role === 'STUDENT'; });
+
+      updateNotificationBadges(payments, hackerLogs, chats);
 
       var revenue = payments.filter(function(p) { return p.status === "APPROVED"; }).reduce(function(sum, p) { return sum + (Number(p.amount) || 0); }, 0);
       document.getElementById("totalRevenue").innerText = revenue + " ج.م";
@@ -804,7 +1258,7 @@
       document.getElementById("totalStudentsCount").innerText = allStudentsCache.length;
       document.getElementById("totalBreachesCount").innerText = hackerLogs.length;
 
-      var selectExam = document.getElementById("eCourseSelect");
+      var selectExam = document.getElementById("newExamCourseSelect");
       if (selectExam) selectExam.innerHTML = courses.map(function(c) { return '<option value="' + c.id + '">' + c.title + '</option>'; }).join('');
 
       renderStudentsTable(allStudentsCache);
@@ -834,6 +1288,7 @@
         }).join('');
       }
 
+      // جدول الامتحانات
       document.getElementById("examsTableBody").innerHTML = exams.map(function(e) {
         return '<tr>' +
           '<td><strong>' + e.title + '</strong></td>' +
@@ -841,39 +1296,60 @@
           '<td>' + e.durationMinutes + ' دقيقة</td>' +
           '<td><strong>' + (e.maxAttempts || 1) + ' محاولات</strong></td>' +
           '<td>' + (e.questions || []).length + ' أسئلة</td>' +
-          '<td><button class="btn-action btn-action-danger" onclick="deleteExam(\'' + e.id + '\')">حذف</button></td>' +
+          '<td>' +
+            '<button class="btn-action btn-action-primary" onclick="openEditExamModal(\'' + e.id + '\')" style="margin-left:4px;">تعديل</button>' +
+            '<button class="btn-action btn-action-danger" onclick="deleteExam(\'' + e.id + '\')">حذف</button>' +
+          '</td>' +
         '</tr>';
       }).join('');
 
+      // جدول المدفوعات
       document.getElementById("paymentsTableBody").innerHTML = payments.map(function(p) {
         return '<tr>' +
           '<td>' + p.userName + '</td><td>' + p.studentPhone + '</td><td>' + p.courseTitle + '</td><td>' + p.amount + ' ج.م</td>' +
-          '<td><a href="' + p.receipt + '" target="_blank" style="color:var(--cyan-accent); font-weight:bold;">عرض الإيصال</a></td>' +
+          '<td><button type="button" class="btn-action btn-action-primary" onclick="viewReceiptImage(\'' + p.receipt + '\')">معاينة الإيصال 🔍</button></td>' +
           '<td>' + (p.status === 'PENDING' ? '<button class="btn-action btn-action-success" onclick="approvePayment(' + p.id + ')">قبول وتفعيل</button>' : '<span style="color:#10b981; font-weight:bold;">مفعل</span>') + '</td>' +
         '</tr>';
       }).reverse().join('');
 
-      // جدول سجل الهاكرز
-      var hackersBody = document.getElementById("hackersTableBody");
-      if (hackerLogs.length === 0) {
-        hackersBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#10b981; padding:20px; font-weight:bold;">🛡️ النظام آمن تماماً! لم يتم رصد أي محاولات اختراق أو نشاطات مشبوهة.</td></tr>';
-      } else {
-        hackersBody.innerHTML = hackerLogs.map(function(h) {
-          return '<tr>' +
-            '<td style="font-size:12px;">' + h.timestamp + '</td>' +
-            '<td><span class="hacker-badge ' + h.severity + '">' + h.severity + '</span></td>' +
-            '<td><strong style="color:#ef4444;">' + h.attackType + '</strong></td>' +
-            '<td>' + h.userName + '<br><small style="color:var(--text-muted);">' + h.userEmail + '</small></td>' +
-            '<td style="font-size:12px; max-width:240px; white-space:normal;">' + h.details + '</td>' +
-            '<td><button class="btn-action btn-action-danger" onclick="deleteUser(\'' + h.userEmail + '\')">حظر وطرد</button></td>' +
-          '</tr>';
-        }).join('');
+      // سجل الهاكرز
+      if (isSuperAdmin) {
+        var hackersBody = document.getElementById("hackersTableBody");
+        if (hackerLogs.length === 0) {
+          hackersBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#10b981; padding:20px; font-weight:bold;">🛡️ النظام آمن تماماً! لم يتم رصد أي محاولات اختراق أو نشاطات مشبوهة.</td></tr>';
+        } else {
+          hackersBody.innerHTML = hackerLogs.map(function(h) {
+            return '<tr>' +
+              '<td style="font-size:12px;">' + h.timestamp + '</td>' +
+              '<td><span class="hacker-badge ' + h.severity + '">' + h.severity + '</span></td>' +
+              '<td><strong style="color:#ef4444;">' + h.attackType + '</strong></td>' +
+              '<td>' + h.userName + '<br><small style="color:var(--text-muted);">' + h.userEmail + '</small></td>' +
+              '<td style="font-size:12px; max-width:240px; white-space:normal;">' + h.details + '</td>' +
+              '<td><button class="btn-action btn-action-danger" onclick="deleteUser(\'' + h.userEmail + '\')">حظر وطرد</button></td>' +
+            '</tr>';
+          }).join('');
+        }
       }
 
+      // جدول الطاقم الإداري
       document.getElementById("staffTableBody").innerHTML = users.filter(function(u) { return u.role !== 'STUDENT'; }).map(function(s) {
+        var isTargetSuper = s.role === 'SUPER_ADMIN';
+        var actionBtns = "";
+
+        if (isSuperAdmin) {
+          if (!isTargetSuper) {
+            actionBtns = '<button class="btn-action btn-action-primary" onclick="openEditStaffRoleModal(\'' + s.email + '\', \'' + s.fullName.replace(/'/g, "\\'") + '\', \'' + s.role + '\')" style="margin-left:4px;">تعديل الرتبة</button>' +
+                         '<button class="btn-action btn-action-danger" onclick="deleteUser(\'' + s.email + '\')">حذف</button>';
+          } else {
+            actionBtns = '<span style="color:var(--cyan-accent); font-weight:bold; font-size:12px;">المشرف العام الرئيسي</span>';
+          }
+        } else {
+          actionBtns = '<span style="color:var(--text-muted); font-size:11.5px;">مقتصر على الماستر أدمن</span>';
+        }
+
         return '<tr>' +
-          '<td>' + s.fullName + '</td><td>' + s.email + '</td><td>' + s.studentPhone + '</td><td><span class="badge-success">' + s.role + '</span></td>' +
-          '<td><button class="btn-action btn-action-danger" onclick="deleteUser(\'' + s.email + '\')">حذف</button></td>' +
+          '<td><strong>' + s.fullName + '</strong></td><td>' + s.email + '</td><td>' + s.studentPhone + '</td><td><span class="badge-success">' + s.role + '</span></td>' +
+          '<td>' + actionBtns + '</td>' +
         '</tr>';
       }).join('');
 
@@ -884,70 +1360,106 @@
       renderCharts();
     }
 
-    function clearHackerLogs() {
-      if (confirm("هل تريد مسح سجل محاولات الاختراق؟")) {
-        localStorage.setItem("edu_hacker_logs", JSON.stringify([]));
-        renderAdmin();
-        showToast("تم مسح السجل بنجاح", "info");
+    function viewReceiptImage(imgSrc) {
+      if (!imgSrc || imgSrc === "undefined") {
+        showToast("لم يرفق الطالب صورة للإيصال", "error");
+        return;
       }
+      document.getElementById("receiptModalImg").src = imgSrc;
+      document.getElementById("receiptDownloadLink").href = imgSrc;
+      openModal("receiptViewerModal");
     }
 
-    function openCourseWatchStats(courseId, courseTitle) {
-      document.getElementById("watchModalCourseTitle").innerText = "تقرير المشاهدات: " + courseTitle;
-      var tracking = JSON.parse(localStorage.getItem("edu_course_watch_logs")) || {};
-      var courseLogs = tracking[courseId] || {};
-      var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-      var enrolledUsers = users.filter(function(u) { return u.enrolledCourses && u.enrolledCourses.includes(courseId); });
-
-      currentWatchStatsList = enrolledUsers.map(function(u) {
-        var log = courseLogs[u.email] || { totalSeconds: 0, lastActive: 'لم يبدأ بعد' };
-        var accessCount = (u.courseAccessCount && u.courseAccessCount[courseId]) || 0;
-        return {
-          fullName: u.fullName,
-          phone: u.studentPhone || 'غير مسجل',
-          totalSeconds: log.totalSeconds || 0,
-          accessCount: accessCount,
-          lastActive: log.lastActive
-        };
-      });
-
-      document.getElementById("watchStatsSearchInput").value = "";
-      renderWatchStatsTable(currentWatchStatsList);
-      openModal("courseWatchStatsModal");
+    function openAddStaffModal() {
+      var user = getCurrentUser();
+      if (!user || user.role !== "SUPER_ADMIN") {
+        showToast("إضافة أعضاء الطاقم مقتصر على المشرف العام فقط", "error");
+        return;
+      }
+      document.getElementById("staffFullName").value = "";
+      document.getElementById("staffEmail").value = "";
+      document.getElementById("staffPassword").value = "";
+      document.getElementById("staffPhone").value = "";
+      openModal("addStaffModal");
     }
 
-    function renderWatchStatsTable(list) {
-      var tbody = document.getElementById("watchStatsTableBody");
-      if (list.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد نتائج مطابقة للبحث.</td></tr>';
+    document.getElementById("addStaffForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      var user = getCurrentUser();
+      if (!user || user.role !== "SUPER_ADMIN") {
+        showToast("غير مصرح لك بإضافة مسؤولين", "error");
         return;
       }
 
-      tbody.innerHTML = list.map(function(item) {
-        var hours = Math.floor(item.totalSeconds / 3600);
-        var minutes = Math.floor((item.totalSeconds % 3600) / 60);
-        var seconds = item.totalSeconds % 60;
+      var name = document.getElementById("staffFullName").value.trim();
+      var email = document.getElementById("staffEmail").value.trim().toLowerCase();
+      var pass = document.getElementById("staffPassword").value;
+      var phone = document.getElementById("staffPhone").value.trim();
+      var role = document.getElementById("staffRoleSelect").value;
 
-        var formattedTime = hours > 0 
-          ? (hours + " ساعة و " + minutes + " دقيقة") 
-          : (minutes > 0 ? (minutes + " دقيقة و " + seconds + " ثانية") : (seconds + " ثانية"));
+      var users = JSON.parse(localStorage.getItem("edu_users")) || [];
+      if (users.some(function(u) { return u.email === email; })) {
+        showToast("هذا البريد مسجل مسبقاً في النظام!", "error");
+        return;
+      }
 
-        return '<tr>' +
-          '<td><strong>' + item.fullName + '</strong></td>' +
-          '<td>' + item.phone + '</td>' +
-          '<td><span style="color:#0284C7; font-weight:800;">' + formattedTime + '</span></td>' +
-          '<td>' + item.accessCount + ' مرات</td>' +
-          '<td><span style="font-size:12px; color:var(--text-muted);">' + item.lastActive + '</span></td>' +
-        '</tr>';
-      }).join('');
+      var newStaff = {
+        fullName: name,
+        email: email,
+        password: pass,
+        studentPhone: phone,
+        parentPhone: phone,
+        governorate: "كفر الشيخ",
+        schoolName: "إدارة هي كيميا !",
+        educationType: "GENERAL",
+        role: role,
+        enrolledCourses: ["c1", "c2"],
+        courseAccessCount: {}
+      };
+
+      users.push(newStaff);
+      localStorage.setItem("edu_users", JSON.stringify(users));
+      logAdminAction("إضافة مسؤول جديد", "أضاف المشرف العام المسؤول " + name + " برتبة " + role);
+      closeModal("addStaffModal");
+      renderAdmin();
+      showToast("تمت إضافة المسؤول بنجاح", "success");
+    });
+
+    function openEditStaffRoleModal(email, name, currentRole) {
+      var user = getCurrentUser();
+      if (!user || user.role !== "SUPER_ADMIN") {
+        showToast("تعديل الرتب مقتصر على المشرف العام فقط", "error");
+        return;
+      }
+      document.getElementById("editStaffTargetEmail").value = email;
+      document.getElementById("editStaffTargetName").innerText = name;
+      document.getElementById("editStaffNewRoleSelect").value = currentRole;
+      openModal("editStaffRoleModal");
     }
 
-    function filterWatchStatsTable() {
-      var query = document.getElementById("watchStatsSearchInput").value.trim().toLowerCase();
-      var filtered = currentWatchStatsList.filter(function(item) {
-        return item.fullName.toLowerCase().includes(query) || item.phone.toLowerCase().includes(query);
-      });
-      renderWatchStatsTable(filtered);
+    function saveStaffRoleChange() {
+      var user = getCurrentUser();
+      if (!user || user.role !== "SUPER_ADMIN") {
+        showToast("غير مصرح لك بتعديل الرتب", "error");
+        return;
+      }
+
+      var targetEmail = document.getElementById("editStaffTargetEmail").value;
+      var newRole = document.getElementById("editStaffNewRoleSelect").value;
+
+      var users = JSON.parse(localStorage.getItem("edu_users")) || [];
+      var uIdx = users.findIndex(function(u) { return u.email === targetEmail; });
+
+      if (uIdx !== -1) {
+        var oldRole = users[uIdx].role;
+        users[uIdx].role = newRole;
+        localStorage.setItem("edu_users", JSON.stringify(users));
+
+        logAdminAction("تعديل رتبة مسؤول", "تم تعديل رتبة " + users[uIdx].fullName + " من " + oldRole + " إلى " + newRole);
+        closeModal("editStaffRoleModal");
+        renderAdmin();
+        showToast("تم تحديث رتبة المسؤول بنجاح", "success");
+      }
     }
 
     function openAddCourseModal() {
@@ -1057,7 +1569,7 @@
       var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
       
       if (isNaN(index) || !courses[index]) {
-        showToast("حدث خطأ أثناء حفظ التعديل", "error");
+        showToast("حدث خطأ أثناء تحديد الكورس للتعديل", "error");
         return;
       }
 
@@ -1088,10 +1600,10 @@
       courses[index].lessons = lessonsArr;
 
       localStorage.setItem("edu_courses", JSON.stringify(courses));
-      logAdminAction("تعديل كورس", "تم تعديل كورس ومحاضرات: " + courses[index].title);
+      logAdminAction("تعديل كورس", "تم حفظ وتعديل كورس: " + courses[index].title);
       closeModal("editCourseModal");
       renderAdmin();
-      showToast("تم حفظ تعديلات الكورس بنجاح", "success");
+      showToast("تم حفظ تعديلات الكورس والمحاضرات بنجاح", "success");
     }
 
     function deleteCourse(courseIndex) {
@@ -1106,6 +1618,72 @@
           showToast("تم حذف الكورس بنجاح", "info");
         }
       }
+    }
+
+    function clearHackerLogs() {
+      if (confirm("هل تريد مسح سجل محاولات الاختراق؟")) {
+        localStorage.setItem("edu_hacker_logs", JSON.stringify([]));
+        renderAdmin();
+        showToast("تم مسح السجل بنجاح", "info");
+      }
+    }
+
+    function openCourseWatchStats(courseId, courseTitle) {
+      document.getElementById("watchModalCourseTitle").innerText = "تقرير المشاهدات: " + courseTitle;
+      var tracking = JSON.parse(localStorage.getItem("edu_course_watch_logs")) || {};
+      var courseLogs = tracking[courseId] || {};
+      var users = JSON.parse(localStorage.getItem("edu_users")) || [];
+      var enrolledUsers = users.filter(function(u) { return u.enrolledCourses && u.enrolledCourses.includes(courseId); });
+
+      currentWatchStatsList = enrolledUsers.map(function(u) {
+        var log = courseLogs[u.email] || { totalSeconds: 0, lastActive: 'لم يبدأ بعد' };
+        var accessCount = (u.courseAccessCount && u.courseAccessCount[courseId]) || 0;
+        return {
+          fullName: u.fullName,
+          phone: u.studentPhone || 'غير مسجل',
+          totalSeconds: log.totalSeconds || 0,
+          accessCount: accessCount,
+          lastActive: log.lastActive
+        };
+      });
+
+      document.getElementById("watchStatsSearchInput").value = "";
+      renderWatchStatsTable(currentWatchStatsList);
+      openModal("courseWatchStatsModal");
+    }
+
+    function renderWatchStatsTable(list) {
+      var tbody = document.getElementById("watchStatsTableBody");
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد نتائج مطابقة للبحث.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = list.map(function(item) {
+        var hours = Math.floor(item.totalSeconds / 3600);
+        var minutes = Math.floor((item.totalSeconds % 3600) / 60);
+        var seconds = item.totalSeconds % 60;
+
+        var formattedTime = hours > 0 
+          ? (hours + " ساعة و " + minutes + " دقيقة") 
+          : (minutes > 0 ? (minutes + " دقيقة و " + seconds + " ثانية") : (seconds + " ثانية"));
+
+        return '<tr>' +
+          '<td><strong>' + item.fullName + '</strong></td>' +
+          '<td>' + item.phone + '</td>' +
+          '<td><span style="color:#0284C7; font-weight:800;">' + formattedTime + '</span></td>' +
+          '<td>' + item.accessCount + ' مرات</td>' +
+          '<td><span style="font-size:12px; color:var(--text-muted);">' + item.lastActive + '</span></td>' +
+        '</tr>';
+      }).join('');
+    }
+
+    function filterWatchStatsTable() {
+      var query = document.getElementById("watchStatsSearchInput").value.trim().toLowerCase();
+      var filtered = currentWatchStatsList.filter(function(item) {
+        return item.fullName.toLowerCase().includes(query) || item.phone.toLowerCase().includes(query);
+      });
+      renderWatchStatsTable(filtered);
     }
 
     function renderStudentsTable(studentsList) {
@@ -1275,43 +1853,6 @@
       }
     }
 
-    function pushTempQuestion() {
-      var q = document.getElementById("qText").value.trim();
-      var o0 = document.getElementById("opt0").value.trim();
-      var o1 = document.getElementById("opt1").value.trim();
-      var o2 = document.getElementById("opt2").value.trim();
-      var o3 = document.getElementById("opt3").value.trim();
-      var corr = parseInt(document.getElementById("correctOpt").value);
-      if (!q || !o0 || !o1) { showToast("يرجى إدخال نص السؤال وخيارين على الأقل", "error"); return; }
-      tempQuestions.push({ q: q, options: [o0, o1, o2 || "لا شيء مما سبق", o3 || "جميع ما سبق"], correct: corr });
-      document.getElementById("qText").value = "";
-      document.getElementById("opt0").value = "";
-      document.getElementById("opt1").value = "";
-      document.getElementById("opt2").value = "";
-      document.getElementById("opt3").value = "";
-      showToast("تمت إضافة السؤال بنجاح", "success");
-    }
-
-    document.getElementById("addExamForm").addEventListener("submit", function(e) {
-      e.preventDefault();
-      if (tempQuestions.length === 0) { showToast("أضف سؤالاً واحداً على الأقل للامتحان", "error"); return; }
-      var exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
-      exams.push({
-        id: "e_" + Date.now(),
-        isGeneral: document.getElementById("eTypeSelect").value === "GENERAL",
-        courseId: document.getElementById("eCourseSelect").value,
-        title: document.getElementById("eTitle").value.trim(),
-        durationMinutes: parseInt(document.getElementById("eDuration").value),
-        maxAttempts: parseInt(document.getElementById("eMaxAttempts").value) || 1,
-        questions: tempQuestions
-      });
-      localStorage.setItem("edu_exams", JSON.stringify(exams));
-      tempQuestions = [];
-      closeModal("addExamModal");
-      renderAdmin();
-      showToast("تم نشر الامتحان وضبط المحاولات بنجاح", "success");
-    });
-
     function approvePayment(id) {
       var payments = JSON.parse(localStorage.getItem("edu_payments")) || [];
       var users = JSON.parse(localStorage.getItem("edu_users")) || [];
@@ -1340,7 +1881,12 @@
     }
 
     function deleteUser(email) {
-      if (confirm("هل تريد حظر وحذف هذا الحساب نهائياً؟")) {
+      var currentUser = getCurrentUser();
+      if (!currentUser || currentUser.role !== "SUPER_ADMIN") {
+        showToast("حذف الحسابات مقتصر على المشرف العام فقط", "error");
+        return;
+      }
+      if (confirm("هل تريد حذف هذا الحساب نهائياً؟")) {
         var users = JSON.parse(localStorage.getItem("edu_users")) || [];
         localStorage.setItem("edu_users", JSON.stringify(users.filter(function(u) { return u.email !== email; })));
         renderAdmin();
