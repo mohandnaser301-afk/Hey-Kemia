@@ -52,7 +52,7 @@
       <div class="widget-right">
         <div class="rating-stars">★★★★★</div>
         <div class="exp-years">أكثر من</div>
-        <div class="exp-years" style="color:var(--chem-gold);">10 سنين</div>
+        <div class="exp-years" style="color:var(--cyan-accent);">10 سنين</div>
         <div class="exp-label">خبرة وتدريس كيمياء الثانوية</div>
       </div>
 
@@ -94,18 +94,18 @@
   <!-- قسم لوحة شرف أوائل الشهر -->
   <section id="honorRoll" class="honor-roll-section container">
     <div style="text-align:center; margin-bottom:10px;">
-      <span style="color:var(--chem-gold); font-size:12px; font-weight:800; background:var(--chem-gold-soft); padding:4px 14px; border-radius:20px;">لوحة التميز الأكاديمي</span>
+      <span style="color:var(--cyan-accent); font-size:12px; font-weight:800; background:rgba(0, 210, 255, 0.1); padding:4px 14px; border-radius:20px;">لوحة التميز الأكاديمي</span>
       <h2 style="font-size:24px; font-weight:900; color:var(--royal-indigo-base); margin-top:8px;">أوائل امتحانات الشهر</h2>
       <p style="color:var(--text-muted); font-size:13.5px;">تكريم الطلاب الحاصلين على أعلى معدلات تراكمية (80% فأعلى) في تقييمات المنصة</p>
     </div>
     <div id="honorPodiumContainer" class="honor-podium-grid"></div>
   </section>
 
-  <!-- الكورسات المتاحة بطريقة العرض المبتكرة المحدثة -->
+  <!-- الكورسات المتاحة -->
   <section id="courses" style="padding: 30px 0 60px;">
     <div class="container">
       <div style="margin-bottom: 24px; text-align:right;">
-        <span style="color:var(--chem-gold); font-size:12px; font-weight:800; background:var(--chem-gold-soft); padding:4px 14px; border-radius:20px;">المحتوى التدريبي</span>
+        <span style="color:var(--cyan-accent); font-size:12px; font-weight:800; background:rgba(0, 210, 255, 0.1); padding:4px 14px; border-radius:20px;">المحتوى التدريبي</span>
         <h2 style="font-size: 26px; font-weight: 900; color: var(--royal-indigo-base); margin-top:6px;">المناهج والكورسات المتاحة</h2>
         <p style="color: var(--text-muted); font-size: 14px;">اختر الكورس وابدأ فوراً في مشاهدة المحاضرات وحل الاختبارات</p>
       </div>
@@ -129,11 +129,11 @@
     <section id="bottomCtaSection" class="cta-banner-bottom">
       <h2>جاهز تقفل الكيمياء مع أ/ محمد السعيد؟</h2>
       <p style="margin-bottom:24px; opacity:0.9; font-size:15px;">أنشئ حسابك الآن وابدأ مشاهدة المحاضرات الأولى فوراً</p>
-      <a href="register.html" class="btn btn-gold" style="padding:12px 34px;">إنشاء حساب جديد</a>
+      <a href="register.html" class="btn btn-cyan" style="padding:12px 34px;">إنشاء حساب جديد</a>
     </section>
   </div>
 
-  <!-- الفوتر وقسم الحقوق والتواصل -->
+  <!-- الفوتر وقسم الحقوق والتواصل بنمط Liquid Glass -->
   <footer class="platform-footer">
     <div class="container">
       <div class="footer-grid">
@@ -237,7 +237,7 @@
         var rankClass = "rank-" + (idx + 1);
         return '<div class="honor-card ' + rankClass + '">' +
           '<div class="honor-badge-icon">' + (idx + 1) + '</div>' +
-          '<div style="font-size:12px; font-weight:800; color:var(--chem-gold); margin-bottom:4px;">المركز ' + rankLabels[idx] + '</div>' +
+          '<div style="font-size:12px; font-weight:800; color:var(--cyan-accent); margin-bottom:4px;">المركز ' + rankLabels[idx] + '</div>' +
           '<h3 class="honor-student-name">' + st.name + '</h3>' +
           '<div class="honor-student-gov">' + st.gov + '</div>' +
           '<div class="honor-score-pill">' + st.average + '% المعدل العام</div>' +
@@ -267,7 +267,7 @@
           var actionButton = isEnrolled
             ? '<a href="course-view.html?id=' + c.id + '" class="btn btn-action-success" style="padding:10px 20px; font-size:13px; text-decoration:none;">دخول المحاضرات</a>'
             : (isFreeCourse 
-                ? '<button onclick="handleEnrollClick(\'' + c.id + '\')" class="btn btn-gold" style="padding:10px 20px; font-size:13px;">اشتراك فوري مجاني</button>'
+                ? '<button onclick="handleEnrollClick(\'' + c.id + '\')" class="btn btn-cyan" style="padding:10px 20px; font-size:13px;">اشتراك فوري مجاني</button>'
                 : '<button onclick="handleEnrollClick(\'' + c.id + '\')" class="btn btn-primary" style="padding:10px 20px; font-size:13px;">الاشتراك الآن</button>');
 
           var priceBlock = isFreeCourse 
@@ -287,7 +287,7 @@
                 '<span class="tag-glass-pill">' + (c.tag || 'الصف الثالث الثانوي') + '</span>' +
                 (isEnrolled 
                   ? '<span class="tag-glass-pill green">مشترك بالفعل</span>' 
-                  : (isFreeCourse ? '<span class="tag-glass-pill gold">كورس مجاني</span>' : '')) +
+                  : (isFreeCourse ? '<span class="tag-glass-pill cyan">كورس مجاني</span>' : '')) +
               '</div>' +
             '</div>' +
             '<div class="course-liquid-body">' +
