@@ -66,7 +66,94 @@ body {
 }
 
 /* =========================================================
-   1. الأنيميشنز والمؤثرات الحركية العامة (Keyframes & Motion)
+   1. النماذج وحقول الإدخال والبطاقات
+   ========================================================= */
+.form-group {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  text-align: right;
+}
+
+.form-row {
+  display: flex;
+  gap: 14px;
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.form-row .form-group {
+  flex: 1;
+  min-width: 0;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--royal-indigo-base);
+  margin-bottom: 6px;
+  text-align: right;
+}
+
+input, select, textarea {
+  display: block;
+  width: 100%;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1.5px solid #dbe2ef;
+  border-radius: var(--radius-sm);
+  color: var(--text-dark);
+  font-size: 13.5px;
+  font-weight: 600;
+  outline: none;
+  transition: all 0.2s ease;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+input::placeholder, textarea::placeholder {
+  color: #94a3b8;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--cyan-accent);
+  background: #ffffff;
+  box-shadow: 0 0 0 3.5px rgba(0, 210, 255, 0.18);
+}
+
+select {
+  cursor: pointer;
+  appearance: auto;
+}
+
+.auth-page-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 105px 16px 40px;
+}
+
+.auth-card {
+  background: var(--bg-card);
+  backdrop-filter: var(--liquid-glass-blur);
+  -webkit-backdrop-filter: var(--liquid-glass-blur);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 38px 32px;
+  width: 100%;
+  max-width: 540px;
+  box-shadow: var(--liquid-glass-highlight);
+  text-align: right;
+}
+
+/* =========================================================
+   2. الأنيميشنز والمؤثرات الحركية العامة
    ========================================================= */
 .anim-fade-up {
   animation: fadeUpReveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -77,7 +164,6 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* حركة طفو الرموز الكيميائية والزخارف */
 .chem-watermark-bg span {
   display: inline-block;
   color: var(--royal-indigo-base);
@@ -123,12 +209,12 @@ body {
   transition: all 0.65s ease;
 }
 
-.btn-primary:hover::after, .btn-cyan:hover::after, .course-liquid-card:hover::after, .honor-card::after:hover {
+.btn-primary:hover::after, .btn-cyan:hover::after, .course-liquid-card:hover::after, .honor-card:hover::after {
   left: 130%;
 }
 
 /* =========================================================
-   2. شاشة اللودينج الكيميائية (Chemical Preloader)
+   3. شاشة اللودينج الكيميائية
    ========================================================= */
 #chemicalPreloader {
   position: fixed;
@@ -372,7 +458,7 @@ body {
 }
 
 /* =========================================================
-   3. التنبيهات (Toasts)
+   4. التنبيهات
    ========================================================= */
 #toastContainer {
   position: fixed;
@@ -428,7 +514,7 @@ body {
 }
 
 /* =========================================================
-   4. النافبار الكبسولي الثابت (Sticky Glass Capsule)
+   5. النافبار الكبسولي الثابت
    ========================================================= */
 .navbar-capsule-wrapper {
   position: fixed;
@@ -554,7 +640,7 @@ body {
 }
 
 /* =========================================================
-   5. مسرح الهيرو والقوس الكيميائي المطور بالزخارف
+   6. مسرح الهيرو والقوس الكيميائي
    ========================================================= */
 .hero-editorial-stage {
   position: relative;
@@ -575,7 +661,6 @@ body {
   margin-bottom: 30px;
 }
 
-/* زيادة كثافة وتوهج الرموز الكيميائية بالخلفية */
 .chem-watermark-bg {
   position: absolute;
   inset: 0;
@@ -679,9 +764,6 @@ body {
 .exp-years { font-size: 18px; font-weight: 900; color: var(--royal-indigo-base); }
 .exp-label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
 
-/* =========================================================
-   تكبير القوس وإضافة الزخارف والمدارات الذرية المحيطة به
-   ========================================================= */
 .teacher-arch-wrapper {
   position: relative;
   width: 100%;
@@ -693,7 +775,6 @@ body {
   z-index: 4;
 }
 
-/* توهج كيميائي أزرق سيان ناعم بالخلفية */
 .teacher-arch-wrapper::before {
   content: '';
   position: absolute;
@@ -715,7 +796,6 @@ body {
   100% { transform: translateX(-50%) scale(1.08); opacity: 1; }
 }
 
-/* مدارات ذرية زخرفية كبرى خلف القوس */
 .teacher-arch-wrapper::after {
   content: '';
   position: absolute;
@@ -737,7 +817,6 @@ body {
   100% { transform: translate(-50%, 0) rotate(345deg); }
 }
 
-/* القوس الكحلي الأكبر حجماً */
 .teacher-arch-stage {
   position: relative;
   width: 100%;
@@ -759,11 +838,8 @@ body {
   transition: transform 0.4s ease;
 }
 
-.teacher-arch-stage:hover {
-  transform: scale(1.015);
-}
+.teacher-arch-stage:hover { transform: scale(1.015); }
 
-/* صورة الأستاذ المكبرة والمتناسقة بدقة */
 .teacher-cutout-img {
   width: auto;
   max-width: 100%;
@@ -779,12 +855,10 @@ body {
   z-index: 4;
 }
 
-.teacher-arch-wrapper:hover .teacher-cutout-img {
-  transform: scale(1.025);
-}
+.teacher-arch-wrapper:hover .teacher-cutout-img { transform: scale(1.025); }
 
 /* =========================================================
-   6. شريط الإحصائيات (Stat Strip)
+   7. شريط الإحصائيات
    ========================================================= */
 .stats-counter-strip {
   display: grid;
@@ -815,7 +889,7 @@ body {
 .stat-strip-label { font-size: 12.5px; font-weight: 700; color: var(--text-muted); margin-top: 2px; }
 
 /* =========================================================
-   7. شبكة الكورسات (Courses Grid)
+   8. شبكة الكورسات
    ========================================================= */
 .courses-grid-layout {
   display: grid;
@@ -933,7 +1007,10 @@ body {
   display: flex;
   align-items: center;
   gap: 4px;
+  transition: transform 0.2s ease;
 }
+
+.course-meta-badge:hover { transform: translateY(-1px); }
 
 .course-liquid-footer {
   margin-top: auto;
@@ -951,7 +1028,7 @@ body {
 .price-val.free { color: #059669; }
 
 /* =========================================================
-   8. لوحة شرف أوائل الشهر (Honor Roll)
+   9. لوحة شرف أوائل الشهر
    ========================================================= */
 .honor-roll-section { padding: 35px 0 45px; }
 
@@ -1038,18 +1115,18 @@ body {
 }
 
 /* =========================================================
-   9. الأزرار والنماذج
+   10. الأزرار والنماذج
    ========================================================= */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 8px 18px;
+  padding: 10px 20px;
   border-radius: 8px;
   text-decoration: none;
   font-weight: 800;
-  font-size: 13px;
+  font-size: 13.5px;
   border: 1px solid transparent;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1120,7 +1197,7 @@ body {
 .cta-banner-bottom h2 { font-size: clamp(20px, 5vw, 26px); font-weight: 900; margin-bottom: 8px; }
 
 /* =========================================================
-   10. الفوتر المتجاوب
+   11. الفوتر المتجاوب
    ========================================================= */
 .platform-footer {
   background: var(--liquid-glass-dark);
@@ -1194,7 +1271,7 @@ body {
 }
 
 /* =========================================================
-   11. استعلامات الوسائط الشاملة للهواتف والشاشات الصغيرة
+   12. استعلامات الوسائط الشاملة
    ========================================================= */
 @media (max-width: 992px) {
   .hero-side-widgets {
@@ -1212,6 +1289,7 @@ body {
 }
 
 @media (max-width: 768px) {
+  .form-row { flex-direction: column; gap: 0; }
   .capsule-links { display: none; }
   .navbar-capsule { padding: 6px 12px 6px 14px; }
   .hero-editorial-stage {
@@ -1240,6 +1318,7 @@ body {
 }
 
 @media (max-width: 480px) {
+  .auth-card { padding: 26px 18px; }
   .hero-editorial-stage {
     padding-top: 85px !important;
     min-height: 500px;

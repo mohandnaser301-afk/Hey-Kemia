@@ -3,98 +3,89 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>هي كيميا ! - تسجيل الدخول</title>
+  <title>تسجيل الدخول - هي كيميا !</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body style="display: flex; flex-direction: column; min-height: 100vh;">
+<body>
 
+  <!-- النافبار الكبسولي -->
   <div class="navbar-capsule-wrapper">
     <nav class="navbar-capsule">
       <a href="index.html" class="capsule-brand">
         <div class="capsule-logo">HK</div>
         <span class="brand-text">هي كيميا<span>!</span></span>
       </a>
-      <a href="index.html" class="nav-btn-link">الرئيسية</a>
+      <div class="capsule-links">
+        <a href="index.html#hero">الرئيسية</a>
+        <a href="index.html#courses">الكورسات المتاحة</a>
+        <a href="index.html#honorRoll">لوحة الشرف</a>
+        <a href="support.html">الدعم الفني</a>
+      </div>
+      <div class="capsule-auth" id="navAuthBox">
+        <a href="register.html" class="nav-btn-primary">إنشاء حساب جديد</a>
+      </div>
     </nav>
   </div>
 
-  <div class="container" style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 0;">
-    <div class="form-container" style="max-width: 440px; width: 100%;">
-      <h2 style="font-size: 22px; font-weight: 900; text-align: center; color: var(--royal-indigo-base); margin-bottom: 6px;">تسجيل الدخول للمنصة</h2>
-      <p style="color: var(--text-muted); font-size: 13px; text-align: center; margin-bottom: 25px;">منظومة الكيمياء للأستاذ محمد السعيد</p>
+  <div class="auth-page-wrapper">
+    <div class="auth-card anim-fade-up">
+      <div style="text-align:center; margin-bottom: 28px;">
+        <div class="capsule-logo" style="margin: 0 auto 12px; width:46px; height:46px; font-size:17px;">HK</div>
+        <h1 style="font-size: 25px; font-weight: 900; color: var(--royal-indigo-base);">تسجيل الدخول للمنصة</h1>
+        <p style="color: var(--text-muted); font-size: 13.5px; margin-top: 4px;">منظومة الكيمياء للأستاذ محمد السعيد</p>
+      </div>
 
       <form id="loginForm">
         <div class="form-group">
           <label>البريد الإلكتروني:</label>
-          <input type="email" id="loginEmail" placeholder="student@example.com" required>
+          <input type="email" id="logEmail" placeholder="student@example.com" required>
         </div>
 
         <div class="form-group">
           <label>كلمة المرور:</label>
-          <input type="password" id="loginPassword" placeholder="••••••••" required>
+          <input type="password" id="logPassword" placeholder="••••••••" required>
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 10px;">تسجيل الدخول</button>
+        <button type="submit" class="btn btn-primary" style="width:100%; padding:12px; margin-top:12px; font-size:14.5px;">تسجيل الدخول</button>
       </form>
 
-      <div style="text-align: center; margin-top: 20px; border-top: 1px solid var(--border-subtle); padding-top: 15px;">
-        <p style="font-size: 13px; color: var(--text-muted);">
-          ليس لديك حساب؟ <a href="register.html" style="color: var(--chem-gold); font-weight: bold; text-decoration: none;">إنشاء حساب طالب جديد</a>
-        </p>
+      <div style="text-align:center; margin-top: 22px; font-size: 13.5px; color: var(--text-muted);">
+        ليس لديك حساب؟ <a href="register.html" style="color:var(--cyan-accent); font-weight:800; text-decoration:none;">إنشاء حساب طالب جديد</a>
       </div>
     </div>
   </div>
-
-  <footer class="platform-footer" style="margin-top:auto;">
-    <div class="container">
-      <div class="footer-bottom-bar" style="border-top:none; padding-top:0;">
-        <p>© 2026 جميع الحقوق محفوظة لمنصة <strong>هي كيميا !</strong> - أ/ محمد السعيد</p>
-        <p>للدعم الفني والاستفسارات: <strong style="color:var(--chem-gold);">01012345678</strong></p>
-      </div>
-    </div>
-  </footer>
 
   <script src="app.js"></script>
   <script>
     document.getElementById("loginForm").addEventListener("submit", function(e) {
       e.preventDefault();
-      var emailInput = document.getElementById("loginEmail").value.trim().toLowerCase();
-      var passInput = document.getElementById("loginPassword").value.trim();
+
+      var email = document.getElementById("logEmail").value.trim().toLowerCase();
+      var password = document.getElementById("logPassword").value;
 
       var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-      var user = users.find(function(u) { return u.email.toLowerCase() === emailInput && u.password === passInput; });
+      var user = users.find(function(u) {
+        return u.email.toLowerCase() === email && u.password === password;
+      });
 
-      if (!user && emailInput === "superadmin@platform.com" && passInput === "admin123") {
-        user = {
-          fullName: "أ/ محمد السعيد (المشرف العام)",
-          email: "superadmin@platform.com",
-          role: "SUPER_ADMIN",
-          governorate: "كفر الشيخ",
-          enrolledCourses: ["c1", "c2"]
-        };
+      if (user) {
+        localStorage.setItem("current_user", JSON.stringify(user));
+        showToast("مرحباً بك مجدداً يا " + user.fullName, "success");
+
+        setTimeout(function() {
+          if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") {
+            window.location.href = "admin.html";
+          } else if (user.role === "SUPPORT") {
+            window.location.href = "support.html";
+          } else {
+            var urlParams = new URLSearchParams(window.location.search);
+            var redirect = urlParams.get("redirect");
+            window.location.href = redirect ? decodeURIComponent(redirect) : "dashboard.html";
+          }
+        }, 1000);
+      } else {
+        showToast("البريد الإلكتروني أو كلمة المرور غير صحيحة", "error");
       }
-
-      if (!user) {
-        showToast("البريد الإلكتروني أو كلمة المرور غير صحيحة", "error", "فشل تسجيل الدخول");
-        return;
-      }
-
-      localStorage.setItem("current_user", JSON.stringify(user));
-      logAdminAction("تسجيل دخول", "قام " + user.fullName + " (" + user.role + ") بالدخول للمنصة.");
-      showToast("مرحباً بك مجدداً يا " + user.fullName.split(' ')[0], "success", "تم تسجيل الدخول");
-
-      setTimeout(function() {
-        var redirect = new URLSearchParams(window.location.search).get("redirect");
-        if (redirect) {
-          window.location.href = redirect;
-        } else if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") {
-          window.location.href = "admin.html";
-        } else if (user.role === "SUPPORT") {
-          window.location.href = "support.html";
-        } else {
-          window.location.href = "dashboard.html";
-        }
-      }, 800);
     });
   </script>
 </body>
