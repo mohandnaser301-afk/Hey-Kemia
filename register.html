@@ -3,229 +3,190 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>هي كيميا ! - إنشاء حسابك الآن</title>
+  <title>إنشاء حساب جديد - هي كيميا !</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    .auth-split-wrapper { display: grid; grid-template-columns: 420px 1fr; min-height: 580px; background: #fff; border-radius: var(--radius-lg); margin: 30px auto; overflow: hidden; box-shadow: 0 10px 30px rgba(12,7,84,0.06); border: 1px solid var(--border-subtle); }
-    .auth-sidebar-banner { background: var(--royal-indigo-base); padding: 40px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff; text-align: center; }
-    .auth-main-form-area { padding: 45px 50px; display: flex; flex-direction: column; justify-content: center; }
-    .stepper-header { display: flex; justify-content: space-between; position: relative; margin-bottom: 30px; }
-    .stepper-header::before { content: ''; position: absolute; top: 18px; left: 30px; right: 30px; height: 2px; background: #E2E8F0; z-index: 1; }
-    .step-item { position: relative; z-index: 2; text-align: center; background: #fff; padding: 0 8px; }
-    .step-circle { width: 34px; height: 34px; border-radius: 50%; background: #F1F5F9; color: var(--text-muted); display: flex; align-items: center; justify-content: center; font-weight: 800; margin: 0 auto 6px; border: 2px solid #E2E8F0; }
-    .step-item.active .step-circle { background: var(--chem-gold); color: var(--royal-indigo-deep); border-color: var(--chem-gold); }
-    .step-label { font-size: 11px; font-weight: 700; color: var(--text-muted); }
-    .step-item.active .step-label { color: var(--royal-indigo-base); }
-    .wizard-step { display: none; }
-    .wizard-step.active { display: block; }
-    @media (max-width: 900px) { .auth-split-wrapper { grid-template-columns: 1fr; } .auth-sidebar-banner { display: none; } .auth-main-form-area { padding: 30px 20px; } }
+    .auth-page-wrapper {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 100px 16px 40px;
+    }
+    .auth-card {
+      background: var(--bg-card);
+      backdrop-filter: var(--liquid-glass-blur);
+      -webkit-backdrop-filter: var(--liquid-glass-blur);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 35px 28px;
+      width: 100%;
+      max-width: 580px;
+      box-shadow: var(--liquid-glass-highlight);
+    }
   </style>
 </head>
-<body style="display: flex; flex-direction: column; min-height: 100vh;">
+<body>
 
+  <!-- النافبار الكبسولي -->
   <div class="navbar-capsule-wrapper">
     <nav class="navbar-capsule">
       <a href="index.html" class="capsule-brand">
         <div class="capsule-logo">HK</div>
         <span class="brand-text">هي كيميا<span>!</span></span>
       </a>
-      <a href="login.html" class="nav-btn-link">تسجيل الدخول</a>
+      <div class="capsule-links">
+        <a href="index.html#hero">الرئيسية</a>
+        <a href="index.html#courses">الكورسات المتاحة</a>
+        <a href="index.html#honorRoll">لوحة الشرف</a>
+        <a href="support.html">الدعم الفني</a>
+      </div>
+      <div class="capsule-auth" id="navAuthBox">
+        <a href="login.html" class="nav-btn-link">تسجيل الدخول</a>
+      </div>
     </nav>
   </div>
 
-  <div class="container" style="flex: 1;">
-    <div class="auth-split-wrapper">
-      
-      <div class="auth-sidebar-banner">
-        <div class="capsule-logo" style="width:50px; height:50px; font-size:18px; margin-bottom:15px;">HK</div>
-        <h3 style="font-size:22px; font-weight:900; color:#fff; margin-bottom:8px;">منصة هي كيميا !</h3>
-        <p style="font-size:13px; color:#94A3B8;">مع الأستاذ محمد السعيد - ثانوية عامة وأزهر</p>
+  <div class="auth-page-wrapper">
+    <div class="auth-card anim-fade-up">
+      <div style="text-align:center; margin-bottom: 25px;">
+        <div class="capsule-logo" style="margin: 0 auto 12px; width:44px; height:44px; font-size:16px;">HK</div>
+        <h1 style="font-size: 24px; font-weight: 900; color: var(--royal-indigo-base);">إنشاء حساب طالب جديد</h1>
+        <p style="color: var(--text-muted); font-size: 13.5px; margin-top: 4px;">انضم لمنظومة كيمياء الثانوية العامة مع أ/ محمد السعيد</p>
       </div>
 
-      <div class="auth-main-form-area">
-        
-        <div class="stepper-header">
-          <div class="step-item active" id="stHeader1">
-            <div class="step-circle">1</div>
-            <div class="step-label">البيانات الأساسية</div>
+      <form id="registerForm">
+        <div class="form-group">
+          <label>الاسم ثلاثي أو رباعي:</label>
+          <input type="text" id="regFullName" placeholder="اكتب اسمك كاملاً كما هو في الشهادة" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="flex:1;">
+            <label>البريد الإلكتروني:</label>
+            <input type="email" id="regEmail" placeholder="example@mail.com" required>
           </div>
-          <div class="step-item" id="stHeader2">
-            <div class="step-circle">2</div>
-            <div class="step-label">البيانات الدراسية</div>
-          </div>
-          <div class="step-item" id="stHeader3">
-            <div class="step-circle">3</div>
-            <div class="step-label">بيانات ولي الأمر</div>
+          <div class="form-group" style="flex:1;">
+            <label>كلمة المرور:</label>
+            <input type="password" id="regPassword" placeholder="••••••••" required>
           </div>
         </div>
 
-        <div style="text-align:center; margin-bottom:20px;">
-          <h2 style="font-size:22px; font-weight:900; color:var(--royal-indigo-base);">إنشاء حساب طالب جديد</h2>
-          <p style="color:var(--text-muted); font-size:13px;">ادخل بياناتك بشكل دقيق لتفعيل حسابك ومتابعة الحصص</p>
+        <div class="form-row">
+          <div class="form-group" style="flex:1;">
+            <label>رقم هاتف الطالب (واتساب):</label>
+            <input type="tel" id="regStudentPhone" placeholder="010xxxxxxxx" required>
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>رقم هاتف ولي الأمر:</label>
+            <input type="tel" id="regParentPhone" placeholder="01xxxxxxxxx" required>
+          </div>
         </div>
 
-        <form id="wizardRegisterForm">
-          
-          <div class="wizard-step active" id="wStep1">
-            <div class="form-row">
-              <div class="form-group" style="flex:1;">
-                <label>الاسم الأول:</label>
-                <input type="text" id="regFirstName" placeholder="مثال: أحمد" required>
-              </div>
-              <div class="form-group" style="flex:1;">
-                <label>الاسم الأخير / العائلة:</label>
-                <input type="text" id="regLastName" placeholder="مثال: علي حسن" required>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label>رقم هاتف الطالب (واتساب):</label>
-              <input type="tel" id="regStudentPhone" placeholder="01xxxxxxxxx" required>
-            </div>
-
-            <button type="button" class="btn btn-primary" style="width:100%; padding:12px; margin-top:10px;" onclick="goToStep(2)">التالي ←</button>
+        <div class="form-row">
+          <div class="form-group" style="flex:1;">
+            <label>المحافظة:</label>
+            <select id="regGovernorate" required>
+              <option value="">اختر محافظتك...</option>
+              <option value="الإسكندرية">الإسكندرية</option>
+              <option value="الإسماعيلية">الإسماعيلية</option>
+              <option value="أسوان">أسوان</option>
+              <option value="أسيوط">أسيوط</option>
+              <option value="الأقصر">الأقصر</option>
+              <option value="البحر الأحمر">البحر الأحمر</option>
+              <option value="البحيرة">البحيرة</option>
+              <option value="بني سويف">بني سويف</option>
+              <option value="بورسعيد">بورسعيد</option>
+              <option value="جنوب سيناء">جنوب سيناء</option>
+              <option value="الجيزة">الجيزة</option>
+              <option value="الدقهلية">الدقهلية</option>
+              <option value="دمياط">دمياط</option>
+              <option value="سوهاج">سوهاج</option>
+              <option value="السويس">السويس</option>
+              <option value="الشرقية">الشرقية</option>
+              <option value="شمال سيناء">شمال سيناء</option>
+              <option value="الغربية">الغربية</option>
+              <option value="الفيوم">الفيوم</option>
+              <option value="القاهرة">القاهرة</option>
+              <option value="القليوبية">القليوبية</option>
+              <option value="قنا">قنا</option>
+              <option value="كفر الشيخ" selected>كفر الشيخ</option>
+              <option value="مطروح">مطروح</option>
+              <option value="المنوفية">المنوفية</option>
+              <option value="المنيا">المنيا</option>
+              <option value="الوادي الجديد">الوادي الجديد</option>
+            </select>
           </div>
-
-          <div class="wizard-step" id="wStep2">
-            <div class="form-group">
-              <label>المحافظة:</label>
-              <select id="regGovernorate" required>
-                <option value="كفر الشيخ" selected>كفر الشيخ</option>
-                <option value="القاهرة">القاهرة</option>
-                <option value="الإسكندرية">الإسكندرية</option>
-                <option value="الغربية">الغربية</option>
-                <option value="الدقهلية">الدقهلية</option>
-                <option value="الجيزة">الجيزة</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>اسم المدرسة الحالية:</label>
-              <input type="text" id="regSchoolName" placeholder="اكتب اسم مدرستك" required>
-            </div>
-
-            <div class="form-group">
-              <label>نوع التعليم:</label>
-              <div style="display:flex; gap:20px; padding:6px 0;">
-                <label style="cursor:pointer;"><input type="radio" name="regEduType" value="GENERAL" checked> ثانوي عام</label>
-                <label style="cursor:pointer;"><input type="radio" name="regEduType" value="AZHAR"> ثانوي أزهر</label>
-              </div>
-            </div>
-
-            <div style="display:flex; gap:10px; margin-top:10px;">
-              <button type="button" class="btn btn-outline" style="flex:1;" onclick="goToStep(1)">→ السابق</button>
-              <button type="button" class="btn btn-primary" style="flex:2;" onclick="goToStep(3)">التالي ←</button>
-            </div>
+          <div class="form-group" style="flex:1;">
+            <label>نوع التعليم:</label>
+            <select id="regEducationType" required>
+              <option value="GENERAL" selected>ثانوية عامة</option>
+              <option value="AZHAR">ثانوية أزهرية</option>
+            </select>
           </div>
+        </div>
 
-          <div class="wizard-step" id="wStep3">
-            <div class="form-group">
-              <label>رقم هاتف ولي الأمر:</label>
-              <input type="tel" id="regParentPhone" placeholder="01xxxxxxxxx" required>
-            </div>
+        <div class="form-group">
+          <label>اسم المدرسة / الإدارة التعليمية:</label>
+          <input type="text" id="regSchoolName" placeholder="مثال: مدرسة كفر الشيخ الثانوية بنين" required>
+        </div>
 
-            <div class="form-group">
-              <label>البريد الإلكتروني:</label>
-              <input type="email" id="regEmail" placeholder="student@example.com" required>
-            </div>
+        <button type="submit" class="btn btn-cyan" style="width:100%; padding:12px; margin-top:10px; font-size:14.5px;">إنشاء الحساب وبدء الدراسة</button>
+      </form>
 
-            <div class="form-row">
-              <div class="form-group" style="flex:1;">
-                <label>كلمة السر:</label>
-                <input type="password" id="regPassword" placeholder="••••••••" required>
-              </div>
-              <div class="form-group" style="flex:1;">
-                <label>تأكيد كلمة السر:</label>
-                <input type="password" id="regPasswordConfirm" placeholder="••••••••" required>
-              </div>
-            </div>
-
-            <div style="display:flex; gap:10px; margin-top:10px;">
-              <button type="button" class="btn btn-outline" style="flex:1;" onclick="goToStep(2)">→ السابق</button>
-              <button type="submit" class="btn btn-gold" style="flex:2;">إنشاء الحساب</button>
-            </div>
-          </div>
-
-        </form>
+      <div style="text-align:center; margin-top: 18px; font-size: 13px; color: var(--text-muted);">
+        لديك حساب بالفعل؟ <a href="login.html" style="color:var(--cyan-accent); font-weight:800; text-decoration:none;">تسجيل الدخول</a>
       </div>
-
     </div>
   </div>
 
-  <footer class="platform-footer" style="margin-top:auto;">
-    <div class="container">
-      <div class="footer-bottom-bar" style="border-top:none; padding-top:0;">
-        <p>© 2026 جميع الحقوق محفوظة لمنصة <strong>هي كيميا !</strong> - أ/ محمد السعيد</p>
-        <p>للدعم الفني والاستفسارات: <strong style="color:var(--chem-gold);">01012345678</strong></p>
-      </div>
-    </div>
-  </footer>
-
   <script src="app.js"></script>
   <script>
-    function goToStep(stepNumber) {
-      if (stepNumber === 2) {
-        var fName = document.getElementById("regFirstName").value.trim();
-        var lName = document.getElementById("regLastName").value.trim();
-        var phone = document.getElementById("regStudentPhone").value.trim();
-        if (!fName || !lName || !phone) {
-          showToast("يرجى إدخال الاسم بالكامل ورقم الهاتف أولاً", "error");
-          return;
-        }
-      } else if (stepNumber === 3) {
-        var school = document.getElementById("regSchoolName").value.trim();
-        if (!school) {
-          showToast("يرجى إدخال اسم مدرستك لمتابعة التسجيل", "error");
-          return;
-        }
-      }
-
-      document.querySelectorAll(".wizard-step").forEach(function(el) { el.classList.remove("active"); });
-      document.querySelectorAll(".step-item").forEach(function(el) { el.classList.remove("active"); });
-
-      document.getElementById("wStep" + stepNumber).classList.add("active");
-      for (var i = 1; i <= stepNumber; i++) {
-        document.getElementById("stHeader" + i).classList.add("active");
-      }
-    }
-
-    document.getElementById("wizardRegisterForm").addEventListener("submit", function(e) {
+    document.getElementById("registerForm").addEventListener("submit", function(e) {
       e.preventDefault();
-      var pass = document.getElementById("regPassword").value;
-      var passConf = document.getElementById("regPasswordConfirm").value;
 
-      if (pass !== passConf) {
-        showToast("كلمة السر وتأكيدها غير متطابقين", "error");
+      var fullName = document.getElementById("regFullName").value.trim();
+      var email = document.getElementById("regEmail").value.trim().toLowerCase();
+      var password = document.getElementById("regPassword").value;
+      var studentPhone = document.getElementById("regStudentPhone").value.trim();
+      var parentPhone = document.getElementById("regParentPhone").value.trim();
+      var governorate = document.getElementById("regGovernorate").value;
+      var educationType = document.getElementById("regEducationType").value;
+      var schoolName = document.getElementById("regSchoolName").value.trim();
+
+      if (!fullName || !email || !password || !studentPhone || !governorate) {
+        showToast("يرجى ملء جميع الحقول المطلوبة", "error");
         return;
       }
 
-      var email = document.getElementById("regEmail").value.trim().toLowerCase();
       var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-
-      if (users.some(function(u) { return u.email.toLowerCase() === email; })) {
-        showToast("هذا البريد الإلكتروني مسجل بالفعل بحساب آخر", "error");
+      if (users.some(function(u) { return u.email === email; })) {
+        showToast("هذا البريد الإلكتروني مسجل مسبقاً!", "error");
         return;
       }
 
       var newUser = {
-        fullName: document.getElementById("regFirstName").value.trim() + " " + document.getElementById("regLastName").value.trim(),
+        fullName: fullName,
         email: email,
-        password: pass,
-        studentPhone: document.getElementById("regStudentPhone").value.trim(),
-        parentPhone: document.getElementById("regParentPhone").value.trim(),
-        governorate: document.getElementById("regGovernorate").value,
-        schoolName: document.getElementById("regSchoolName").value.trim(),
-        educationType: document.querySelector('input[name="regEduType"]:checked').value,
+        password: password,
+        studentPhone: studentPhone,
+        parentPhone: parentPhone,
+        governorate: governorate,
+        educationType: educationType,
+        schoolName: schoolName,
         role: "STUDENT",
-        enrolledCourses: [],
+        enrolledCourses: ["c1"], // تفعيل كورس التأسيس المجاني تلقائياً
         courseAccessCount: {}
       };
 
       users.push(newUser);
       localStorage.setItem("edu_users", JSON.stringify(users));
-      showToast("تم إنشاء حسابك بنجاح، جاري تحويلك لصفحة الدخول", "success");
+      localStorage.setItem("current_user", JSON.stringify(newUser));
+
+      logAdminAction("تسجيل طالب جديد", "سجل الطالب: " + fullName + " من محافظة " + governorate);
+      showToast("تم إنشاء حسابك بنجاح! جاري تحويلك للوحة التحكم", "success");
       setTimeout(function() {
-        window.location.href = "login.html";
+        window.location.href = "dashboard.html";
       }, 1200);
     });
   </script>

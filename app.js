@@ -8,7 +8,27 @@ function sanitizeText(str) {
   return temp.innerHTML;
 }
 
-// 2. التحقق من سلامة الجلسة ومنع تزوير الصلاحيات بالـ LocalStorage (Tamper Protection)
+// 2. تسجيل ورصد محاولات الاختراق في لوحة الإدارة (Hacker Log System)
+function recordSecurityBreach(attackType, details, severity) {
+  severity = severity || "HIGH";
+  var currentUser = getCurrentUser() || { fullName: "مجهول / IP مشبوه", email: "guest@threat.net" };
+  var breaches = JSON.parse(localStorage.getItem("edu_hacker_logs")) || [];
+  
+  breaches.unshift({
+    id: "HCK_" + Date.now(),
+    timestamp: new Date().toLocaleString('ar-EG'),
+    userName: sanitizeText(currentUser.fullName),
+    userEmail: sanitizeText(currentUser.email),
+    attackType: sanitizeText(attackType),
+    details: sanitizeText(details),
+    severity: severity,
+    userAgent: navigator.userAgent
+  });
+  
+  localStorage.setItem("edu_hacker_logs", JSON.stringify(breaches));
+}
+
+// 3. التحقق الصارم من سلامة الجلسة ومنع تزوير الصلاحيات بالـ LocalStorage
 function verifySessionIntegrity() {
   var user = getCurrentUser();
   if (!user) return;
@@ -16,23 +36,25 @@ function verifySessionIntegrity() {
   var users = JSON.parse(localStorage.getItem("edu_users")) || [];
   var dbUser = users.find(function(u) { return u.email === user.email; });
 
-  // إذا تم التلاعب بالرتبة من المتصفح، يتم تصحيحها تلقائياً بالمرجع الحقيقي
   if (dbUser && user.role !== dbUser.role) {
+    recordSecurityBreach("تزوير صلاحيات (Privilege Escalation)", "حاول المستخدم تزوير رتبته محلياً إلى: " + user.role, "CRITICAL");
     user.role = dbUser.role;
     localStorage.setItem("current_user", JSON.stringify(user));
   }
 }
 
-// 3. كاشف فتح أدوات المطورين ومحاولات الفحص البرمجي (Anti-DevTools Shield)
+// 4. كاشف فتح أدوات المطورين ومحاولات الفحص البرمجي
 function initSecurityGuards() {
   document.addEventListener("keydown", function(e) {
     if (
       e.key === "F12" || 
       (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "i" || e.key === "J" || e.key === "j" || e.key === "C" || e.key === "c")) ||
-      (e.ctrlKey && (e.key === "u" || e.key === "U" || e.key === "s" || e.key === "S"))
+      (e.ctrlKey && (e.key === "u" || e.key === "U" || e.key === "s" || e.key === "S" || e.key === "p" || e.key === "P"))
     ) {
       if (!window.location.pathname.includes("admin.html")) {
         e.preventDefault();
+        recordSecurityBreach("محاولة فتح DevTools أو تصوير", "تم الضغط على اختصار: " + e.key, "MEDIUM");
+        showToast("محتوى المنصة محمي بأنظمة الأمان المشفرة", "error");
       }
     }
   });
@@ -128,9 +150,10 @@ function initPlatformDatabase() {
   if (!localStorage.getItem("edu_submissions")) localStorage.setItem("edu_submissions", JSON.stringify([]));
   if (!localStorage.getItem("edu_live_chats")) localStorage.setItem("edu_live_chats", JSON.stringify([]));
   if (!localStorage.getItem("edu_course_watch_logs")) localStorage.setItem("edu_course_watch_logs", JSON.stringify({}));
+  if (!localStorage.getItem("edu_hacker_logs")) localStorage.setItem("edu_hacker_logs", JSON.stringify([]));
   if (!localStorage.getItem("edu_activity_logs")) {
     localStorage.setItem("edu_activity_logs", JSON.stringify([
-      { id: Date.now(), actorName: "أ/ محمد السعيد", actorRole: "SUPER_ADMIN", actionType: "تهيئة المنصة", details: "تم تشغيل منصة هي كيميا بنجاح مع تفعيل بروتوكولات الحماية.", timestamp: new Date().toLocaleString('ar-EG') }
+      { id: Date.now(), actorName: "أ/ محمد السعيد", actorRole: "SUPER_ADMIN", actionType: "تهيئة المنصة", details: "تم تشغيل منصة هي كيميا بنجاح مع تفعيل نظام الحماية المطور.", timestamp: new Date().toLocaleString('ar-EG') }
     ]));
   }
 }
@@ -255,10 +278,28 @@ function logout() {
   window.location.href = "login.html";
 }
 
+// حماية مسارات وقوائم المنصة
 function updateNavbarAndAuthGuards() {
   verifySessionIntegrity();
   var user = getCurrentUser();
   var currentPath = window.location.pathname.toLowerCase();
+
+  // منع الدخول لصفحات الإدارة لغير المسؤولين
+  if (currentPath.includes("admin.html")) {
+    if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN")) {
+      recordSecurityBreach("محاولة دخول غير مصرح للوحة الإدارة", "محاولة دخول بدون صلاحيات لصفحة admin.html", "CRITICAL");
+      window.location.replace("login.html");
+      return;
+    }
+  }
+
+  // منع دخول لوحة الطالب لمن لم يسجل
+  if (currentPath.includes("dashboard.html") || currentPath.includes("course-view.html") || currentPath.includes("exam.html")) {
+    if (!user) {
+      window.location.replace("login.html");
+      return;
+    }
+  }
 
   if (user && (currentPath.includes("login.html") || currentPath.includes("register.html"))) {
     if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") {

@@ -92,6 +92,17 @@
       color: var(--royal-indigo-base);
     }
 
+    .hacker-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .hacker-badge.CRITICAL { background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; }
+    .hacker-badge.HIGH { background: #ffedd5; color: #ea580c; border: 1px solid #fdba74; }
+    .hacker-badge.MEDIUM { background: #fef9c3; color: #ca8a04; border: 1px solid #fde047; }
+
     @media print {
       body * { visibility: hidden; }
       #printableStudentCard, #printableStudentCard *, #printableWatchStats, #printableWatchStats * { visibility: visible; }
@@ -132,6 +143,7 @@
         <a onclick="switchTab('studentsTab', this)" class="nav-item">إدارة وسجلات الطلاب</a>
         <a onclick="switchTab('examsTab', this)" class="nav-item">الامتحانات والمحاولات</a>
         <a onclick="switchTab('paymentsTab', this)" class="nav-item">طلبات الدفع والتفعيل</a>
+        <a onclick="switchTab('hackersTab', this)" class="nav-item" style="color:#f87171;">🛡️ سجل الهاكرز والأمان</a>
         <a onclick="switchTab('staffTab', this)" class="nav-item">الطاقم الإداري</a>
         <a onclick="switchTab('logsTab', this)" class="nav-item">سجل النشاطات</a>
         <a href="support.html" class="nav-item">شات الطلاب</a>
@@ -174,10 +186,10 @@
             </div>
           </div>
           <div class="stat-card">
-            <span class="stat-icon">📝</span>
+            <span class="stat-icon">🛡️</span>
             <div>
-              <h3 id="totalExamsCount" style="font-size:20px; font-weight:900;">0</h3>
-              <p style="font-size:12px; color:var(--text-muted);">الامتحانات المتاحة</p>
+              <h3 id="totalBreachesCount" style="font-size:20px; font-weight:900; color:#ef4444;">0</h3>
+              <p style="font-size:12px; color:var(--text-muted);">محاولات تم صدها</p>
             </div>
           </div>
         </section>
@@ -190,7 +202,7 @@
             </div>
           </div>
           <div class="chart-card">
-            <h3>توزيع الطلاب جغرافياً</h3>
+            <h3>توزيع الطلاب جغرافياً (محافظات مصر)</h3>
             <div style="height: 250px;">
               <canvas id="geoDoughnutChart"></canvas>
             </div>
@@ -232,7 +244,7 @@
         </div>
       </div>
 
-      <!-- 3. إدارة الطلاب -->
+      <!-- 3. إدارة الطلاب مع جميع محافظات مصر -->
       <div id="studentsTab" class="tab-content-section">
         <header class="topbar">
           <div>
@@ -244,13 +256,34 @@
         <div class="student-filter-bar">
           <input type="text" id="studentSearchInput" oninput="filterStudentsTable()" placeholder="ابحث بالاسم، البريد الإلكتروني، أو رقم الهاتف...">
           <select id="studentGovFilter" onchange="filterStudentsTable()">
-            <option value="">جميع المحافظات</option>
-            <option value="كفر الشيخ">كفر الشيخ</option>
-            <option value="القاهرة">القاهرة</option>
+            <option value="">جميع محافظات مصر (27 محافظة)</option>
             <option value="الإسكندرية">الإسكندرية</option>
-            <option value="الغربية">الغربية</option>
-            <option value="الدقهلية">الدقهلية</option>
+            <option value="الإسماعيلية">الإسماعيلية</option>
+            <option value="أسوان">أسوان</option>
+            <option value="أسيوط">أسيوط</option>
+            <option value="الأقصر">الأقصر</option>
+            <option value="البحر الأحمر">البحر الأحمر</option>
+            <option value="البحيرة">البحيرة</option>
+            <option value="بني سويف">بني سويف</option>
+            <option value="بورسعيد">بورسعيد</option>
+            <option value="جنوب سيناء">جنوب سيناء</option>
             <option value="الجيزة">الجيزة</option>
+            <option value="الدقهلية">الدقهلية</option>
+            <option value="دمياط">دمياط</option>
+            <option value="سوهاج">سوهاج</option>
+            <option value="السويس">السويس</option>
+            <option value="الشرقية">الشرقية</option>
+            <option value="شمال سيناء">شمال سيناء</option>
+            <option value="الغربية">الغربية</option>
+            <option value="الفيوم">الفيوم</option>
+            <option value="القاهرة">القاهرة</option>
+            <option value="القليوبية">القليوبية</option>
+            <option value="قنا">قنا</option>
+            <option value="كفر الشيخ">كفر الشيخ</option>
+            <option value="مطروح">مطروح</option>
+            <option value="المنوفية">المنوفية</option>
+            <option value="المنيا">المنيا</option>
+            <option value="الوادي الجديد">الوادي الجديد</option>
           </select>
         </div>
 
@@ -322,7 +355,33 @@
         </div>
       </div>
 
-      <!-- 6. الطاقم -->
+      <!-- 6. سجل الهاكرز ومحاولات الاختراق -->
+      <div id="hackersTab" class="tab-content-section">
+        <header class="topbar">
+          <div>
+            <h1 style="font-size:22px; font-weight:900; color:#ef4444;">🛡️ سجل رصد محاولات الاختراق والهاكرز</h1>
+            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">تتبع فوري لأي محاولات لفحص الكود، تزوير الصلاحيات، أو القرصنة</p>
+          </div>
+          <button class="btn btn-action-danger" onclick="clearHackerLogs()">مسح السجل</button>
+        </header>
+        <div class="table-container">
+          <table class="exams-table">
+            <thead>
+              <tr>
+                <th>التاريخ والوقت</th>
+                <th>الخطورة</th>
+                <th>نوع الهجوم / المخالفة</th>
+                <th>المستخدم / الحساب</th>
+                <th>التفاصيل التقنية</th>
+                <th>الإجراء</th>
+              </tr>
+            </thead>
+            <tbody id="hackersTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 7. الطاقم -->
       <div id="staffTab" class="tab-content-section">
         <header class="topbar">
           <div>
@@ -346,7 +405,7 @@
         </div>
       </div>
 
-      <!-- 7. اللوجات -->
+      <!-- 8. اللوجات العامة -->
       <div id="logsTab" class="tab-content-section">
         <header class="topbar">
           <div>
@@ -386,7 +445,6 @@
         </div>
       </div>
 
-      <!-- شريط البحث الفوري داخل تقرير المشاهدات -->
       <div class="no-print" style="margin-bottom: 15px;">
         <input type="text" id="watchStatsSearchInput" oninput="filterWatchStatsTable()" placeholder="ابحث في المشاهدات باسم الطالب أو رقم الهاتف..." style="width:100%; padding:10px 14px; background:#f8f9fc; border:1px solid var(--border-subtle); border-radius:8px;">
       </div>
@@ -736,6 +794,7 @@
       var users = JSON.parse(localStorage.getItem("edu_users")) || [];
       var exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
       var logs = JSON.parse(localStorage.getItem("edu_activity_logs")) || [];
+      var hackerLogs = JSON.parse(localStorage.getItem("edu_hacker_logs")) || [];
 
       allStudentsCache = users.filter(function(u) { return u.role === 'STUDENT'; });
 
@@ -743,13 +802,14 @@
       document.getElementById("totalRevenue").innerText = revenue + " ج.م";
       document.getElementById("totalCoursesCount").innerText = courses.length;
       document.getElementById("totalStudentsCount").innerText = allStudentsCache.length;
-      document.getElementById("totalExamsCount").innerText = exams.length;
+      document.getElementById("totalBreachesCount").innerText = hackerLogs.length;
 
       var selectExam = document.getElementById("eCourseSelect");
       if (selectExam) selectExam.innerHTML = courses.map(function(c) { return '<option value="' + c.id + '">' + c.title + '</option>'; }).join('');
 
       renderStudentsTable(allStudentsCache);
 
+      // جدول الكورسات
       var coursesBody = document.getElementById("coursesTableBody");
       if (courses.length === 0) {
         coursesBody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد كورسات مضافة بعد.</td></tr>';
@@ -793,6 +853,23 @@
         '</tr>';
       }).reverse().join('');
 
+      // جدول سجل الهاكرز
+      var hackersBody = document.getElementById("hackersTableBody");
+      if (hackerLogs.length === 0) {
+        hackersBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#10b981; padding:20px; font-weight:bold;">🛡️ النظام آمن تماماً! لم يتم رصد أي محاولات اختراق أو نشاطات مشبوهة.</td></tr>';
+      } else {
+        hackersBody.innerHTML = hackerLogs.map(function(h) {
+          return '<tr>' +
+            '<td style="font-size:12px;">' + h.timestamp + '</td>' +
+            '<td><span class="hacker-badge ' + h.severity + '">' + h.severity + '</span></td>' +
+            '<td><strong style="color:#ef4444;">' + h.attackType + '</strong></td>' +
+            '<td>' + h.userName + '<br><small style="color:var(--text-muted);">' + h.userEmail + '</small></td>' +
+            '<td style="font-size:12px; max-width:240px; white-space:normal;">' + h.details + '</td>' +
+            '<td><button class="btn-action btn-action-danger" onclick="deleteUser(\'' + h.userEmail + '\')">حظر وطرد</button></td>' +
+          '</tr>';
+        }).join('');
+      }
+
       document.getElementById("staffTableBody").innerHTML = users.filter(function(u) { return u.role !== 'STUDENT'; }).map(function(s) {
         return '<tr>' +
           '<td>' + s.fullName + '</td><td>' + s.email + '</td><td>' + s.studentPhone + '</td><td><span class="badge-success">' + s.role + '</span></td>' +
@@ -807,7 +884,14 @@
       renderCharts();
     }
 
-    // فتح وعرض تقرير المشاهدات مع تجهيز بيانات البحث
+    function clearHackerLogs() {
+      if (confirm("هل تريد مسح سجل محاولات الاختراق؟")) {
+        localStorage.setItem("edu_hacker_logs", JSON.stringify([]));
+        renderAdmin();
+        showToast("تم مسح السجل بنجاح", "info");
+      }
+    }
+
     function openCourseWatchStats(courseId, courseTitle) {
       document.getElementById("watchModalCourseTitle").innerText = "تقرير المشاهدات: " + courseTitle;
       var tracking = JSON.parse(localStorage.getItem("edu_course_watch_logs")) || {};
@@ -1150,7 +1234,7 @@
             labels: Object.keys(govCounts).length ? Object.keys(govCounts) : ['كفر الشيخ', 'القاهرة', 'أخرى'],
             datasets: [{
               data: Object.values(govCounts).length ? Object.values(govCounts) : [10, 5, 2],
-              backgroundColor: ['#0E1338', '#00D2FF', '#10b981', '#1D255E', '#5CE1E6']
+              backgroundColor: ['#0E1338', '#00D2FF', '#10b981', '#1D255E', '#5CE1E6', '#0284C7', '#f59e0b']
             }]
           },
           options: {
@@ -1256,7 +1340,7 @@
     }
 
     function deleteUser(email) {
-      if (confirm("هل تريد حذف هذا الحساب نهائياً؟")) {
+      if (confirm("هل تريد حظر وحذف هذا الحساب نهائياً؟")) {
         var users = JSON.parse(localStorage.getItem("edu_users")) || [];
         localStorage.setItem("edu_users", JSON.stringify(users.filter(function(u) { return u.email !== email; })));
         renderAdmin();
