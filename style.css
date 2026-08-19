@@ -1,34 +1,35 @@
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
 
 :root {
-  /* منظومة الألوان المتناسقة الموحدة */
   --royal-indigo-base: #141A46;
   --royal-indigo-deep: #0D112F;
   --royal-indigo-light: #232C6E;
-  --royal-indigo-soft: #EEF2FA;
+  --royal-indigo-soft: rgba(20, 26, 70, 0.05);
   
   --chem-gold: #D49B35;
   --chem-gold-light: #E8B458;
-  --chem-gold-soft: #FDF7EC;
-  --arch-bg: #1B2358;
+  --chem-gold-soft: rgba(212, 155, 53, 0.12);
+  --arch-bg: linear-gradient(180deg, rgba(27, 35, 88, 0.85) 0%, rgba(20, 26, 70, 0.95) 100%);
   
-  --bg-sand: #F6F8FD;
-  --bg-card: #FFFFFF;
+  --bg-sand: #F3F5FA;
+  --bg-card: rgba(255, 255, 255, 0.65);
   
   --text-dark: #121829;
   --text-muted: #5F6B8A;
-  --border-subtle: #E2E8F4;
+  --border-subtle: rgba(255, 255, 255, 0.45);
   
   --radius-pill: 50px;
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 22px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
 
-  /* Liquid Glass System */
-  --liquid-glass-bg: rgba(20, 26, 70, 0.76);
-  --liquid-glass-border: rgba(255, 255, 255, 0.22);
-  --liquid-glass-highlight: inset 0 1.5px 2px rgba(255, 255, 255, 0.4), inset 0 -1.5px 2px rgba(0, 0, 0, 0.18), 0 16px 40px rgba(13, 17, 47, 0.15);
-  --liquid-glass-blur: blur(28px) saturate(190%);
+  /* Pure Liquid Glass Tokens */
+  --liquid-glass-dark: rgba(16, 21, 58, 0.58);
+  --liquid-glass-light: rgba(255, 255, 255, 0.55);
+  --liquid-glass-border: rgba(255, 255, 255, 0.35);
+  --liquid-glass-border-dark: rgba(255, 255, 255, 0.15);
+  --liquid-glass-highlight: inset 0 1.5px 2px rgba(255, 255, 255, 0.6), inset 0 -1.5px 2px rgba(0, 0, 0, 0.1), 0 16px 40px rgba(13, 17, 47, 0.12);
+  --liquid-glass-blur: blur(30px) saturate(200%);
 }
 
 * {
@@ -41,6 +42,11 @@
 
 body {
   background-color: var(--bg-sand);
+  background-image: 
+    radial-gradient(at 10% 20%, rgba(212, 155, 53, 0.08) 0px, transparent 50%),
+    radial-gradient(at 90% 80%, rgba(20, 26, 70, 0.07) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, rgba(35, 44, 110, 0.04) 0px, transparent 50%);
+  background-attachment: fixed;
   color: var(--text-dark);
   line-height: 1.6;
   overflow-x: hidden;
@@ -53,7 +59,7 @@ body {
   margin: 0 auto;
 }
 
-/* نظام التنبيهات والإشعارات بنمط Liquid Glass */
+/* نظام التنبيهات والإشعارات */
 #toastContainer {
   position: fixed;
   top: 25px;
@@ -69,11 +75,11 @@ body {
   pointer-events: auto;
   min-width: 310px;
   max-width: 420px;
-  background: var(--liquid-glass-bg);
+  background: var(--liquid-glass-dark);
   backdrop-filter: var(--liquid-glass-blur);
   -webkit-backdrop-filter: var(--liquid-glass-blur);
   color: #ffffff;
-  border: 1px solid var(--liquid-glass-border);
+  border: 1px solid var(--liquid-glass-border-dark);
   border-radius: var(--radius-md);
   padding: 14px 18px;
   box-shadow: var(--liquid-glass-highlight);
@@ -124,7 +130,7 @@ body {
   to { opacity: 1; transform: translateX(0); }
 }
 
-/* النافبار الكبسولي بنمط Liquid Glass النقي والفاخر */
+/* النافبار الكبسولي */
 .navbar-capsule-wrapper {
   position: sticky;
   top: 18px;
@@ -135,10 +141,10 @@ body {
 }
 
 .navbar-capsule {
-  background: var(--liquid-glass-bg);
+  background: var(--liquid-glass-dark);
   backdrop-filter: var(--liquid-glass-blur);
   -webkit-backdrop-filter: var(--liquid-glass-blur);
-  border: 1px solid var(--liquid-glass-border);
+  border: 1px solid var(--liquid-glass-border-dark);
   border-radius: 50px;
   padding: 8px 18px 8px 24px;
   display: flex;
@@ -170,14 +176,14 @@ body {
   font-weight: 900;
   font-size: 13.5px;
   letter-spacing: -0.5px;
-  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.6), 0 3px 10px rgba(212, 155, 53, 0.35);
+  box-shadow: inset 0 1.5px 2px rgba(255, 255, 255, 0.7), 0 4px 12px rgba(212, 155, 53, 0.4);
 }
 
 .brand-text {
   font-size: 17.5px;
   font-weight: 900;
   color: #ffffff;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 .brand-text span {
@@ -202,8 +208,8 @@ body {
 }
 
 .capsule-links a:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.28);
   color: #ffffff;
   transform: translateY(-1px);
 }
@@ -222,13 +228,13 @@ body {
   padding: 6px 14px;
   border-radius: 30px;
   transition: all 0.2s ease;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
 }
 
 .nav-btn-link:hover {
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.2);
   color: #ffffff;
 }
 
@@ -244,14 +250,14 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.7), 0 4px 14px rgba(212, 155, 53, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 1.5px 2px rgba(255, 255, 255, 0.8), 0 4px 14px rgba(212, 155, 53, 0.35);
   cursor: pointer;
 }
 
 .nav-btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.9), 0 6px 18px rgba(212, 155, 53, 0.45);
+  box-shadow: inset 0 1.5px 2px rgba(255, 255, 255, 0.95), 0 6px 18px rgba(212, 155, 53, 0.5);
 }
 
 /* قسم الهيرو */
@@ -259,8 +265,6 @@ body {
   position: relative;
   padding: 35px 0 0 0;
   text-align: center;
-  background-image: radial-gradient(rgba(20, 26, 70, 0.04) 1px, transparent 1px);
-  background-size: 24px 24px;
   min-height: 620px;
   display: flex;
   flex-direction: column;
@@ -316,16 +320,17 @@ body {
 }
 
 .welcome-pill {
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(12px);
-  border: 1.5px solid var(--royal-indigo-base);
+  background: var(--liquid-glass-light);
+  backdrop-filter: var(--liquid-glass-blur);
+  -webkit-backdrop-filter: var(--liquid-glass-blur);
+  border: 1.5px solid var(--border-subtle);
   border-radius: 30px;
   padding: 3px 20px;
   font-weight: 800;
   font-size: 13px;
   color: var(--royal-indigo-base);
   display: inline-block;
-  box-shadow: 0 4px 15px rgba(20, 26, 70, 0.06);
+  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.7), 0 4px 15px rgba(20, 26, 70, 0.05);
 }
 
 .welcome-sparks {
@@ -377,11 +382,18 @@ body {
 
 .widget-left, .widget-right {
   pointer-events: auto;
+  background: var(--liquid-glass-light);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  box-shadow: var(--liquid-glass-highlight);
 }
 
 .widget-left {
   text-align: right;
-  max-width: 220px;
+  max-width: 240px;
 }
 
 .quote-symbol {
@@ -393,7 +405,7 @@ body {
 }
 
 .quote-text {
-  font-size: 14.5px;
+  font-size: 13.5px;
   font-weight: 800;
   color: var(--royal-indigo-base);
   line-height: 1.4;
@@ -440,11 +452,13 @@ body {
   max-width: 480px;
   height: 330px;
   background: var(--arch-bg);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 280px 280px 0 0;
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  box-shadow: 0 -10px 30px rgba(20, 26, 70, 0.15);
+  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.4), 0 -12px 35px rgba(20, 26, 70, 0.2);
   overflow: visible;
 }
 
@@ -455,7 +469,7 @@ body {
   object-position: bottom;
   position: absolute;
   bottom: 0;
-  filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.22));
+  filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.25));
   pointer-events: none;
 }
 
@@ -469,11 +483,19 @@ body {
 
 .stat-strip-box {
   background: var(--bg-card);
+  backdrop-filter: var(--liquid-glass-blur);
+  -webkit-backdrop-filter: var(--liquid-glass-blur);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   padding: 22px;
   text-align: center;
-  box-shadow: 0 4px 15px rgba(20, 26, 70, 0.03);
+  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.8), 0 8px 25px rgba(20, 26, 70, 0.04);
+  transition: all 0.25s ease;
+}
+
+.stat-strip-box:hover {
+  transform: translateY(-3px);
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .stat-strip-num {
@@ -489,67 +511,162 @@ body {
   margin-top: 4px;
 }
 
-/* الكورسات */
+/* بطاقات الكورسات بنمط Liquid Glass المطور */
 .courses-grid-layout {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  gap: 24px;
-  margin-top: 22px;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 28px;
+  margin-top: 25px;
 }
 
-.course-clean-card {
-  background: #ffffff;
+.course-liquid-card {
+  background: var(--bg-card);
+  backdrop-filter: var(--liquid-glass-blur);
+  -webkit-backdrop-filter: var(--liquid-glass-blur);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 15px rgba(20, 26, 70, 0.03);
+  position: relative;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: inset 0 1.5px 2px rgba(255, 255, 255, 0.8), 0 10px 30px rgba(20, 26, 70, 0.04);
 }
 
-.course-clean-card:hover {
-  transform: translateY(-4px);
-  border-color: var(--royal-indigo-light);
-  box-shadow: 0 12px 30px rgba(20, 26, 70, 0.08);
+.course-liquid-card:hover {
+  transform: translateY(-8px);
+  border-color: rgba(212, 155, 53, 0.6);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: inset 0 1.5px 2px rgba(255, 255, 255, 1), 0 20px 45px rgba(20, 26, 70, 0.12);
 }
 
-.course-clean-img {
+.course-liquid-media {
+  position: relative;
   width: 100%;
-  height: 190px;
-  object-fit: cover;
-  border-bottom: 1px solid var(--border-subtle);
+  height: 210px;
+  overflow: hidden;
 }
 
-.course-clean-body {
-  padding: 22px;
+.course-liquid-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.course-liquid-card:hover .course-liquid-img {
+  transform: scale(1.06);
+}
+
+.course-floating-tags {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.tag-glass-pill {
+  background: rgba(16, 21, 58, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 11.5px;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.tag-glass-pill.gold {
+  background: rgba(212, 155, 53, 0.85);
+  color: var(--royal-indigo-deep);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.tag-glass-pill.green {
+  background: rgba(16, 185, 129, 0.85);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.course-liquid-body {
+  padding: 24px;
   display: flex;
   flex-direction: column;
   flex: 1;
 }
 
-.course-clean-tag {
-  align-self: flex-start;
-  background: var(--chem-gold-soft);
-  color: #9c6e1c;
-  border: 1px solid rgba(212, 155, 53, 0.25);
-  padding: 2px 10px;
-  border-radius: 4px;
-  font-size: 11.5px;
-  font-weight: 800;
-  margin-bottom: 10px;
-}
-
-.course-clean-price {
-  font-size: 22px;
+.course-liquid-title {
+  font-size: 19px;
   font-weight: 900;
   color: var(--royal-indigo-base);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.course-liquid-desc {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.course-meta-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.course-meta-badge {
+  background: rgba(20, 26, 70, 0.05);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--royal-indigo-base);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.course-liquid-footer {
   margin-top: auto;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-subtle);
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.6);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 15px;
+}
+
+.price-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.price-label-text {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.price-val {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--royal-indigo-base);
+}
+
+.price-val.free {
+  color: #059669;
 }
 
 /* قسم لوحة شرف أوائل الشهر */
@@ -568,7 +685,9 @@ body {
 }
 
 .honor-card {
-  background: #ffffff;
+  background: var(--bg-card);
+  backdrop-filter: var(--liquid-glass-blur);
+  -webkit-backdrop-filter: var(--liquid-glass-blur);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   padding: 24px 20px;
@@ -576,21 +695,22 @@ body {
   width: 280px;
   position: relative;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 4px 15px rgba(20, 26, 70, 0.03);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.8), 0 8px 25px rgba(20, 26, 70, 0.04);
 }
 
 .honor-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 25px rgba(20, 26, 70, 0.08);
+  transform: translateY(-5px);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 1), 0 16px 35px rgba(20, 26, 70, 0.09);
 }
 
 .honor-card.rank-1 {
   order: 2;
-  border-color: var(--chem-gold);
-  background: linear-gradient(180deg, #ffffff 0%, var(--chem-gold-soft) 100%);
+  border-color: rgba(212, 155, 53, 0.45);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(253, 247, 236, 0.75) 100%);
   transform: translateY(-12px);
   width: 300px;
   padding: 30px 22px;
+  box-shadow: inset 0 1.5px 2px rgba(255, 255, 255, 0.9), 0 16px 40px rgba(212, 155, 53, 0.15);
 }
 
 .honor-card.rank-1:hover {
@@ -615,16 +735,20 @@ body {
 .honor-card.rank-1 .honor-badge-icon {
   background: linear-gradient(135deg, var(--chem-gold-light) 0%, var(--chem-gold) 100%);
   color: var(--royal-indigo-deep);
-  box-shadow: 0 4px 12px rgba(212, 155, 53, 0.35);
+  box-shadow: inset 0 1.5px 2px rgba(255, 255, 255, 0.7), 0 4px 14px rgba(212, 155, 53, 0.4);
 }
 
 .honor-card.rank-2 .honor-badge-icon {
-  background: #e2e8f0;
+  background: rgba(226, 232, 240, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
   color: var(--royal-indigo-base);
 }
 
 .honor-card.rank-3 .honor-badge-icon {
-  background: #f1e5d8;
+  background: rgba(241, 229, 216, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
   color: #8c5823;
 }
 
@@ -643,7 +767,9 @@ body {
 
 .honor-score-pill {
   display: inline-block;
-  background: var(--royal-indigo-soft);
+  background: rgba(20, 26, 70, 0.08);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   color: var(--royal-indigo-base);
   padding: 4px 14px;
   border-radius: var(--radius-pill);
@@ -654,6 +780,8 @@ body {
 .honor-card.rank-1 .honor-score-pill {
   background: var(--royal-indigo-base);
   color: #ffffff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(20, 26, 70, 0.2);
 }
 
 /* الأزرار العامة */
@@ -663,46 +791,55 @@ body {
   justify-content: center;
   gap: 6px;
   padding: 9px 20px;
-  border-radius: 6px;
+  border-radius: 8px;
   text-decoration: none;
   font-weight: 800;
   font-size: 13.5px;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-primary {
   background: var(--royal-indigo-base);
   color: #ffffff;
+  box-shadow: 0 4px 14px rgba(20, 26, 70, 0.18);
 }
 
 .btn-primary:hover {
   background: var(--royal-indigo-light);
+  transform: translateY(-1px);
 }
 
 .btn-gold {
-  background: var(--chem-gold);
+  background: linear-gradient(135deg, var(--chem-gold-light) 0%, var(--chem-gold) 100%);
   color: var(--royal-indigo-deep);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.6), 0 4px 14px rgba(212, 155, 53, 0.3);
 }
 
 .btn-gold:hover {
-  background: var(--chem-gold-light);
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.8), 0 6px 18px rgba(212, 155, 53, 0.4);
 }
 
 /* الأسئلة الشائعة */
 .faq-item {
-  background: #ffffff;
+  background: var(--bg-card);
+  backdrop-filter: var(--liquid-glass-blur);
+  -webkit-backdrop-filter: var(--liquid-glass-blur);
   border: 1px solid var(--border-subtle);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 16px 20px;
   margin-bottom: 10px;
   cursor: pointer;
-  transition: border-color 0.15s;
+  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.7);
+  transition: all 0.2s ease;
 }
 
 .faq-item:hover {
-  border-color: var(--royal-indigo-light);
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(212, 155, 53, 0.35);
 }
 
 .faq-question {
@@ -720,7 +857,7 @@ body {
   font-size: 13.5px;
   margin-top: 10px;
   padding-top: 10px;
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid rgba(255, 255, 255, 0.5);
   line-height: 1.7;
 }
 
@@ -730,13 +867,16 @@ body {
 
 /* بانر التسجيل */
 .cta-banner-bottom {
-  background: var(--royal-indigo-base);
+  background: var(--liquid-glass-dark);
+  backdrop-filter: var(--liquid-glass-blur);
+  -webkit-backdrop-filter: var(--liquid-glass-blur);
+  border: 1px solid var(--liquid-glass-border-dark);
   color: #ffffff;
   padding: 48px 20px;
   text-align: center;
   margin: 50px 0 35px;
   border-radius: var(--radius-md);
-  box-shadow: 0 10px 30px rgba(20, 26, 70, 0.12);
+  box-shadow: var(--liquid-glass-highlight);
 }
 
 .cta-banner-bottom h2 {
@@ -747,10 +887,13 @@ body {
 
 /* النماذج وحقول الإدخال */
 .form-container {
-  background: #ffffff;
+  background: var(--bg-card);
+  backdrop-filter: var(--liquid-glass-blur);
+  -webkit-backdrop-filter: var(--liquid-glass-blur);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: 32px;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.8), 0 12px 35px rgba(20, 26, 70, 0.05);
 }
 
 .form-group {
@@ -774,25 +917,29 @@ label {
 input, select, textarea {
   width: 100%;
   padding: 11px 14px;
-  background: #fbfbfe;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
   border: 1.5px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   color: var(--text-dark);
   font-size: 13.5px;
   outline: none;
-  transition: border-color 0.15s;
+  transition: all 0.2s ease;
 }
 
 input:focus, select:focus, textarea:focus {
-  border-color: var(--royal-indigo-light);
+  border-color: var(--royal-indigo-base);
   background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(20, 26, 70, 0.1);
 }
 
 /* فوتر المنصة */
 .platform-footer {
-  background: var(--royal-indigo-deep);
+  background: var(--liquid-glass-dark);
+  backdrop-filter: var(--liquid-glass-blur);
+  -webkit-backdrop-filter: var(--liquid-glass-blur);
+  border-top: 1px solid var(--liquid-glass-border-dark);
   color: #ffffff;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding: 45px 0 25px 0;
   margin-top: 50px;
 }
@@ -862,24 +1009,27 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   padding: 9px 12px;
   border-radius: var(--radius-sm);
   text-decoration: none;
   color: #ffffff;
-  transition: background 0.15s;
+  transition: all 0.2s ease;
 }
 
 .contact-item-box:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
 }
 
 .contact-icon-circle {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--chem-gold);
+  background: linear-gradient(135deg, var(--chem-gold-light) 0%, var(--chem-gold) 100%);
   color: var(--royal-indigo-deep);
   display: flex;
   align-items: center;
@@ -900,7 +1050,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .footer-bottom-bar {
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding-top: 18px;
   display: flex;
   justify-content: space-between;

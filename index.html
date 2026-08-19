@@ -101,11 +101,12 @@
     <div id="honorPodiumContainer" class="honor-podium-grid"></div>
   </section>
 
-  <!-- الكورسات المتاحة -->
-  <section id="courses" style="padding: 30px 0 50px;">
+  <!-- الكورسات المتاحة بطريقة العرض المبتكرة المحدثة -->
+  <section id="courses" style="padding: 30px 0 60px;">
     <div class="container">
       <div style="margin-bottom: 24px; text-align:right;">
-        <h2 style="font-size: 26px; font-weight: 900; color: var(--royal-indigo-base);">المناهج والكورسات المتاحة</h2>
+        <span style="color:var(--chem-gold); font-size:12px; font-weight:800; background:var(--chem-gold-soft); padding:4px 14px; border-radius:20px;">المحتوى التدريبي</span>
+        <h2 style="font-size: 26px; font-weight: 900; color: var(--royal-indigo-base); margin-top:6px;">المناهج والكورسات المتاحة</h2>
         <p style="color: var(--text-muted); font-size: 14px;">اختر الكورس وابدأ فوراً في مشاهدة المحاضرات وحل الاختبارات</p>
       </div>
       <div class="courses-grid-layout" id="coursesListContainer"></div>
@@ -227,7 +228,7 @@
       .slice(0, 3);
 
       if (topStudents.length === 0) {
-        container.innerHTML = '<div style="background:#ffffff; border:1px dashed var(--border-subtle); padding:30px; border-radius:12px; text-align:center; color:var(--text-muted); font-size:14px; width:100%; max-width:500px;">لم يحقق أي طالب الحد الأدنى للوحة الشرف (80%) لهذا الشهر بعد.<br>استعد للاختبارات القادمة لتكون أول المكرمين!</div>';
+        container.innerHTML = '<div style="background:var(--bg-card); backdrop-filter:var(--liquid-glass-blur); border:1px dashed var(--border-subtle); padding:30px; border-radius:14px; text-align:center; color:var(--text-muted); font-size:14px; width:100%; max-width:500px;">لم يحقق أي طالب الحد الأدنى للوحة الشرف (80%) لهذا الشهر بعد.<br>استعد للاختبارات القادمة لتكون أول المكرمين!</div>';
         return;
       }
 
@@ -264,30 +265,41 @@
           var isFreeCourse = c.isFree || Number(c.price) === 0;
 
           var actionButton = isEnrolled
-            ? '<a href="course-view.html?id=' + c.id + '" class="btn" style="background:#059669; color:#fff; padding:8px 18px; font-size:13px;">أنت مشترك بالفعل — دخول المحاضرات</a>'
+            ? '<a href="course-view.html?id=' + c.id + '" class="btn btn-action-success" style="padding:10px 20px; font-size:13px; text-decoration:none;">دخول المحاضرات</a>'
             : (isFreeCourse 
-                ? '<button onclick="handleEnrollClick(\'' + c.id + '\')" class="btn btn-gold" style="padding:8px 18px; font-size:13px;">اشتراك مجاني فوري</button>'
-                : '<button onclick="handleEnrollClick(\'' + c.id + '\')" class="btn btn-primary" style="padding:8px 18px; font-size:13px;">الاشتراك في الكورس</button>');
+                ? '<button onclick="handleEnrollClick(\'' + c.id + '\')" class="btn btn-gold" style="padding:10px 20px; font-size:13px;">اشتراك فوري مجاني</button>'
+                : '<button onclick="handleEnrollClick(\'' + c.id + '\')" class="btn btn-primary" style="padding:10px 20px; font-size:13px;">الاشتراك الآن</button>');
 
-          var priceLabel = isFreeCourse 
-            ? '<span style="color:#059669; font-weight:900; font-size:20px;">مجاني</span>' 
-            : '<span>' + c.price + ' ج.م</span>';
+          var priceBlock = isFreeCourse 
+            ? '<div class="price-box"><span class="price-label-text">قيمة الاشتراك</span><span class="price-val free">مجاناً بالكامل</span></div>'
+            : '<div class="price-box"><span class="price-label-text">قيمة الاشتراك</span><span class="price-val">' + c.price + ' ج.م</span></div>';
 
-          var viewsBadge = (c.maxViewsType === 'unlimited' || !c.maxViews || Number(c.maxViews) === 0) 
+          var viewsBadgeText = (c.maxViewsType === 'unlimited' || !c.maxViews || Number(c.maxViews) === 0) 
             ? 'مشاهدة مفتوحة' 
             : (c.maxViews + ' مرات دخول');
 
-          return '<div class="course-clean-card">' +
-            '<img src="' + (c.image || 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80') + '" class="course-clean-img" alt="' + c.title + '">' +
-            '<div class="course-clean-body">' +
-              '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">' +
-                '<span class="course-clean-tag">' + (c.tag || 'الصف الثالث الثانوي') + '</span>' +
-                '<span style="font-size:11.5px; color:var(--text-muted); font-weight:700;">' + viewsBadge + '</span>' +
+          var lessonsCount = (c.lessons || []).length;
+
+          return '<div class="course-liquid-card">' +
+            '<div class="course-liquid-media">' +
+              '<img src="' + (c.image || 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80') + '" class="course-liquid-img" alt="' + c.title + '">' +
+              '<div class="course-floating-tags">' +
+                '<span class="tag-glass-pill">' + (c.tag || 'الصف الثالث الثانوي') + '</span>' +
+                (isEnrolled 
+                  ? '<span class="tag-glass-pill green">مشترك بالفعل</span>' 
+                  : (isFreeCourse ? '<span class="tag-glass-pill gold">كورس مجاني</span>' : '')) +
               '</div>' +
-              '<h3 style="font-size:18px; font-weight:800; margin-bottom:8px; color:var(--royal-indigo-base);">' + c.title + '</h3>' +
-              '<p style="color:var(--text-muted); font-size:13px; margin-bottom:18px;">' + c.desc + '</p>' +
-              '<div class="course-clean-price">' +
-                priceLabel +
+            '</div>' +
+            '<div class="course-liquid-body">' +
+              '<h3 class="course-liquid-title">' + c.title + '</h3>' +
+              '<p class="course-liquid-desc">' + c.desc + '</p>' +
+              '<div class="course-meta-row">' +
+                '<div class="course-meta-badge">📖 ' + lessonsCount + ' محاضرات</div>' +
+                '<div class="course-meta-badge">👁️ ' + viewsBadgeText + '</div>' +
+                '<div class="course-meta-badge">📝 بنك أسئلة وتدريبات</div>' +
+              '</div>' +
+              '<div class="course-liquid-footer">' +
+                priceBlock +
                 actionButton +
               '</div>' +
             '</div>' +
