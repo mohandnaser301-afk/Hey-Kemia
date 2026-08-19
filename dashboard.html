@@ -6,11 +6,11 @@
   <title>هي كيميا ! - بروفايل الطالب</title>
   <link rel="stylesheet" href="dashboard.css">
   <style>
-    .live-chat-bubble-btn { position: fixed; bottom: 25px; left: 25px; background: var(--chem-gold); color: #fff; width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; z-index: 9999; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-    .live-chat-window { display: none; position: fixed; bottom: 90px; left: 25px; width: 350px; height: 460px; background: #fff; border: 1px solid var(--border-subtle); border-radius: 18px; z-index: 9999; flex-direction: column; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
-    .chat-win-header { background: var(--primary-navy); color:#fff; padding: 12px 16px; display: flex; justify-content: space-between; align-items:center; }
-    .chat-win-messages { flex: 1; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #F8FAFC; }
-    .student-bubble { align-self: flex-end; background: var(--chem-gold); color: #fff; font-weight: 700; padding: 8px 12px; border-radius: 12px; max-width: 80%; font-size: 13px; }
+    .live-chat-bubble-btn { position: fixed; bottom: 25px; left: 25px; background: var(--chem-gold); color: var(--royal-indigo-deep); width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; z-index: 9999; box-shadow: 0 10px 25px rgba(12,7,84,0.25); }
+    .live-chat-window { display: none; position: fixed; bottom: 90px; left: 25px; width: 350px; height: 460px; background: #fff; border: 1px solid var(--border-subtle); border-radius: 18px; z-index: 9999; flex-direction: column; overflow: hidden; box-shadow: 0 20px 40px rgba(12,7,84,0.18); }
+    .chat-win-header { background: var(--royal-indigo-base); color:#fff; padding: 12px 16px; display: flex; justify-content: space-between; align-items:center; }
+    .chat-win-messages { flex: 1; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #F8F9FC; }
+    .student-bubble { align-self: flex-end; background: var(--chem-gold); color: var(--royal-indigo-deep); font-weight: 700; padding: 8px 12px; border-radius: 12px; max-width: 80%; font-size: 13px; }
     .support-bubble { align-self: flex-start; background: #E2E8F0; color: #0F172A; padding: 8px 12px; border-radius: 12px; max-width: 80%; font-size: 13px; }
     .chat-win-input { padding: 10px 14px; background: #fff; border-top: 1px solid var(--border-subtle); display: flex; gap: 8px; }
   </style>
@@ -25,19 +25,19 @@
         <div class="user-info"><h4 id="dashName" style="color:#fff; font-size:14px;">اسم الطالب</h4><span class="badge" id="dashMeta" style="color:var(--chem-gold-light); font-size:11px;">طالب مسجل</span></div>
       </div>
       <nav class="sidebar-nav">
-        <a href="dashboard.html" class="nav-item active">📊 لوحة التحكم</a>
-        <a href="#my-courses" class="nav-item">📚 كورساتي المفعلة</a>
-        <a href="#exams" class="nav-item">📝 درجات الامتحانات</a>
-        <a href="javascript:void(0)" onclick="toggleChatWindow()" class="nav-item" style="color:var(--chem-gold-light);">💬 شات الدعم الفني</a>
-        <a href="index.html#courses" class="nav-item">🛒 تصفح الكورسات</a>
-        <a href="javascript:void(0)" onclick="logout()" class="nav-item logout">🚪 تسجيل الخروج</a>
+        <a href="dashboard.html" class="nav-item active">لوحة التحكم</a>
+        <a href="#my-courses" class="nav-item">كورساتي المفعلة</a>
+        <a href="#exams" class="nav-item">درجات الامتحانات</a>
+        <a href="javascript:void(0)" onclick="toggleChatWindow()" class="nav-item" style="color:var(--chem-gold-light);">شات أ/ محمد السعيد والدعم</a>
+        <a href="index.html#courses" class="nav-item">تصفح الكورسات</a>
+        <a href="javascript:void(0)" onclick="logout()" class="nav-item logout">تسجيل الخروج</a>
       </nav>
     </aside>
 
     <main class="main-content">
       <header class="topbar">
-        <div><h1 style="font-size:24px; font-weight:900; color:var(--primary-navy);">مرحباً بك يا <span id="welcomeName">بطل</span> 👋</h1><p class="subtitle" style="color:var(--text-muted); font-size:13px;">المنظومة المتخصصة لكيمياء الثانوية العامة</p></div>
-        <span class="school-tag" id="dashSchool" style="background:#fff; border:1px solid var(--border-subtle); padding:6px 14px; border-radius:20px; font-size:13px; font-weight:700;">🏫 المدرسة</span>
+        <div><h1 style="font-size:24px; font-weight:900; color:var(--royal-indigo-base);">مرحباً بك يا <span id="welcomeName">طالب</span></h1><p class="subtitle" style="color:var(--text-muted); font-size:13px;">منظومة كيمياء الثانوية العامة مع أ/ محمد السعيد</p></div>
+        <span class="school-tag" id="dashSchool" style="background:#fff; border:1px solid var(--border-subtle); padding:6px 14px; border-radius:20px; font-size:13px; font-weight:700;">المدرسة</span>
       </header>
 
       <section class="stats-grid">
@@ -48,12 +48,12 @@
       </section>
 
       <section id="my-courses" style="margin-bottom:30px;">
-        <h2 style="font-size:18px; font-weight:900; color:var(--primary-navy); margin-bottom:15px;">الكورسات المفعلة بحسابك</h2>
+        <h2 style="font-size:18px; font-weight:900; color:var(--royal-indigo-base); margin-bottom:15px;">الكورسات المفعلة بحسابك</h2>
         <div class="courses-grid-layout" id="coursesContainer"></div>
       </section>
 
       <section id="exams">
-        <h2 style="font-size:18px; font-weight:900; color:var(--primary-navy); margin-bottom:15px;">سجل درجات الامتحانات</h2>
+        <h2 style="font-size:18px; font-weight:900; color:var(--royal-indigo-base); margin-bottom:15px;">سجل درجات الامتحانات</h2>
         <div class="table-container">
           <table class="exams-table">
             <thead><tr><th>اسم الامتحان</th><th>المادة</th><th>التاريخ</th><th>الدرجة</th><th>النسبة</th><th>الحالة</th></tr></thead>
@@ -67,7 +67,7 @@
   <div class="live-chat-bubble-btn" onclick="toggleChatWindow()">💬</div>
   <div class="live-chat-window" id="liveChatWindow">
     <div class="chat-win-header">
-      <h4 style="font-size:13px; font-weight:800;">شات المعلم والدعم الفني 🟢</h4>
+      <h4 style="font-size:13px; font-weight:800;">شات أ/ محمد السعيد والدعم</h4>
       <button onclick="toggleChatWindow()" style="background:none; border:none; color:#fff; cursor:pointer; font-size:16px;">✕</button>
     </div>
     <div class="chat-win-messages" id="studentChatMessages"></div>
@@ -85,7 +85,7 @@
     document.getElementById("dashName").innerText = user.fullName;
     document.getElementById("dashAvatar").innerText = user.fullName.slice(0, 2);
     document.getElementById("dashMeta").innerText = (user.educationType === 'AZHAR' ? 'أزهر' : 'عام') + ' - ' + (user.governorate || 'مصر');
-    document.getElementById("dashSchool").innerText = '🏫 ' + (user.schoolName || 'المنصة');
+    document.getElementById("dashSchool").innerText = user.schoolName || 'المنصة';
     document.getElementById("welcomeName").innerText = user.fullName.split(" ")[0];
 
     var allCourses = JSON.parse(localStorage.getItem("edu_courses")) || [];
@@ -100,9 +100,9 @@
         return '<div class="course-clean-card">' +
           '<div class="course-clean-body">' +
             '<span class="course-clean-tag">كورس مفعّل</span>' +
-            '<h3 style="color:var(--primary-navy); font-size:18px; margin-bottom:8px;">' + c.title + '</h3>' +
+            '<h3 style="color:var(--royal-indigo-base); font-size:18px; margin-bottom:8px;">' + c.title + '</h3>' +
             '<p style="color:var(--text-muted); font-size:13px; margin-bottom:15px;">' + c.desc + '</p>' +
-            '<a href="course-view.html?id=' + c.id + '" class="btn btn-primary" style="width:100%;">دخول المحاضرات 🎬</a>' +
+            '<a href="course-view.html?id=' + c.id + '" class="btn btn-primary" style="width:100%;">دخول المحاضرات</a>' +
           '</div>' +
         '</div>';
       }).join('');
@@ -114,7 +114,7 @@
     if (mySubs.length > 0) {
       var avg = Math.round(mySubs.reduce(function(acc, curr) { return acc + curr.percentage; }, 0) / mySubs.length);
       document.getElementById("averageScore").innerText = avg + "%";
-      document.getElementById("studentRating").innerText = avg >= 85 ? "ممتاز 🌟" : avg >= 65 ? "جيد جداً 👍" : "مستمر بالتدريب";
+      document.getElementById("studentRating").innerText = avg >= 85 ? "ممتاز" : avg >= 65 ? "جيد جداً" : "مستمر بالتدريب";
       document.getElementById("examsTableBody").innerHTML = mySubs.map(function(s) {
         return '<tr><td>' + s.examTitle + '</td><td>' + s.subject + '</td><td>' + s.date + '</td><td>' + s.score + '/' + s.total + '</td><td>' + s.percentage + '%</td><td><span class="badge-success">تم التسليم</span></td></tr>';
       }).join('');

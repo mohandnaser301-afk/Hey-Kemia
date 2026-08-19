@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>هي كيميا ! - شات الدعم الحي</title>
+  <title>هي كيميا ! - شات الدعم الفني</title>
   <link rel="stylesheet" href="dashboard.css">
   <style>
-    .chat-layout { display: grid; grid-template-columns: 300px 1fr; gap: 20px; height: calc(100vh - 120px); background: #fff; border: 1px solid var(--border-subtle); border-radius: 18px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
-    .chat-users-list { background: #F8FAFC; border-left: 1px solid var(--border-subtle); overflow-y: auto; display: flex; flex-direction: column; }
+    .chat-layout { display: grid; grid-template-columns: 300px 1fr; gap: 20px; height: calc(100vh - 120px); background: #fff; border: 1px solid var(--border-subtle); border-radius: 18px; overflow: hidden; box-shadow: 0 4px 15px rgba(12,7,84,0.03); }
+    .chat-users-list { background: #F8F9FC; border-left: 1px solid var(--border-subtle); overflow-y: auto; display: flex; flex-direction: column; }
     .chat-user-item { padding: 15px; border-bottom: 1px solid var(--border-subtle); cursor: pointer; display: flex; align-items: center; gap: 12px; }
     .chat-user-item.active { background: #fff; border-right: 4px solid var(--chem-gold); }
     .chat-main-area { display: flex; flex-direction: column; height: 100%; background: #fff; }
     .chat-header { padding: 15px 20px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: #fff; }
-    .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: #F8FAFC; }
+    .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: #F8F9FC; }
     .message-bubble { max-width: 70%; padding: 12px 16px; border-radius: 14px; font-size: 14px; }
     .msg-student { align-self: flex-start; background: #E2E8F0; color: #0F172A; }
-    .msg-support { align-self: flex-end; background: var(--chem-gold); color: #fff; font-weight: 700; }
+    .msg-support { align-self: flex-end; background: var(--chem-gold); color: var(--royal-indigo-deep); font-weight: 700; }
     .chat-input-area { padding: 14px 20px; border-top: 1px solid var(--border-subtle); background: #fff; display: flex; gap: 10px; }
   </style>
 </head>
@@ -26,30 +26,30 @@
       <div class="sidebar-brand"><h2>هي كيميا<span>!</span></h2></div>
       <div class="user-profile-summary">
         <div class="avatar">💬</div>
-        <div class="user-info"><h4 id="agentName" style="color:#fff; font-size:14px;">فريق الدعم</h4><span class="badge" style="color:var(--chem-gold-light); font-size:11px;">🟢 متصل</span></div>
+        <div class="user-info"><h4 id="agentName" style="color:#fff; font-size:14px;">فريق أ/ محمد السعيد</h4><span class="badge" style="color:var(--chem-gold-light); font-size:11px;">متصل</span></div>
       </div>
       <nav class="sidebar-nav">
-        <a href="support.html" class="nav-item active">💬 شات الطلاب</a>
-        <a href="admin.html" class="nav-item">🧪 لوحة الإدارة</a>
-        <a href="index.html" class="nav-item">🌐 عرض الموقع</a>
-        <a href="javascript:void(0)" onclick="logout()" class="nav-item logout">🚪 تسجيل الخروج</a>
+        <a href="support.html" class="nav-item active">شات الطلاب</a>
+        <a href="admin.html" class="nav-item">لوحة الإدارة</a>
+        <a href="index.html" class="nav-item">عرض الموقع</a>
+        <a href="javascript:void(0)" onclick="logout()" class="nav-item logout">تسجيل الخروج</a>
       </nav>
     </aside>
 
     <main class="main-content" style="padding: 20px 30px;">
       <div class="chat-layout">
         <div class="chat-users-list">
-          <div style="padding: 14px 18px; font-weight: 800; color: var(--primary-navy); border-bottom: 1px solid var(--border-subtle);">المحادثات النشطة</div>
+          <div style="padding: 14px 18px; font-weight: 800; color: var(--royal-indigo-base); border-bottom: 1px solid var(--border-subtle);">المحادثات النشطة</div>
           <div id="usersListContainer"></div>
         </div>
 
         <div class="chat-main-area">
           <div class="chat-header">
             <div>
-              <h3 id="currentChatStudentName" style="color: var(--primary-navy); font-size: 16px; font-weight: 800;">اختر طالباً للرد عليه</h3>
+              <h3 id="currentChatStudentName" style="color: var(--royal-indigo-base); font-size: 16px; font-weight: 800;">اختر طالباً للرد عليه</h3>
               <span id="currentChatStudentMeta" style="font-size: 12px; color: var(--chem-gold);"></span>
             </div>
-            <button class="btn btn-outline" style="padding: 4px 10px; font-size: 12px;" onclick="loadMessages()">تحديث 🔄</button>
+            <button class="btn btn-outline" style="padding: 4px 10px; font-size: 12px;" onclick="loadMessages()">تحديث</button>
           </div>
 
           <div class="chat-messages" id="messagesContainer">
@@ -58,7 +58,7 @@
 
           <form class="chat-input-area" id="supportSendForm" style="display:none;">
             <input type="text" id="supportMsgInput" placeholder="اكتب ردك للطالب هنا..." style="flex:1;" required>
-            <button type="submit" class="btn btn-primary">إرسال الرد 🚀</button>
+            <button type="submit" class="btn btn-primary">إرسال الرد</button>
           </form>
         </div>
       </div>
@@ -69,8 +69,8 @@
   <script>
     var user = getCurrentUser();
     if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN" && user.role !== "SUPPORT")) {
-      alert("مخصص للإدارة وفريق الدعم فقط!");
-      window.location.href = "login.html";
+      showToast("مخصص للإدارة وفريق الدعم فقط", "error");
+      setTimeout(function() { window.location.href = "login.html"; }, 1000);
     }
 
     document.getElementById("agentName").innerText = user.fullName;
@@ -88,7 +88,7 @@
       container.innerHTML = emails.map(function(email) {
         return '<div class="chat-user-item ' + (activeEmail === email ? 'active' : '') + '" onclick="selectStudent(\'' + email + '\', \'' + map[email].name + '\')">' +
           '<div class="avatar" style="width:36px; height:36px; font-size:12px;">' + map[email].name.slice(0,2) + '</div>' +
-          '<div style="flex:1;"><h4 style="font-size:13px; color:var(--primary-navy); font-weight:800;">' + map[email].name + '</h4><p style="font-size:11px; color:var(--text-muted);">' + map[email].lastMsg + '</p></div>' +
+          '<div style="flex:1;"><h4 style="font-size:13px; color:var(--royal-indigo-base); font-weight:800;">' + map[email].name + '</h4><p style="font-size:11px; color:var(--text-muted);">' + map[email].lastMsg + '</p></div>' +
         '</div>';
       }).join('');
     }
@@ -97,7 +97,7 @@
       activeEmail = email;
       activeName = name;
       document.getElementById("currentChatStudentName").innerText = "محادثة مع: " + name;
-      document.getElementById("currentChatStudentMeta").innerText = email + " | 🟢 مباشر";
+      document.getElementById("currentChatStudentMeta").innerText = email + " | متصل";
       document.getElementById("supportSendForm").style.display = "flex";
       renderActiveUsers();
       loadMessages();

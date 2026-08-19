@@ -1,8 +1,8 @@
 @import url('style.css');
 
 :root {
-  --bg-sidebar: #0A141D;
-  --bg-content: #F8FAFC;
+  --bg-sidebar: rgba(13, 17, 47, 0.90);
+  --bg-content: #F6F8FD;
 }
 
 .dashboard-wrapper {
@@ -10,50 +10,59 @@
   min-height: 100vh;
 }
 
+/* شريط السايدبار بنمط Liquid Glass المتناسق */
 .sidebar {
-  width: 270px;
-  background-color: var(--bg-sidebar);
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 24px 16px;
+  width: 260px;
+  background: var(--bg-sidebar);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 22px 14px;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  box-shadow: inset -1.5px 0 2px rgba(255, 255, 255, 0.15), 10px 0 35px rgba(0, 0, 0, 0.14);
 }
 
 .sidebar-brand h2 {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 900;
-  color: #fff;
-  margin-bottom: 24px;
-  padding-right: 8px;
+  color: #ffffff;
+  margin-bottom: 20px;
+  padding-right: 6px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.25);
 }
 
 .sidebar-brand span {
-  color: var(--chem-gold);
+  color: var(--chem-gold-light);
 }
 
 .user-profile-summary {
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 12px 14px;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 10px 12px;
   border-radius: 12px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.25);
 }
 
 .avatar {
-  width: 42px;
-  height: 42px;
-  background: var(--chem-gold);
-  color: #0A1C2A;
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(135deg, var(--chem-gold-light) 0%, var(--chem-gold) 100%);
+  color: var(--royal-indigo-deep);
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 900;
-  font-size: 14px;
+  font-size: 13.5px;
+  box-shadow: 0 3px 10px rgba(212, 155, 53, 0.35);
 }
 
 .sidebar-nav {
@@ -62,30 +71,52 @@
   gap: 6px;
 }
 
+/* عناصر وقوائم السايدبار الزجاجية السائلة */
 .nav-item {
-  padding: 11px 16px;
-  color: #94A3B8;
+  padding: 10px 14px;
+  color: #d1d9ec;
   text-decoration: none;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 700;
   border-radius: 10px;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.nav-item:hover, .nav-item.active {
-  background: rgba(197, 136, 56, 0.12);
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  transform: translateX(-3px);
+  backdrop-filter: blur(8px);
+}
+
+.nav-item.active {
+  background: rgba(212, 155, 53, 0.2);
   color: var(--chem-gold-light);
+  border-color: rgba(212, 155, 53, 0.4);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 4px 15px rgba(0, 0, 0, 0.12);
 }
 
 .nav-item.logout {
   margin-top: auto;
-  color: #EF4444;
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.18);
+}
+
+.nav-item.logout:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #ef4444;
 }
 
 .main-content {
   flex: 1;
-  padding: 32px 38px;
+  padding: 28px 34px;
   overflow-y: auto;
   background: var(--bg-content);
 }
@@ -94,71 +125,86 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 18px;
-  margin-bottom: 30px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 26px;
 }
 
 .stat-card {
-  background: #FFFFFF;
+  background: #ffffff;
   border: 1px solid var(--border-subtle);
-  padding: 22px;
-  border-radius: 14px;
+  padding: 18px 20px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
-  gap: 16px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+  gap: 14px;
+  box-shadow: 0 4px 15px rgba(20, 26, 70, 0.025);
 }
 
 .stat-icon {
-  font-size: 24px;
-  background: rgba(10, 28, 42, 0.04);
-  padding: 12px;
-  border-radius: 10px;
+  font-size: 20px;
+  background: #edf1fb;
+  padding: 10px;
+  border-radius: 8px;
 }
 
 .table-container {
-  background: #FFFFFF;
+  background: #ffffff;
   border: 1px solid var(--border-subtle);
-  border-radius: 14px;
+  border-radius: 12px;
   overflow-x: auto;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+  box-shadow: 0 4px 15px rgba(20, 26, 70, 0.025);
 }
 
 .exams-table {
   width: 100%;
   border-collapse: collapse;
   text-align: right;
-  font-size: 14px;
+  font-size: 13.5px;
 }
 
 .exams-table th, .exams-table td {
-  padding: 15px 18px;
+  padding: 13px 16px;
   border-bottom: 1px solid var(--border-subtle);
 }
 
 .exams-table th {
-  background: #F8FAFC;
+  background: #f8fafd;
   color: var(--text-muted);
   font-weight: 800;
 }
 
 .badge-success {
-  background: rgba(16, 185, 129, 0.12);
-  color: #10B981;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 12px;
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11.5px;
   font-weight: 800;
 }
+
+.btn-action {
+  padding: 5px 11px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 12px;
+  transition: opacity 0.15s;
+}
+
+.btn-action:hover { opacity: 0.88; }
+.btn-action-primary { background: var(--royal-indigo-base); color: #ffffff; }
+.btn-action-success { background: #059669; color: #ffffff; }
+.btn-action-danger { background: #dc2626; color: #ffffff; }
 
 @media (max-width: 900px) {
   .dashboard-wrapper { flex-direction: column; }
   .sidebar { width: 100%; border-left: none; border-bottom: 1px solid rgba(255,255,255,0.08); }
-  .main-content { padding: 20px; }
+  .main-content { padding: 18px; }
 }

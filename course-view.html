@@ -6,18 +6,74 @@
   <title>هي كيميا ! - مشاهدة المحاضرات</title>
   <link rel="stylesheet" href="style.css">
   <style>
+    body {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
     .course-player-layout { display: grid; grid-template-columns: 1fr 340px; gap: 25px; max-width: 1220px; margin: 25px auto; padding: 0 20px; }
-    .video-wrapper { background: #000; border-radius: 14px; overflow: hidden; aspect-ratio: 16/9; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid var(--border-subtle); }
-    .video-wrapper iframe { width: 100%; height: 100%; border: none; }
-    .playlist-card { background: #fff; border-radius: 14px; border: 1px solid var(--border-subtle); padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
-    .playlist-item { padding: 12px; background: #F8FAFC; border-radius: 8px; margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between; }
-    .playlist-item.active { border: 1.5px solid var(--chem-gold); background: rgba(197, 136, 56, 0.08); }
-    .views-badge { background: rgba(197, 136, 56, 0.1); border: 1px solid var(--chem-gold); color: var(--chem-gold); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; }
+    
+    .video-secure-container {
+      position: relative;
+      background: #000;
+      border-radius: 14px;
+      overflow: hidden;
+      aspect-ratio: 16/9;
+      box-shadow: 0 10px 30px rgba(12,7,84,0.12);
+      border: 1px solid var(--border-subtle);
+    }
+    
+    .video-secure-container iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    .security-watermark {
+      position: absolute;
+      pointer-events: none;
+      user-select: none;
+      z-index: 999;
+      background: rgba(18, 16, 51, 0.45);
+      color: rgba(255, 255, 255, 0.65);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      backdrop-filter: blur(2px);
+      transition: all 1.2s ease-in-out;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      direction: ltr;
+    }
+
+    .screen-recording-shield {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: #070438;
+      color: #fff;
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .playlist-card { background: #fff; border-radius: 14px; border: 1px solid var(--border-subtle); padding: 20px; box-shadow: 0 4px 15px rgba(12,7,84,0.03); }
+    .playlist-item { padding: 12px; background: #F8F9FC; border-radius: 8px; margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between; }
+    .playlist-item.active { border: 1.5px solid var(--chem-gold); background: rgba(212, 175, 55, 0.08); }
+    .views-badge { background: rgba(212, 175, 55, 0.12); border: 1px solid var(--chem-gold); color: #9E7D1C; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; }
     .blocked-screen { display: none; text-align: center; padding: 60px 20px; background: #fff; border: 1px solid #EF4444; border-radius: 18px; max-width: 600px; margin: 60px auto; }
+    
     @media (max-width: 900px) { .course-player-layout { grid-template-columns: 1fr; } }
   </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
 
   <div class="navbar-capsule-wrapper">
     <nav class="navbar-capsule">
@@ -26,37 +82,50 @@
         <span class="brand-text">هي كيميا<span>!</span></span>
       </a>
       <div style="display:flex; align-items:center; gap:15px;">
-        <span class="views-badge" id="viewsDisplay">👁️ المتبقي لك: --</span>
-        <a href="dashboard.html" class="nav-btn-link">لوحة التحكم ↩</a>
+        <span class="views-badge" id="viewsDisplay">المشاهدة: --</span>
+        <a href="dashboard.html" class="nav-btn-link">لوحة التحكم</a>
       </div>
     </nav>
   </div>
 
   <div class="container">
     <div class="blocked-screen" id="blockedScreen">
-      <div style="font-size: 50px; margin-bottom: 15px;">🛑</div>
-      <h2 style="color: #EF4444; margin-bottom: 10px;">عذراً، لقد استنفدت عدد مرات الدخول المسموحة!</h2>
-      <p style="color: var(--text-muted); margin-bottom: 25px;">لقد بلغت الحد الأقصى لمشاهدة هذا الكورس. يرجى مراجعة المعلم أو الدعم الفني.</p>
+      <div style="font-size: 45px; margin-bottom: 15px;">🛑</div>
+      <h2 style="color: #EF4444; margin-bottom: 10px;">عذراً، لقد استنفدت عدد مرات الدخول المسموحة</h2>
+      <p style="color: var(--text-muted); margin-bottom: 25px;">لقد بلغت الحد الأقصى لمشاهدة هذا الكورس. يرجى مراجعة أ/ محمد السعيد أو فريق الدعم الفني.</p>
       <a href="dashboard.html" class="btn btn-primary">العودة للوحة التحكم</a>
     </div>
   </div>
 
   <div class="course-player-layout" id="playerLayout">
     <main>
-      <div class="video-wrapper">
+      <div class="video-secure-container" id="videoWrapper">
         <iframe id="mainPlayer" src="" allowfullscreen></iframe>
+        
+        <div class="security-watermark" id="dynamicWatermark">
+          <span id="wmUserName">طالب المنصة</span>
+          <span id="wmUserPhone">01xxxxxxxxx</span>
+        </div>
+
+        <div class="screen-recording-shield" id="recordingShield">
+          <div>
+            <h3 style="color:#f87171; margin-bottom:6px;">تم إيقاف العرض مؤقتاً</h3>
+            <p style="font-size:13px; color:#cbd5e1;">يرجى الرجوع لنافذة المنصة لمتابعة المشاهدة.</p>
+          </div>
+        </div>
       </div>
+
       <div style="margin-top: 20px;">
-        <h2 id="currentLessonTitle" style="color:var(--primary-navy); font-size:22px; font-weight:900;">جاري تحميل المحاضرة...</h2>
+        <h2 id="currentLessonTitle" style="color:var(--royal-indigo-base); font-size:22px; font-weight:900;">جاري تحميل المحاضرة...</h2>
         <p id="courseDesc" style="color:var(--text-muted); margin-top:8px; font-size:14px;"></p>
       </div>
     </main>
 
     <aside class="playlist-card">
-      <h3 style="color:var(--primary-navy); margin-bottom:15px; font-size:16px; font-weight:800;">فهرس المحاضرات</h3>
+      <h3 style="color:var(--royal-indigo-base); margin-bottom:15px; font-size:16px; font-weight:800;">فهرس المحاضرات</h3>
       <div id="lessonsList"></div>
       <div style="margin-top: 25px; border-top: 1px solid var(--border-subtle); padding-top: 15px;">
-        <a id="examLink" href="#" class="btn btn-primary" style="width: 100%; display: block; text-align: center;">📝 دخول امتحان الكورس</a>
+        <a id="examLink" href="#" class="btn btn-primary" style="width: 100%; display: block; text-align: center;">دخول امتحان الكورس</a>
       </div>
     </aside>
   </div>
@@ -71,9 +140,53 @@
     var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
     var course = courses.find(function(c) { return c.id == courseId; });
 
-    if (!course) { alert("الكورس غير متاح!"); window.location.href = "dashboard.html"; }
+    if (!course) { 
+      showToast("الكورس غير متاح حالياً", "error");
+      setTimeout(function() { window.location.href = "dashboard.html"; }, 1000);
+    }
 
-    var maxAllowed = Number(course.maxViews) || 5;
+    document.getElementById("wmUserName").innerText = user.fullName;
+    document.getElementById("wmUserPhone").innerText = user.studentPhone || user.email;
+
+    function moveWatermark() {
+      var wm = document.getElementById("dynamicWatermark");
+      var wrapper = document.getElementById("videoWrapper");
+      if (!wm || !wrapper) return;
+
+      var maxX = wrapper.clientWidth - wm.clientWidth - 20;
+      var maxY = wrapper.clientHeight - wm.clientHeight - 20;
+
+      var randX = Math.max(10, Math.floor(Math.random() * maxX));
+      var randY = Math.max(10, Math.floor(Math.random() * maxY));
+
+      wm.style.left = randX + "px";
+      wm.style.top = randY + "px";
+    }
+    setInterval(moveWatermark, 4000);
+    setTimeout(moveWatermark, 500);
+
+    window.addEventListener("blur", function() {
+      document.getElementById("recordingShield").style.display = "flex";
+    });
+    window.addEventListener("focus", function() {
+      document.getElementById("recordingShield").style.display = "none";
+    });
+
+    window.addEventListener("keydown", function(e) {
+      if (
+        e.key === "F12" || 
+        (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
+        (e.ctrlKey && (e.key === "u" || e.key === "U" || e.key === "s" || e.key === "S" || e.key === "p" || e.key === "P")) ||
+        e.key === "PrintScreen"
+      ) {
+        e.preventDefault();
+        showToast("غير مسموح بالتقاط صور أو تسجيل المحاضرات", "error");
+        return false;
+      }
+    });
+
+    var isUnlimited = course.maxViewsType === "unlimited" || !course.maxViews || Number(course.maxViews) === 0;
+    var maxAllowed = Number(course.maxViews) || 0;
     var users = JSON.parse(localStorage.getItem("edu_users")) || [];
     var uIdx = users.findIndex(function(u) { return u.email === user.email; });
 
@@ -83,11 +196,13 @@
       users[uIdx].courseAccessCount[courseId] = currentViews;
       localStorage.setItem("edu_users", JSON.stringify(users));
 
-      if (currentViews > maxAllowed) {
+      if (!isUnlimited && currentViews > maxAllowed) {
         document.getElementById("playerLayout").style.display = "none";
         document.getElementById("blockedScreen").style.display = "block";
       } else {
-        document.getElementById("viewsDisplay").innerText = "👁️ الدخول (" + currentViews + " من " + maxAllowed + ") | المتبقي: " + (maxAllowed - currentViews);
+        document.getElementById("viewsDisplay").innerText = isUnlimited 
+          ? "المشاهدة: مفتوحة (غير محدودة)" 
+          : "الدخول (" + currentViews + " من " + maxAllowed + ") | المتبقي: " + (maxAllowed - currentViews);
       }
     }
 
@@ -97,7 +212,7 @@
     var lessons = course.lessons || [];
     document.getElementById("lessonsList").innerHTML = lessons.map(function(l, idx) {
       return '<div class="playlist-item ' + (idx === 0 ? 'active' : '') + '" onclick="playLesson(\'' + l.videoUrl + '\', \'' + l.title + '\', this)">' +
-        '<div><h4 style="font-size:13px; color:var(--primary-navy); font-weight:800;">' + (idx + 1) + '. ' + l.title + '</h4><span style="font-size:11px; color:var(--text-muted);">⏱️ ' + l.duration + '</span></div>' +
+        '<div><h4 style="font-size:13px; color:var(--royal-indigo-base); font-weight:800;">' + (idx + 1) + '. ' + l.title + '</h4><span style="font-size:11px; color:var(--text-muted);">' + l.duration + '</span></div>' +
       '</div>';
     }).join('');
 

@@ -6,22 +6,22 @@
   <title>هي كيميا ! - إنشاء حسابك الآن</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    .auth-split-wrapper { display: grid; grid-template-columns: 420px 1fr; min-height: 580px; background: #fff; border-radius: var(--radius-lg); margin: 30px auto; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid var(--border-subtle); }
-    .auth-sidebar-banner { background: var(--primary-navy); padding: 40px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff; text-align: center; }
+    .auth-split-wrapper { display: grid; grid-template-columns: 420px 1fr; min-height: 580px; background: #fff; border-radius: var(--radius-lg); margin: 30px auto; overflow: hidden; box-shadow: 0 10px 30px rgba(12,7,84,0.06); border: 1px solid var(--border-subtle); }
+    .auth-sidebar-banner { background: var(--royal-indigo-base); padding: 40px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff; text-align: center; }
     .auth-main-form-area { padding: 45px 50px; display: flex; flex-direction: column; justify-content: center; }
     .stepper-header { display: flex; justify-content: space-between; position: relative; margin-bottom: 30px; }
     .stepper-header::before { content: ''; position: absolute; top: 18px; left: 30px; right: 30px; height: 2px; background: #E2E8F0; z-index: 1; }
     .step-item { position: relative; z-index: 2; text-align: center; background: #fff; padding: 0 8px; }
     .step-circle { width: 34px; height: 34px; border-radius: 50%; background: #F1F5F9; color: var(--text-muted); display: flex; align-items: center; justify-content: center; font-weight: 800; margin: 0 auto 6px; border: 2px solid #E2E8F0; }
-    .step-item.active .step-circle { background: var(--chem-gold); color: #fff; border-color: var(--chem-gold); }
+    .step-item.active .step-circle { background: var(--chem-gold); color: var(--royal-indigo-deep); border-color: var(--chem-gold); }
     .step-label { font-size: 11px; font-weight: 700; color: var(--text-muted); }
-    .step-item.active .step-label { color: var(--primary-navy); }
+    .step-item.active .step-label { color: var(--royal-indigo-base); }
     .wizard-step { display: none; }
     .wizard-step.active { display: block; }
     @media (max-width: 900px) { .auth-split-wrapper { grid-template-columns: 1fr; } .auth-sidebar-banner { display: none; } .auth-main-form-area { padding: 30px 20px; } }
   </style>
 </head>
-<body>
+<body style="display: flex; flex-direction: column; min-height: 100vh;">
 
   <div class="navbar-capsule-wrapper">
     <nav class="navbar-capsule">
@@ -33,13 +33,13 @@
     </nav>
   </div>
 
-  <div class="container">
+  <div class="container" style="flex: 1;">
     <div class="auth-split-wrapper">
       
       <div class="auth-sidebar-banner">
         <div class="capsule-logo" style="width:50px; height:50px; font-size:18px; margin-bottom:15px;">HK</div>
         <h3 style="font-size:22px; font-weight:900; color:#fff; margin-bottom:8px;">منصة هي كيميا !</h3>
-        <p style="font-size:13px; color:#94A3B8;">المنظومة المتخصصة لكيمياء الثانوية العامة والأزهر</p>
+        <p style="font-size:13px; color:#94A3B8;">مع الأستاذ محمد السعيد - ثانوية عامة وأزهر</p>
       </div>
 
       <div class="auth-main-form-area">
@@ -60,8 +60,8 @@
         </div>
 
         <div style="text-align:center; margin-bottom:20px;">
-          <h2 style="font-size:22px; font-weight:900; color:var(--primary-navy);">أنشئ حسابك الآن :</h2>
-          <p style="color:var(--text-muted); font-size:13px;">ادخل بياناتك بشكل صحيح لتفعيل الحساب</p>
+          <h2 style="font-size:22px; font-weight:900; color:var(--royal-indigo-base);">إنشاء حساب طالب جديد</h2>
+          <p style="color:var(--text-muted); font-size:13px;">ادخل بياناتك بشكل دقيق لتفعيل حسابك ومتابعة الحصص</p>
         </div>
 
         <form id="wizardRegisterForm">
@@ -142,7 +142,7 @@
 
             <div style="display:flex; gap:10px; margin-top:10px;">
               <button type="button" class="btn btn-outline" style="flex:1;" onclick="goToStep(2)">→ السابق</button>
-              <button type="submit" class="btn btn-gold" style="flex:2;">إنشاء الحساب والبدء 🚀</button>
+              <button type="submit" class="btn btn-gold" style="flex:2;">إنشاء الحساب</button>
             </div>
           </div>
 
@@ -152,6 +152,15 @@
     </div>
   </div>
 
+  <footer class="platform-footer" style="margin-top:auto;">
+    <div class="container">
+      <div class="footer-bottom-bar" style="border-top:none; padding-top:0;">
+        <p>© 2026 جميع الحقوق محفوظة لمنصة <strong>هي كيميا !</strong> - أ/ محمد السعيد</p>
+        <p>للدعم الفني والاستفسارات: <strong style="color:var(--chem-gold);">01012345678</strong></p>
+      </div>
+    </div>
+  </footer>
+
   <script src="app.js"></script>
   <script>
     function goToStep(stepNumber) {
@@ -160,13 +169,13 @@
         var lName = document.getElementById("regLastName").value.trim();
         var phone = document.getElementById("regStudentPhone").value.trim();
         if (!fName || !lName || !phone) {
-          alert("يرجى ملء الاسم ورقم الهاتف أولاً!");
+          showToast("يرجى إدخال الاسم بالكامل ورقم الهاتف أولاً", "error");
           return;
         }
       } else if (stepNumber === 3) {
         var school = document.getElementById("regSchoolName").value.trim();
         if (!school) {
-          alert("يرجى إدخال اسم مدرستك!");
+          showToast("يرجى إدخال اسم مدرستك لمتابعة التسجيل", "error");
           return;
         }
       }
@@ -186,7 +195,7 @@
       var passConf = document.getElementById("regPasswordConfirm").value;
 
       if (pass !== passConf) {
-        alert("❌ كلمة السر غير متطابقة!");
+        showToast("كلمة السر وتأكيدها غير متطابقين", "error");
         return;
       }
 
@@ -194,7 +203,7 @@
       var users = JSON.parse(localStorage.getItem("edu_users")) || [];
 
       if (users.some(function(u) { return u.email.toLowerCase() === email; })) {
-        alert("❌ هذا البريد الإلكتروني مسجل بالفعل!");
+        showToast("هذا البريد الإلكتروني مسجل بالفعل بحساب آخر", "error");
         return;
       }
 
@@ -214,8 +223,10 @@
 
       users.push(newUser);
       localStorage.setItem("edu_users", JSON.stringify(users));
-      alert("🎉 تم إنشاء حسابك بنجاح! يمكنك الآن تسجيل الدخول.");
-      window.location.href = "login.html";
+      showToast("تم إنشاء حسابك بنجاح، جاري تحويلك لصفحة الدخول", "success");
+      setTimeout(function() {
+        window.location.href = "login.html";
+      }, 1200);
     });
   </script>
 </body>

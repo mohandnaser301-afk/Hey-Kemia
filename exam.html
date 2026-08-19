@@ -7,11 +7,11 @@
   <link rel="stylesheet" href="style.css">
   <style>
     .exam-wrapper { max-width: 800px; margin: 40px auto; }
-    .question-card { background: #fff; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
-    .opt-label { display: flex; align-items: center; gap: 12px; background: #F8FAFC; border: 1px solid var(--border-subtle); padding: 14px 18px; border-radius: var(--radius-sm); margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
-    .opt-label:hover { border-color: var(--chem-gold); background: rgba(197, 136, 56, 0.08); }
+    .question-card { background: #fff; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(12,7,84,0.03); }
+    .opt-label { display: flex; align-items: center; gap: 12px; background: #F8F9FC; border: 1px solid var(--border-subtle); padding: 14px 18px; border-radius: var(--radius-sm); margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+    .opt-label:hover { border-color: var(--chem-gold); background: rgba(212, 175, 55, 0.08); }
     .timer-badge { background: rgba(239, 68, 68, 0.1); border: 1px solid #EF4444; color: #EF4444; padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 13px; }
-    .attempts-badge { background: rgba(197, 136, 56, 0.1); border: 1px solid var(--chem-gold); color: var(--chem-gold); padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 13px; }
+    .attempts-badge { background: rgba(212, 175, 55, 0.12); border: 1px solid var(--chem-gold); color: #9E7D1C; padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 13px; }
     .blocked-screen { display: none; text-align: center; padding: 50px 24px; background: #fff; border: 1px solid #EF4444; border-radius: 18px; max-width: 600px; margin: 60px auto; }
   </style>
 </head>
@@ -24,31 +24,31 @@
         <span class="brand-text">هي كيميا<span>!</span></span>
       </a>
       <div style="display:flex; align-items:center; gap:12px;">
-        <span class="attempts-badge" id="attemptsDisplay">🎯 المحاولة: --</span>
-        <span class="timer-badge" id="timerDisplay">⏱️ --:--</span>
-        <a href="dashboard.html" class="nav-btn-link">خروج ✕</a>
+        <span class="attempts-badge" id="attemptsDisplay">المحاولة: --</span>
+        <span class="timer-badge" id="timerDisplay">الوقت: --:--</span>
+        <a href="dashboard.html" class="nav-btn-link">خروج</a>
       </div>
     </nav>
   </div>
 
   <div class="container">
     <div class="blocked-screen" id="blockedScreen">
-      <div style="font-size: 52px; margin-bottom: 15px;">🛑</div>
-      <h2 style="color: #EF4444; margin-bottom: 12px; font-size: 22px;">عذراً، لقد استنفدت عدد المحاولات المسموحة لهذا الامتحان!</h2>
+      <div style="font-size: 48px; margin-bottom: 15px;">🛑</div>
+      <h2 style="color: #EF4444; margin-bottom: 12px; font-size: 22px;">عذراً، لقد استنفدت عدد المحاولات المسموحة لهذا الامتحان</h2>
       <p id="blockedDetails" style="color: var(--text-muted); font-size: 14px; margin-bottom: 25px; line-height: 1.8;"></p>
-      <a href="dashboard.html" class="btn btn-primary">العودة للوحة التحكم 📊</a>
+      <a href="dashboard.html" class="btn btn-primary">العودة للوحة التحكم</a>
     </div>
   </div>
 
   <div class="container exam-wrapper" id="examLayout">
     <div style="margin-bottom:25px; text-align:center;">
-      <h1 id="examTitle" style="color:var(--primary-navy); font-size:24px; font-weight:900; margin-bottom:6px;">جاري تحميل الامتحان...</h1>
+      <h1 id="examTitle" style="color:var(--royal-indigo-base); font-size:24px; font-weight:900; margin-bottom:6px;">جاري تحميل الامتحان...</h1>
       <p id="examSubDetails" style="color:var(--text-muted); font-size:14px;"></p>
     </div>
 
     <form id="examForm">
       <div id="questionsContainer"></div>
-      <button type="submit" class="btn btn-primary" style="width:100%; padding:14px; font-size:16px; margin-top:10px;">تسليم الإجابات واعتماد النتيجة 🚀</button>
+      <button type="submit" class="btn btn-primary" style="width:100%; padding:14px; font-size:16px; margin-top:10px;">تسليم الإجابات واعتماد النتيجة</button>
     </form>
   </div>
 
@@ -63,8 +63,8 @@
     var exam = exams.find(function(e) { return e.id == examId; }) || exams[0];
 
     if (!exam) {
-      alert("الامتحان غير متاح!");
-      window.location.href = "dashboard.html";
+      showToast("الامتحان غير متاح", "error");
+      setTimeout(function() { window.location.href = "dashboard.html"; }, 1000);
     }
 
     var maxAttempts = Number(exam.maxAttempts) || 1;
@@ -77,10 +77,10 @@
       document.getElementById("blockedScreen").style.display = "block";
       var highestScore = Math.max.apply(Math, myExamSubmissions.map(function(s) { return s.percentage; }));
       document.getElementById("blockedDetails").innerHTML = "الحد الأقصى المسموح به: <strong>" + maxAttempts + " محاولة</strong><br>عدد مرات خوضك للاختبار: <strong>" + usedAttempts + " مرات</strong><br>أعلى نسبة حققتها: <strong style='color:var(--chem-gold);'>" + highestScore + "%</strong>";
-      document.getElementById("attemptsDisplay").innerText = "🛑 المحاولات: (" + usedAttempts + "/" + maxAttempts + ")";
+      document.getElementById("attemptsDisplay").innerText = "المحاولات: (" + usedAttempts + "/" + maxAttempts + ")";
     } else {
       var currentAttemptNumber = usedAttempts + 1;
-      document.getElementById("attemptsDisplay").innerText = "🎯 المحاولة (" + currentAttemptNumber + " من " + maxAttempts + ")";
+      document.getElementById("attemptsDisplay").innerText = "المحاولة (" + currentAttemptNumber + " من " + maxAttempts + ")";
     }
 
     document.getElementById("examTitle").innerText = exam.title;
@@ -91,10 +91,10 @@
     var timerInterval = setInterval(function() {
       var mins = Math.floor(timeLeft / 60);
       var secs = timeLeft % 60;
-      timerElem.innerText = "⏱️ " + mins.toString().padStart(2, '0') + ":" + secs.toString().padStart(2, '0');
+      timerElem.innerText = "الوقت: " + mins.toString().padStart(2, '0') + ":" + secs.toString().padStart(2, '0');
       if (timeLeft <= 0) {
         clearInterval(timerInterval);
-        alert("⏱️ انتهى وقت الامتحان! سيتم تسليم إجاباتك تلقائياً.");
+        showToast("انتهى وقت الامتحان، تم تسليم إجاباتك تلقائياً", "info");
         document.getElementById("examForm").requestSubmit();
       }
       timeLeft--;
@@ -103,7 +103,7 @@
     var questions = exam.questions || [];
     document.getElementById("questionsContainer").innerHTML = questions.map(function(q, qIdx) {
       return '<div class="question-card">' +
-        '<h3 style="color:var(--primary-navy); font-size:16px; font-weight:800; margin-bottom:15px; line-height:1.6;">' + (qIdx + 1) + '. ' + q.q + '</h3>' +
+        '<h3 style="color:var(--royal-indigo-base); font-size:16px; font-weight:800; margin-bottom:15px; line-height:1.6;">' + (qIdx + 1) + '. ' + q.q + '</h3>' +
         '<div>' +
           q.options.map(function(opt, oIdx) {
             return '<label class="opt-label">' +
@@ -144,8 +144,10 @@
       });
       localStorage.setItem("edu_submissions", JSON.stringify(allSubs));
 
-      alert("🎉 تم إنهاء الامتحان بنجاح!\nالدرجة: " + score + " من " + total + " (" + percentage + "%)\nالمحاولات المستهلكة: " + (usedAttempts + 1) + " من " + maxAttempts);
-      window.location.href = "dashboard.html";
+      showToast("الدرجة: " + score + " من " + total + " (" + percentage + "%)", "success", "تم إنهاء الامتحان");
+      setTimeout(function() {
+        window.location.href = "dashboard.html";
+      }, 1500);
     });
   </script>
 </body>

@@ -8,10 +8,9 @@
 </head>
 <body>
 
-  <!-- النافبار الكبسولي المعلق -->
+  <!-- النافبار الكبسولي -->
   <div class="navbar-capsule-wrapper">
     <nav class="navbar-capsule">
-      
       <a href="index.html" class="capsule-brand">
         <div class="capsule-logo">HK</div>
         <span class="brand-text">هي كيميا<span>!</span></span>
@@ -20,6 +19,7 @@
       <div class="capsule-links">
         <a href="#hero">الرئيسية</a>
         <a href="#courses">الكورسات المتاحة</a>
+        <a href="#honorRoll">لوحة الشرف</a>
         <a href="https://wa.me/201000000000" target="_blank">حجز السنتر</a>
         <a href="support.html">الدعم الفني</a>
       </div>
@@ -28,10 +28,8 @@
     </nav>
   </div>
 
-  <!-- الهيرو مع الزخارف الكيميائية المكثفة -->
+  <!-- الهيرو الملكي -->
   <section id="hero" class="hero-editorial-stage">
-    
-    <!-- خلفية الرموز والمعادلات الكيميائية الكثيفة والمتنوعة -->
     <div class="chem-watermark-bg">
       <span>Fe</span> <span>H₂SO₄</span> <span>⬡</span> <span>KMnO₄</span> <span>C₆H₆</span> <span>Cu</span> <span>Δ</span> <span>NaCl</span>
       <span>HCl</span> <span>Sc³⁺</span> <span>O₂</span> <span>Fe₂O₃</span> <span>CH₄</span> <span>ZnSO₄</span> <span>⚡</span> <span>HNO₃</span>
@@ -40,7 +38,6 @@
       <span>NH₃</span> <span>CH₃COOH</span> <span>CuSO₄</span> <span>MnO₂</span> <span>BaSO₄</span> <span>⬢</span> <span>NO₂</span> <span>FeSO₄</span>
     </div>
 
-    <!-- ترويسة مرحباً والعناوين -->
     <div class="hero-top-text">
       <div class="welcome-pill-wrapper">
         <span class="welcome-sparks">///</span>
@@ -51,10 +48,7 @@
       <h2 class="hero-sub-title">أستاذ/ <span>محمد السعيد</span></h2>
     </div>
 
-    <!-- البطاقات الجانبية المتوازنة -->
     <div class="hero-side-widgets">
-      
-      <!-- اليمين: التقييم والخبرة -->
       <div class="widget-right">
         <div class="rating-stars">★★★★★</div>
         <div class="exp-years">أكثر من</div>
@@ -62,21 +56,17 @@
         <div class="exp-label">خبرة وتدريس كيمياء الثانوية</div>
       </div>
 
-      <!-- اليسار: التخصص والرسالة -->
       <div class="widget-left">
         <div class="quote-symbol">“</div>
         <div class="quote-text">منصة متخصصة في كيمياء الثانوية العامة والأزهر</div>
       </div>
-
     </div>
 
-    <!-- القوس مع صورة أستاذ محمد السعيد كاملة ومفرغة -->
     <div class="teacher-arch-wrapper">
       <div class="teacher-arch-stage">
         <img id="heroTeacherImg" src="teacher_clean_cutout.png" alt="أستاذ محمد السعيد" class="teacher-cutout-img">
       </div>
     </div>
-
   </section>
 
   <!-- شريط الإحصائيات -->
@@ -101,11 +91,21 @@
     </div>
   </section>
 
+  <!-- قسم لوحة شرف أوائل الشهر -->
+  <section id="honorRoll" class="honor-roll-section container">
+    <div style="text-align:center; margin-bottom:10px;">
+      <span style="color:var(--chem-gold); font-size:12px; font-weight:800; background:var(--chem-gold-soft); padding:4px 14px; border-radius:20px;">لوحة التميز الأكاديمي</span>
+      <h2 style="font-size:24px; font-weight:900; color:var(--royal-indigo-base); margin-top:8px;">أوائل امتحانات الشهر</h2>
+      <p style="color:var(--text-muted); font-size:13.5px;">تكريم الطلاب الحاصلين على أعلى معدلات تراكمية (80% فأعلى) في تقييمات المنصة</p>
+    </div>
+    <div id="honorPodiumContainer" class="honor-podium-grid"></div>
+  </section>
+
   <!-- الكورسات المتاحة -->
   <section id="courses" style="padding: 30px 0 50px;">
     <div class="container">
       <div style="margin-bottom: 24px; text-align:right;">
-        <h2 style="font-size: 26px; font-weight: 900; color: var(--primary-navy);">المناهج والكورسات المتاحة</h2>
+        <h2 style="font-size: 26px; font-weight: 900; color: var(--royal-indigo-base);">المناهج والكورسات المتاحة</h2>
         <p style="color: var(--text-muted); font-size: 14px;">اختر الكورس وابدأ فوراً في مشاهدة المحاضرات وحل الاختبارات</p>
       </div>
       <div class="courses-grid-layout" id="coursesListContainer"></div>
@@ -116,7 +116,7 @@
   <section id="faq" style="padding: 20px 0 40px;">
     <div class="container">
       <div style="margin-bottom: 20px; text-align:right;">
-        <h2 style="font-size: 24px; font-weight: 900; color: var(--primary-navy);">الأسئلة الشائعة</h2>
+        <h2 style="font-size: 24px; font-weight: 900; color: var(--royal-indigo-base);">الأسئلة الشائعة</h2>
         <p style="color: var(--text-muted); font-size: 14px;">إجابات عن أكثر الاستفسارات الخاصة بالاشتراك والمشاهدة</p>
       </div>
       <div id="faqContainer" style="display:flex; flex-direction:column; gap:10px;"></div>
@@ -124,7 +124,7 @@
   </section>
 
   <!-- بانر التسجيل -->
-  <div class="container">
+  <div class="container" id="bottomCtaContainer">
     <section id="bottomCtaSection" class="cta-banner-bottom">
       <h2>جاهز تقفل الكيمياء مع أ/ محمد السعيد؟</h2>
       <p style="margin-bottom:24px; opacity:0.9; font-size:15px;">أنشئ حسابك الآن وابدأ مشاهدة المحاضرات الأولى فوراً</p>
@@ -132,10 +132,56 @@
     </section>
   </div>
 
-  <!-- الفوتر -->
-  <footer style="background:#fff; border-top:1px solid var(--border-subtle); padding:30px 0; text-align:center; color:var(--text-muted); font-size:13px; margin-top:40px;">
+  <!-- الفوتر وقسم الحقوق والتواصل -->
+  <footer class="platform-footer">
     <div class="container">
-      <p>© 2026 جميع الحقوق محفوظة لمنصة <strong>هي كيميا !</strong> - أستاذ محمد السعيد 🧪</p>
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <h3>هي كيميا<span>!</span></h3>
+          <p>المنظومة التعليمية المتخصصة في شرح وتأسيس كيمياء الثانوية العامة والأزهر مع الأستاذ محمد السعيد.</p>
+        </div>
+
+        <div class="footer-links-col">
+          <h4>روابط هامة</h4>
+          <ul class="footer-links-list">
+            <li><a href="#hero">الرئيسية</a></li>
+            <li><a href="#courses">الكورسات المتاحة</a></li>
+            <li><a href="#honorRoll">لوحة الشرف</a></li>
+            <li><a href="#faq">الأسئلة الشائعة</a></li>
+            <li><a href="login.html">تسجيل الدخول</a></li>
+            <li><a href="register.html">إنشاء حساب جديد</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-contact-col">
+          <h4>تواصل معنا والدعم الفني</h4>
+          <ul class="footer-contact-list">
+            <li>
+              <a href="https://wa.me/201012345678" target="_blank" class="contact-item-box">
+                <div class="contact-icon-circle">💬</div>
+                <div class="contact-info-text">
+                  <span>واتساب واستفسارات السنتر</span>
+                  <strong>01012345678</strong>
+                </div>
+              </a>
+            </li>
+            <li>
+              <a href="tel:01098765432" class="contact-item-box">
+                <div class="contact-icon-circle">📞</div>
+                <div class="contact-info-text">
+                  <span>الدعم الفني والشكاوى</span>
+                  <strong>01098765432</strong>
+                </div>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom-bar">
+        <p>© 2026 جميع الحقوق محفوظة لمنصة <strong>هي كيميا !</strong> - أ/ محمد السعيد 🧪</p>
+        <p>تصميم وتطوير بأعلى معايير الحماية والأداء التعليمي</p>
+      </div>
     </div>
   </footer>
 
@@ -147,7 +193,66 @@
       if (icon) icon.innerText = el.classList.contains("active") ? "−" : "+";
     }
 
+    function renderHonorRoll() {
+      var submissions = JSON.parse(localStorage.getItem("edu_submissions")) || [];
+      var users = JSON.parse(localStorage.getItem("edu_users")) || [];
+      var container = document.getElementById("honorPodiumContainer");
+
+      var studentAverages = {};
+      submissions.forEach(function(sub) {
+        if (!studentAverages[sub.userEmail]) {
+          studentAverages[sub.userEmail] = {
+            name: sub.userName,
+            email: sub.userEmail,
+            totalPercent: 0,
+            count: 0
+          };
+        }
+        studentAverages[sub.userEmail].totalPercent += Number(sub.percentage) || 0;
+        studentAverages[sub.userEmail].count += 1;
+      });
+
+      var topStudents = Object.keys(studentAverages).map(function(email) {
+        var s = studentAverages[email];
+        var u = users.find(function(user) { return user.email === email; });
+        return {
+          name: s.name,
+          email: s.email,
+          gov: u ? (u.governorate || "محافظة كفر الشيخ") : "مصر",
+          average: Math.round(s.totalPercent / s.count)
+        };
+      })
+      .filter(function(st) { return st.average >= 80; })
+      .sort(function(a, b) { return b.average - a.average; })
+      .slice(0, 3);
+
+      if (topStudents.length === 0) {
+        container.innerHTML = '<div style="background:#ffffff; border:1px dashed var(--border-subtle); padding:30px; border-radius:12px; text-align:center; color:var(--text-muted); font-size:14px; width:100%; max-width:500px;">لم يحقق أي طالب الحد الأدنى للوحة الشرف (80%) لهذا الشهر بعد.<br>استعد للاختبارات القادمة لتكون أول المكرمين!</div>';
+        return;
+      }
+
+      var rankLabels = ["الأول", "الثاني", "الثالث"];
+      container.innerHTML = topStudents.map(function(st, idx) {
+        var rankClass = "rank-" + (idx + 1);
+        return '<div class="honor-card ' + rankClass + '">' +
+          '<div class="honor-badge-icon">' + (idx + 1) + '</div>' +
+          '<div style="font-size:12px; font-weight:800; color:var(--chem-gold); margin-bottom:4px;">المركز ' + rankLabels[idx] + '</div>' +
+          '<h3 class="honor-student-name">' + st.name + '</h3>' +
+          '<div class="honor-student-gov">' + st.gov + '</div>' +
+          '<div class="honor-score-pill">' + st.average + '% المعدل العام</div>' +
+        '</div>';
+      }).join('');
+    }
+
     document.addEventListener("DOMContentLoaded", function() {
+      var user = getCurrentUser();
+      var ctaContainer = document.getElementById("bottomCtaContainer");
+      if (user && ctaContainer) {
+        ctaContainer.style.display = "none";
+      }
+
+      renderHonorRoll();
+
       var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
       var container = document.getElementById("coursesListContainer");
 
@@ -155,15 +260,35 @@
         container.innerHTML = '<p style="color:var(--text-muted); padding:20px;">لا توجد كورسات متاحة حالياً.</p>';
       } else {
         container.innerHTML = courses.map(function(c) {
+          var isEnrolled = user && user.enrolledCourses && user.enrolledCourses.includes(c.id);
+          var isFreeCourse = c.isFree || Number(c.price) === 0;
+
+          var actionButton = isEnrolled
+            ? '<a href="course-view.html?id=' + c.id + '" class="btn" style="background:#059669; color:#fff; padding:8px 18px; font-size:13px;">أنت مشترك بالفعل — دخول المحاضرات</a>'
+            : (isFreeCourse 
+                ? '<button onclick="handleEnrollClick(\'' + c.id + '\')" class="btn btn-gold" style="padding:8px 18px; font-size:13px;">اشتراك مجاني فوري</button>'
+                : '<button onclick="handleEnrollClick(\'' + c.id + '\')" class="btn btn-primary" style="padding:8px 18px; font-size:13px;">الاشتراك في الكورس</button>');
+
+          var priceLabel = isFreeCourse 
+            ? '<span style="color:#059669; font-weight:900; font-size:20px;">مجاني</span>' 
+            : '<span>' + c.price + ' ج.م</span>';
+
+          var viewsBadge = (c.maxViewsType === 'unlimited' || !c.maxViews || Number(c.maxViews) === 0) 
+            ? 'مشاهدة مفتوحة' 
+            : (c.maxViews + ' مرات دخول');
+
           return '<div class="course-clean-card">' +
             '<img src="' + (c.image || 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80') + '" class="course-clean-img" alt="' + c.title + '">' +
             '<div class="course-clean-body">' +
-              '<span class="course-clean-tag">' + (c.tag || 'الصف الثالث الثانوي') + '</span>' +
-              '<h3 style="font-size:18px; font-weight:800; margin-bottom:8px; color:var(--primary-navy);">' + c.title + '</h3>' +
+              '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">' +
+                '<span class="course-clean-tag">' + (c.tag || 'الصف الثالث الثانوي') + '</span>' +
+                '<span style="font-size:11.5px; color:var(--text-muted); font-weight:700;">' + viewsBadge + '</span>' +
+              '</div>' +
+              '<h3 style="font-size:18px; font-weight:800; margin-bottom:8px; color:var(--royal-indigo-base);">' + c.title + '</h3>' +
               '<p style="color:var(--text-muted); font-size:13px; margin-bottom:18px;">' + c.desc + '</p>' +
               '<div class="course-clean-price">' +
-                '<span>' + c.price + ' ج.م</span>' +
-                '<button onclick="handleEnrollClick(\'' + c.id + '\')" class="btn btn-primary" style="padding:8px 18px; font-size:13px;">الاشتراك في الكورس</button>' +
+                priceLabel +
+                actionButton +
               '</div>' +
             '</div>' +
           '</div>';

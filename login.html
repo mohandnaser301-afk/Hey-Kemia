@@ -14,14 +14,14 @@
         <div class="capsule-logo">HK</div>
         <span class="brand-text">هي كيميا<span>!</span></span>
       </a>
-      <a href="index.html" class="nav-btn-link">الرئيسية ↩</a>
+      <a href="index.html" class="nav-btn-link">الرئيسية</a>
     </nav>
   </div>
 
   <div class="container" style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 0;">
     <div class="form-container" style="max-width: 440px; width: 100%;">
-      <h2 style="font-size: 22px; font-weight: 900; text-align: center; color: var(--primary-navy); margin-bottom: 6px;">تسجيل الدخول للمنصة 👋</h2>
-      <p style="color: var(--text-muted); font-size: 13px; text-align: center; margin-bottom: 25px;">ادخل بيانات حسابك للوصول إلى المحاضرات والامتحانات</p>
+      <h2 style="font-size: 22px; font-weight: 900; text-align: center; color: var(--royal-indigo-base); margin-bottom: 6px;">تسجيل الدخول للمنصة</h2>
+      <p style="color: var(--text-muted); font-size: 13px; text-align: center; margin-bottom: 25px;">منظومة الكيمياء للأستاذ محمد السعيد</p>
 
       <form id="loginForm">
         <div class="form-group">
@@ -34,7 +34,7 @@
           <input type="password" id="loginPassword" placeholder="••••••••" required>
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 10px;">تسجيل الدخول 🚀</button>
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 10px;">تسجيل الدخول</button>
       </form>
 
       <div style="text-align: center; margin-top: 20px; border-top: 1px solid var(--border-subtle); padding-top: 15px;">
@@ -44,6 +44,15 @@
       </div>
     </div>
   </div>
+
+  <footer class="platform-footer" style="margin-top:auto;">
+    <div class="container">
+      <div class="footer-bottom-bar" style="border-top:none; padding-top:0;">
+        <p>© 2026 جميع الحقوق محفوظة لمنصة <strong>هي كيميا !</strong> - أ/ محمد السعيد</p>
+        <p>للدعم الفني والاستفسارات: <strong style="color:var(--chem-gold);">01012345678</strong></p>
+      </div>
+    </div>
+  </footer>
 
   <script src="app.js"></script>
   <script>
@@ -57,7 +66,7 @@
 
       if (!user && emailInput === "superadmin@platform.com" && passInput === "admin123") {
         user = {
-          fullName: "أستاذ المادة (المشرف العام)",
+          fullName: "أ/ محمد السعيد (المشرف العام)",
           email: "superadmin@platform.com",
           role: "SUPER_ADMIN",
           governorate: "كفر الشيخ",
@@ -66,23 +75,26 @@
       }
 
       if (!user) {
-        alert("❌ البريد الإلكتروني أو كلمة المرور غير صحيحة!");
+        showToast("البريد الإلكتروني أو كلمة المرور غير صحيحة", "error", "فشل تسجيل الدخول");
         return;
       }
 
       localStorage.setItem("current_user", JSON.stringify(user));
       logAdminAction("تسجيل دخول", "قام " + user.fullName + " (" + user.role + ") بالدخول للمنصة.");
+      showToast("مرحباً بك مجدداً يا " + user.fullName.split(' ')[0], "success", "تم تسجيل الدخول");
 
-      var redirect = new URLSearchParams(window.location.search).get("redirect");
-      if (redirect) {
-        window.location.href = redirect;
-      } else if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") {
-        window.location.href = "admin.html";
-      } else if (user.role === "SUPPORT") {
-        window.location.href = "support.html";
-      } else {
-        window.location.href = "dashboard.html";
-      }
+      setTimeout(function() {
+        var redirect = new URLSearchParams(window.location.search).get("redirect");
+        if (redirect) {
+          window.location.href = redirect;
+        } else if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") {
+          window.location.href = "admin.html";
+        } else if (user.role === "SUPPORT") {
+          window.location.href = "support.html";
+        } else {
+          window.location.href = "dashboard.html";
+        }
+      }, 800);
     });
   </script>
 </body>
