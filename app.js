@@ -97,7 +97,106 @@ function initPlatformDatabase() {
 }
 initPlatformDatabase();
 
-// نظام الإشعارات العائمة
+// إعداد وحقن معمل اللودينج الكيميائي وتشغيله لمدة 3 ثوانٍ كاملة
+function injectChemicalPreloader() {
+  if (document.getElementById("chemicalPreloader")) return;
+
+  var preloader = document.createElement("div");
+  preloader.id = "chemicalPreloader";
+  preloader.innerHTML = 
+    '<div class="lab-stage-container">' +
+      '<div class="atomic-ring-1"><div class="electron-dot"></div></div>' +
+      '<div class="atomic-ring-2"><div class="electron-dot"></div></div>' +
+      '<div class="test-tube left-tube"><div class="tube-liquid"></div></div>' +
+      '<div class="test-tube right-tube"><div class="tube-liquid"></div></div>' +
+      '<div class="flask-steam"></div>' +
+      '<div class="main-flask-neck"></div>' +
+      '<div class="main-flask-box">' +
+        '<div class="flask-liquid-core"></div>' +
+        '<div class="lab-bubble"></div>' +
+        '<div class="lab-bubble"></div>' +
+        '<div class="lab-bubble"></div>' +
+        '<div class="lab-bubble"></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="loader-brand-title">منصة هي كيميا<span>!</span></div>' +
+    '<div class="loader-dynamic-phrase" id="loaderDynamicPhrase">جاري تحضير المحاليل والتفاعلات...</div>' +
+    '<div class="loader-counter-num" id="loaderCounterNum">0%</div>' +
+    '<div class="loader-bar-outer"><div class="loader-bar-inner" id="loaderBarFill"></div></div>';
+
+  document.body.prepend(preloader);
+
+  var startTime = Date.now();
+  var duration = 3000;
+  var barFill = document.getElementById("loaderBarFill");
+  var counterNum = document.getElementById("loaderCounterNum");
+  var phraseElem = document.getElementById("loaderDynamicPhrase");
+
+  var phrases = [
+    { at: 0, text: "جاري تحضير المحاليل والتفاعلات الكيميائية..." },
+    { at: 35, text: "تجهيز نواتج التعلم وتدريبات أ/ محمد السعيد..." },
+    { at: 75, text: "اكتمال التفاعل.. أهلاً بك في المنظومة!" }
+  ];
+
+  var timer = setInterval(function() {
+    var elapsed = Date.now() - startTime;
+    var progress = Math.min(100, Math.round((elapsed / duration) * 100));
+
+    if (barFill) barFill.style.width = progress + "%";
+    if (counterNum) counterNum.innerText = progress + "%";
+
+    if (phraseElem) {
+      if (progress >= 75) phraseElem.innerText = phrases[2].text;
+      else if (progress >= 35) phraseElem.innerText = phrases[1].text;
+      else phraseElem.innerText = phrases[0].text;
+    }
+
+    if (progress >= 100) {
+      clearInterval(timer);
+      setTimeout(function() {
+        preloader.classList.add("hide-preloader");
+      }, 150);
+    }
+  }, 30);
+}
+
+// تحويل انتقالات الروابط
+function initPageTransitionAnimations() {
+  document.addEventListener("click", function(e) {
+    var target = e.target.closest("a");
+    if (!target) return;
+
+    var href = target.getAttribute("href");
+    if (
+      href && 
+      !href.startsWith("#") && 
+      !href.startsWith("javascript") && 
+      !href.startsWith("tel:") && 
+      !href.startsWith("mailto:") && 
+      !href.startsWith("https://wa.me") && 
+      target.getAttribute("target") !== "_blank"
+    ) {
+      var preloader = document.getElementById("chemicalPreloader");
+      if (preloader) {
+        e.preventDefault();
+        preloader.classList.remove("hide-preloader");
+        var barFill = document.getElementById("loaderBarFill");
+        var counterNum = document.getElementById("loaderCounterNum");
+        if (barFill) barFill.style.width = "40%";
+        if (counterNum) counterNum.innerText = "40%";
+
+        setTimeout(function() {
+          if (barFill) barFill.style.width = "100%";
+          if (counterNum) counterNum.innerText = "100%";
+          setTimeout(function() {
+            window.location.href = href;
+          }, 200);
+        }, 600);
+      }
+    }
+  });
+}
+
 function showToast(message, type, title) {
   type = type || "info";
   title = title || (type === "success" ? "تم بنجاح" : type === "error" ? "تنبيه" : "معلومات");
@@ -190,7 +289,6 @@ function updateNavbarAndAuthGuards() {
   }
 }
 
-// معالجة الاشتراك الفوري للكورسات المجانية أو التحويل للدفع للمدفوعة
 function handleEnrollClick(courseId) {
   var user = getCurrentUser();
   if (!user) {
@@ -236,5 +334,7 @@ function handleEnrollClick(courseId) {
 }
 
 document.addEventListener("DOMContentLoaded", function() {
+  injectChemicalPreloader();
+  initPageTransitionAnimations();
   updateNavbarAndAuthGuards();
 });
