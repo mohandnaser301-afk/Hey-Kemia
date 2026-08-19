@@ -1,4 +1,42 @@
-// --- المحرك البرمجي لمنصة هي كيميا ! ---
+// --- المحرك البرمجي وحصن الأمان لمنصة هي كيميا ! ---
+
+// 1. نظام الحماية وسد ثغرات المتصفح وحقن الأكواد (Anti-XSS Sanitizer)
+function sanitizeText(str) {
+  if (!str) return "";
+  var temp = document.createElement("div");
+  temp.textContent = str;
+  return temp.innerHTML;
+}
+
+// 2. التحقق من سلامة الجلسة ومنع تزوير الصلاحيات بالـ LocalStorage (Tamper Protection)
+function verifySessionIntegrity() {
+  var user = getCurrentUser();
+  if (!user) return;
+
+  var users = JSON.parse(localStorage.getItem("edu_users")) || [];
+  var dbUser = users.find(function(u) { return u.email === user.email; });
+
+  // إذا تم التلاعب بالرتبة من المتصفح، يتم تصحيحها تلقائياً بالمرجع الحقيقي
+  if (dbUser && user.role !== dbUser.role) {
+    user.role = dbUser.role;
+    localStorage.setItem("current_user", JSON.stringify(user));
+  }
+}
+
+// 3. كاشف فتح أدوات المطورين ومحاولات الفحص البرمجي (Anti-DevTools Shield)
+function initSecurityGuards() {
+  document.addEventListener("keydown", function(e) {
+    if (
+      e.key === "F12" || 
+      (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "i" || e.key === "J" || e.key === "j" || e.key === "C" || e.key === "c")) ||
+      (e.ctrlKey && (e.key === "u" || e.key === "U" || e.key === "s" || e.key === "S"))
+    ) {
+      if (!window.location.pathname.includes("admin.html")) {
+        e.preventDefault();
+      }
+    }
+  });
+}
 
 function initPlatformDatabase() {
   var users = JSON.parse(localStorage.getItem("edu_users")) || [];
@@ -89,17 +127,20 @@ function initPlatformDatabase() {
   if (!localStorage.getItem("edu_payments")) localStorage.setItem("edu_payments", JSON.stringify([]));
   if (!localStorage.getItem("edu_submissions")) localStorage.setItem("edu_submissions", JSON.stringify([]));
   if (!localStorage.getItem("edu_live_chats")) localStorage.setItem("edu_live_chats", JSON.stringify([]));
+  if (!localStorage.getItem("edu_course_watch_logs")) localStorage.setItem("edu_course_watch_logs", JSON.stringify({}));
   if (!localStorage.getItem("edu_activity_logs")) {
     localStorage.setItem("edu_activity_logs", JSON.stringify([
-      { id: Date.now(), actorName: "أ/ محمد السعيد", actorRole: "SUPER_ADMIN", actionType: "تهيئة المنصة", details: "تم تشغيل منصة هي كيميا بنجاح.", timestamp: new Date().toLocaleString('ar-EG') }
+      { id: Date.now(), actorName: "أ/ محمد السعيد", actorRole: "SUPER_ADMIN", actionType: "تهيئة المنصة", details: "تم تشغيل منصة هي كيميا بنجاح مع تفعيل بروتوكولات الحماية.", timestamp: new Date().toLocaleString('ar-EG') }
     ]));
   }
 }
 initPlatformDatabase();
 
-// إعداد وحقن معمل اللودينج الكيميائي وتشغيله لمدة 3 ثوانٍ كاملة
+// إعداد اللودينج وتشغيله لمرة واحدة فقط لمدة 3 ثوانٍ
+var preloaderActive = false;
 function injectChemicalPreloader() {
-  if (document.getElementById("chemicalPreloader")) return;
+  if (document.getElementById("chemicalPreloader") || preloaderActive) return;
+  preloaderActive = true;
 
   var preloader = document.createElement("div");
   preloader.id = "chemicalPreloader";
@@ -155,46 +196,10 @@ function injectChemicalPreloader() {
       clearInterval(timer);
       setTimeout(function() {
         preloader.classList.add("hide-preloader");
+        setTimeout(function() { preloader.remove(); }, 600);
       }, 150);
     }
   }, 30);
-}
-
-// تحويل انتقالات الروابط
-function initPageTransitionAnimations() {
-  document.addEventListener("click", function(e) {
-    var target = e.target.closest("a");
-    if (!target) return;
-
-    var href = target.getAttribute("href");
-    if (
-      href && 
-      !href.startsWith("#") && 
-      !href.startsWith("javascript") && 
-      !href.startsWith("tel:") && 
-      !href.startsWith("mailto:") && 
-      !href.startsWith("https://wa.me") && 
-      target.getAttribute("target") !== "_blank"
-    ) {
-      var preloader = document.getElementById("chemicalPreloader");
-      if (preloader) {
-        e.preventDefault();
-        preloader.classList.remove("hide-preloader");
-        var barFill = document.getElementById("loaderBarFill");
-        var counterNum = document.getElementById("loaderCounterNum");
-        if (barFill) barFill.style.width = "40%";
-        if (counterNum) counterNum.innerText = "40%";
-
-        setTimeout(function() {
-          if (barFill) barFill.style.width = "100%";
-          if (counterNum) counterNum.innerText = "100%";
-          setTimeout(function() {
-            window.location.href = href;
-          }, 200);
-        }, 600);
-      }
-    }
-  });
 }
 
 function showToast(message, type, title) {
@@ -212,8 +217,8 @@ function showToast(message, type, title) {
   toast.className = "toast-notification " + type;
   toast.innerHTML = 
     '<div class="toast-content">' +
-      '<span class="toast-title">' + title + '</span>' +
-      '<span class="toast-message">' + message + '</span>' +
+      '<span class="toast-title">' + sanitizeText(title) + '</span>' +
+      '<span class="toast-message">' + sanitizeText(message) + '</span>' +
     '</div>' +
     '<button class="toast-close" onclick="this.parentElement.remove()">✕</button>';
 
@@ -231,10 +236,10 @@ function logAdminAction(actionType, details) {
   var logs = JSON.parse(localStorage.getItem("edu_activity_logs")) || [];
   logs.unshift({
     id: Date.now(),
-    actorName: user.fullName,
-    actorRole: user.role,
-    actionType: actionType,
-    details: details,
+    actorName: sanitizeText(user.fullName),
+    actorRole: sanitizeText(user.role),
+    actionType: sanitizeText(actionType),
+    details: sanitizeText(details),
     timestamp: new Date().toLocaleString('ar-EG')
   });
   localStorage.setItem("edu_activity_logs", JSON.stringify(logs));
@@ -251,6 +256,7 @@ function logout() {
 }
 
 function updateNavbarAndAuthGuards() {
+  verifySessionIntegrity();
   var user = getCurrentUser();
   var currentPath = window.location.pathname.toLowerCase();
 
@@ -269,14 +275,14 @@ function updateNavbarAndAuthGuards() {
   if (authBox) {
     if (user) {
       if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") {
-        authBox.innerHTML = '<a href="admin.html" class="nav-btn-primary">لوحة الإدارة</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
+        authBox.innerHTML = '<a href="admin.html" class="nav-btn-primary">لوحة الإدارة</a><button onclick="logout()" class="nav-btn-link">خروج</button>';
       } else if (user.role === "SUPPORT") {
-        authBox.innerHTML = '<a href="support.html" class="nav-btn-primary">شات الدعم</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
+        authBox.innerHTML = '<a href="support.html" class="nav-btn-primary">شات الدعم</a><button onclick="logout()" class="nav-btn-link">خروج</button>';
       } else {
-        authBox.innerHTML = '<a href="dashboard.html" class="nav-btn-primary">لوحة الطالب (' + user.fullName.split(' ')[0] + ')</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
+        authBox.innerHTML = '<a href="dashboard.html" class="nav-btn-primary">لوحة الطالب (' + sanitizeText(user.fullName.split(' ')[0]) + ')</a><button onclick="logout()" class="nav-btn-link">خروج</button>';
       }
     } else {
-      authBox.innerHTML = '<a href="login.html" class="nav-btn-link">تسجيل الدخول</a><a href="register.html" class="nav-btn-primary">حساب جديد</a>';
+      authBox.innerHTML = '<a href="login.html" class="nav-btn-link">دخول</a><a href="register.html" class="nav-btn-primary">حساب جديد</a>';
     }
   }
 
@@ -334,7 +340,7 @@ function handleEnrollClick(courseId) {
 }
 
 document.addEventListener("DOMContentLoaded", function() {
+  initSecurityGuards();
   injectChemicalPreloader();
-  initPageTransitionAnimations();
   updateNavbarAndAuthGuards();
 });

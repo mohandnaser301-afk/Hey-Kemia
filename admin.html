@@ -9,8 +9,8 @@
   <style>
     .tab-content-section { display: none; }
     .tab-content-section.active { display: block; }
-    .modal { display: none; position: fixed; inset: 0; background: rgba(18, 16, 51, 0.75); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
-    .modal-content { background: #fff; color: #191b26; border: 1px solid var(--border-subtle); padding: 26px; border-radius: 16px; max-width: 780px; width: 92%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(8, 10, 33, 0.8); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(10px); }
+    .modal-content { background: #fff; color: #191b26; border: 1px solid var(--border-subtle); padding: 26px; border-radius: 16px; max-width: 800px; width: 92%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.25); }
     
     .charts-grid {
       display: grid;
@@ -19,11 +19,12 @@
       margin-bottom: 24px;
     }
     .chart-card {
-      background: #ffffff;
+      background: var(--bg-card);
+      backdrop-filter: var(--liquid-glass-blur);
       border: 1px solid var(--border-subtle);
       border-radius: 12px;
       padding: 20px;
-      box-shadow: 0 4px 15px rgba(12, 7, 84, 0.02);
+      box-shadow: inset 0 1px 2px rgba(255,255,255,0.7), 0 4px 15px rgba(12, 7, 84, 0.02);
     }
     .chart-card h3 {
       font-size: 15px;
@@ -39,18 +40,19 @@
       display: flex;
       gap: 12px;
       margin-bottom: 18px;
-      background: #ffffff;
+      background: var(--bg-card);
+      backdrop-filter: var(--liquid-glass-blur);
       padding: 14px;
       border-radius: 12px;
       border: 1px solid var(--border-subtle);
     }
     .student-filter-bar input {
       flex: 2;
-      background: #f8f9fc;
+      background: rgba(255, 255, 255, 0.7);
     }
     .student-filter-bar select {
       flex: 1;
-      background: #f8f9fc;
+      background: rgba(255, 255, 255, 0.7);
     }
 
     .lesson-item-row {
@@ -92,8 +94,8 @@
 
     @media print {
       body * { visibility: hidden; }
-      #printableStudentCard, #printableStudentCard * { visibility: visible; }
-      #printableStudentCard {
+      #printableStudentCard, #printableStudentCard *, #printableWatchStats, #printableWatchStats * { visibility: visible; }
+      #printableStudentCard, #printableWatchStats {
         position: absolute;
         left: 0;
         top: 0;
@@ -121,7 +123,7 @@
         <div class="avatar">👑</div>
         <div class="user-info">
           <h4 id="adminUserName" style="color:#fff; font-size:13.5px;">أ/ محمد السعيد</h4>
-          <span class="badge" style="color: var(--chem-gold-light); font-size:11px;">المشرف العام</span>
+          <span class="badge" style="color: var(--cyan-accent); font-size:11px;">المشرف العام</span>
         </div>
       </div>
       <nav class="sidebar-nav">
@@ -145,7 +147,7 @@
         <header class="topbar">
           <div>
             <h1 style="font-size:22px; font-weight:900; color:var(--royal-indigo-base);">التحليلات والمؤشرات البيانية</h1>
-            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">متابعة فورية للأداء المالي والأكاديمي</p>
+            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">متابعة فورية للأداء المالي وتفاعل الطلاب</p>
           </div>
         </header>
 
@@ -208,7 +210,7 @@
         <header class="topbar">
           <div>
             <h1 style="font-size:22px; font-weight:900; color:var(--royal-indigo-base);">إدارة المناهج والكورسات</h1>
-            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">إضافة كورس، رفع الصور من الجهاز، وإدارة المحاضرات</p>
+            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">تتبع الطلاب ومتابعة مدة مشاهدة كل طالب للكورس</p>
           </div>
           <button class="btn btn-primary" onclick="openAddCourseModal()">+ إضافة كورس جديد</button>
         </header>
@@ -222,7 +224,7 @@
                 <th>مرات الدخول</th>
                 <th>المحاضرات</th>
                 <th>المشتركين</th>
-                <th>الإجراءات</th>
+                <th>الإجراءات ومتابعة المشاهدات</th>
               </tr>
             </thead>
             <tbody id="coursesTableBody"></tbody>
@@ -368,6 +370,42 @@
       </div>
 
     </main>
+  </div>
+
+  <!-- مودال تقرير مدة مشاهدات الطلاب للكورس مع شريط البحث -->
+  <div id="courseWatchStatsModal" class="modal">
+    <div class="modal-content" id="printableWatchStats">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--cyan-accent); padding-bottom:12px; margin-bottom:18px;">
+        <div>
+          <h2 style="color:var(--royal-indigo-base); font-size:18px; font-weight:900;" id="watchModalCourseTitle">تقرير مشاهدات الطلاب</h2>
+          <span style="font-size:12px; color:var(--text-muted);">متابعة وقت المشاهدة الفعلي وآخر ظهور للطلاب</span>
+        </div>
+        <div class="no-print" style="display:flex; gap:8px;">
+          <button class="btn btn-primary" onclick="window.print()" style="padding:6px 14px; font-size:12px;">طباعة التقرير</button>
+          <button class="btn btn-outline" onclick="closeModal('courseWatchStatsModal')" style="padding:6px 14px; font-size:12px;">إغلاق</button>
+        </div>
+      </div>
+
+      <!-- شريط البحث الفوري داخل تقرير المشاهدات -->
+      <div class="no-print" style="margin-bottom: 15px;">
+        <input type="text" id="watchStatsSearchInput" oninput="filterWatchStatsTable()" placeholder="ابحث في المشاهدات باسم الطالب أو رقم الهاتف..." style="width:100%; padding:10px 14px; background:#f8f9fc; border:1px solid var(--border-subtle); border-radius:8px;">
+      </div>
+
+      <div class="table-container">
+        <table class="exams-table">
+          <thead>
+            <tr>
+              <th>اسم الطالب</th>
+              <th>رقم الهاتف</th>
+              <th>إجمالي مدة المشاهدة</th>
+              <th>مرات الدخول</th>
+              <th>آخر ظهور بالكورس</th>
+            </tr>
+          </thead>
+          <tbody id="watchStatsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <!-- مودال إضافة كورس جديد -->
@@ -516,7 +554,7 @@
         </div>
 
         <div style="display:flex; gap:10px; margin-top:15px;">
-          <button type="submit" class="btn btn-primary" style="flex:1;" onclick="saveEditedCourse()">حفظ التعديلات</button>
+          <button type="button" class="btn btn-primary" style="flex:1;" onclick="saveEditedCourse()">حفظ التعديلات</button>
           <button type="button" class="btn btn-outline" onclick="closeModal('editCourseModal')">إلغاء</button>
         </div>
       </div>
@@ -580,6 +618,7 @@
   <script>
     var tempQuestions = [];
     var allStudentsCache = [];
+    var currentWatchStatsList = [];
     var revenueChartInstance = null;
     var geoChartInstance = null;
     var examsChartInstance = null;
@@ -717,7 +756,7 @@
       } else {
         coursesBody.innerHTML = courses.map(function(c, index) {
           var priceTag = (c.isFree || Number(c.price) === 0) ? '<span style="color:#059669; font-weight:bold;">مجاني</span>' : (c.price + ' ج.م');
-          var viewsTag = (c.maxViewsType === 'unlimited' || !c.maxViews || Number(c.maxViews) === 0) ? '<span style="color:#2563eb; font-weight:bold;">مفتوحة</span>' : (c.maxViews + ' مرات');
+          var viewsTag = (c.maxViewsType === 'unlimited' || !c.maxViews || Number(c.maxViews) === 0) ? '<span style="color:#00D2FF; font-weight:bold;">مفتوحة</span>' : (c.maxViews + ' مرات');
 
           return '<tr>' +
             '<td><img src="' + (c.image || '') + '" style="width:45px; height:32px; object-fit:cover; border-radius:6px;" onerror="this.src=\'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80\'"></td>' +
@@ -727,6 +766,7 @@
             '<td>' + (c.lessons || []).length + ' محاضرات</td>' +
             '<td>' + users.filter(function(u) { return u.enrolledCourses && u.enrolledCourses.includes(c.id); }).length + ' طالب</td>' +
             '<td>' +
+              '<button type="button" class="btn-action btn-action-success" onclick="openCourseWatchStats(\'' + c.id + '\', \'' + c.title.replace(/'/g, "\\'") + '\')" style="margin-left:4px;">تقرير المشاهدات</button>' +
               '<button type="button" class="btn-action btn-action-primary" onclick="openEditCourseModal(' + index + ')" style="margin-left:4px;">تعديل</button>' +
               '<button type="button" class="btn-action btn-action-danger" onclick="deleteCourse(' + index + ')">حذف</button>' +
             '</td>' +
@@ -748,7 +788,7 @@
       document.getElementById("paymentsTableBody").innerHTML = payments.map(function(p) {
         return '<tr>' +
           '<td>' + p.userName + '</td><td>' + p.studentPhone + '</td><td>' + p.courseTitle + '</td><td>' + p.amount + ' ج.م</td>' +
-          '<td><a href="' + p.receipt + '" target="_blank" style="color:var(--chem-gold); font-weight:bold;">عرض الإيصال</a></td>' +
+          '<td><a href="' + p.receipt + '" target="_blank" style="color:var(--cyan-accent); font-weight:bold;">عرض الإيصال</a></td>' +
           '<td>' + (p.status === 'PENDING' ? '<button class="btn-action btn-action-success" onclick="approvePayment(' + p.id + ')">قبول وتفعيل</button>' : '<span style="color:#10b981; font-weight:bold;">مفعل</span>') + '</td>' +
         '</tr>';
       }).reverse().join('');
@@ -765,6 +805,65 @@
       }).join('');
 
       renderCharts();
+    }
+
+    // فتح وعرض تقرير المشاهدات مع تجهيز بيانات البحث
+    function openCourseWatchStats(courseId, courseTitle) {
+      document.getElementById("watchModalCourseTitle").innerText = "تقرير المشاهدات: " + courseTitle;
+      var tracking = JSON.parse(localStorage.getItem("edu_course_watch_logs")) || {};
+      var courseLogs = tracking[courseId] || {};
+      var users = JSON.parse(localStorage.getItem("edu_users")) || [];
+      var enrolledUsers = users.filter(function(u) { return u.enrolledCourses && u.enrolledCourses.includes(courseId); });
+
+      currentWatchStatsList = enrolledUsers.map(function(u) {
+        var log = courseLogs[u.email] || { totalSeconds: 0, lastActive: 'لم يبدأ بعد' };
+        var accessCount = (u.courseAccessCount && u.courseAccessCount[courseId]) || 0;
+        return {
+          fullName: u.fullName,
+          phone: u.studentPhone || 'غير مسجل',
+          totalSeconds: log.totalSeconds || 0,
+          accessCount: accessCount,
+          lastActive: log.lastActive
+        };
+      });
+
+      document.getElementById("watchStatsSearchInput").value = "";
+      renderWatchStatsTable(currentWatchStatsList);
+      openModal("courseWatchStatsModal");
+    }
+
+    function renderWatchStatsTable(list) {
+      var tbody = document.getElementById("watchStatsTableBody");
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد نتائج مطابقة للبحث.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = list.map(function(item) {
+        var hours = Math.floor(item.totalSeconds / 3600);
+        var minutes = Math.floor((item.totalSeconds % 3600) / 60);
+        var seconds = item.totalSeconds % 60;
+
+        var formattedTime = hours > 0 
+          ? (hours + " ساعة و " + minutes + " دقيقة") 
+          : (minutes > 0 ? (minutes + " دقيقة و " + seconds + " ثانية") : (seconds + " ثانية"));
+
+        return '<tr>' +
+          '<td><strong>' + item.fullName + '</strong></td>' +
+          '<td>' + item.phone + '</td>' +
+          '<td><span style="color:#0284C7; font-weight:800;">' + formattedTime + '</span></td>' +
+          '<td>' + item.accessCount + ' مرات</td>' +
+          '<td><span style="font-size:12px; color:var(--text-muted);">' + item.lastActive + '</span></td>' +
+        '</tr>';
+      }).join('');
+    }
+
+    function filterWatchStatsTable() {
+      var query = document.getElementById("watchStatsSearchInput").value.trim().toLowerCase();
+      var filtered = currentWatchStatsList.filter(function(item) {
+        return item.fullName.toLowerCase().includes(query) || item.phone.toLowerCase().includes(query);
+      });
+      renderWatchStatsTable(filtered);
     }
 
     function openAddCourseModal() {
@@ -1021,8 +1120,8 @@
             datasets: [{
               label: 'الإيرادات المحصلة',
               data: [1200, 3400, 5600, payments.filter(function(p){return p.status==='APPROVED';}).reduce(function(s,p){return s+(Number(p.amount)||0);},0)],
-              borderColor: '#c29d44',
-              backgroundColor: 'rgba(194, 157, 68, 0.1)',
+              borderColor: '#00D2FF',
+              backgroundColor: 'rgba(0, 210, 255, 0.1)',
               borderWidth: 2.5,
               tension: 0.35,
               fill: true
@@ -1051,7 +1150,7 @@
             labels: Object.keys(govCounts).length ? Object.keys(govCounts) : ['كفر الشيخ', 'القاهرة', 'أخرى'],
             datasets: [{
               data: Object.values(govCounts).length ? Object.values(govCounts) : [10, 5, 2],
-              backgroundColor: ['#1c1a4a', '#c29d44', '#10b981', '#6366f1', '#f59e0b']
+              backgroundColor: ['#0E1338', '#00D2FF', '#10b981', '#1D255E', '#5CE1E6']
             }]
           },
           options: {
@@ -1079,7 +1178,7 @@
                 submissions.filter(function(s) { return s.percentage >= 60 && s.percentage < 85; }).length,
                 failCount
               ],
-              backgroundColor: ['#10b981', '#c29d44', '#ef4444'],
+              backgroundColor: ['#10b981', '#00D2FF', '#ef4444'],
               borderRadius: 6
             }]
           },

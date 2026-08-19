@@ -13,7 +13,14 @@
       user-select: none;
     }
 
-    .course-player-layout { display: grid; grid-template-columns: 1fr 340px; gap: 25px; max-width: 1220px; margin: 25px auto; padding: 0 20px; }
+    .course-player-layout {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 25px;
+      max-width: 1220px;
+      margin: 25px auto;
+      padding: 0 20px;
+    }
     
     .video-secure-container {
       position: relative;
@@ -31,20 +38,21 @@
       border: none;
     }
 
-    .security-watermark {
+    /* العلامة المائية الذكية والشبحية */
+    .smart-ghost-watermark {
       position: absolute;
       pointer-events: none;
       user-select: none;
       z-index: 999;
-      background: rgba(18, 16, 51, 0.45);
-      color: rgba(255, 255, 255, 0.65);
+      background: rgba(14, 19, 56, 0.35);
+      color: rgba(255, 255, 255, 0.45);
       padding: 4px 10px;
       border-radius: 6px;
       font-size: 11px;
       font-weight: 800;
       letter-spacing: 0.5px;
-      backdrop-filter: blur(2px);
-      transition: all 1.2s ease-in-out;
+      backdrop-filter: blur(1.5px);
+      transition: all 1.8s cubic-bezier(0.16, 1, 0.3, 1);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -55,7 +63,7 @@
       display: none;
       position: absolute;
       inset: 0;
-      background: #070438;
+      background: #080A21;
       color: #fff;
       z-index: 1000;
       justify-content: center;
@@ -64,13 +72,60 @@
       padding: 20px;
     }
 
-    .playlist-card { background: #fff; border-radius: 14px; border: 1px solid var(--border-subtle); padding: 20px; box-shadow: 0 4px 15px rgba(12,7,84,0.03); }
-    .playlist-item { padding: 12px; background: #F8F9FC; border-radius: 8px; margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between; }
-    .playlist-item.active { border: 1.5px solid var(--chem-gold); background: rgba(212, 175, 55, 0.08); }
-    .views-badge { background: rgba(212, 175, 55, 0.12); border: 1px solid var(--chem-gold); color: #9E7D1C; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; }
-    .blocked-screen { display: none; text-align: center; padding: 60px 20px; background: #fff; border: 1px solid #EF4444; border-radius: 18px; max-width: 600px; margin: 60px auto; }
+    .playlist-card {
+      background: var(--bg-card);
+      backdrop-filter: var(--liquid-glass-blur);
+      border-radius: 14px;
+      border: 1px solid var(--border-subtle);
+      padding: 20px;
+      box-shadow: var(--liquid-glass-highlight);
+    }
+
+    .playlist-item {
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 8px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      transition: all 0.2s ease;
+    }
+
+    .playlist-item:hover {
+      background: rgba(255, 255, 255, 0.9);
+      transform: translateX(-2px);
+    }
+
+    .playlist-item.active {
+      border: 1.5px solid var(--cyan-accent);
+      background: rgba(0, 210, 255, 0.1);
+    }
+
+    .views-badge {
+      background: rgba(0, 210, 255, 0.12);
+      border: 1px solid var(--cyan-accent);
+      color: var(--cyan-accent);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .blocked-screen {
+      display: none;
+      text-align: center;
+      padding: 60px 20px;
+      background: #fff;
+      border: 1px solid #EF4444;
+      border-radius: 18px;
+      max-width: 600px;
+      margin: 60px auto;
+    }
     
-    @media (max-width: 900px) { .course-player-layout { grid-template-columns: 1fr; } }
+    @media (max-width: 900px) {
+      .course-player-layout { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body oncontextmenu="return false;">
@@ -102,15 +157,16 @@
       <div class="video-secure-container" id="videoWrapper">
         <iframe id="mainPlayer" src="" allowfullscreen></iframe>
         
-        <div class="security-watermark" id="dynamicWatermark">
+        <!-- العلامة المائية الشبحية الذكية المتغيرة -->
+        <div class="smart-ghost-watermark" id="smartWatermark">
           <span id="wmUserName">طالب المنصة</span>
           <span id="wmUserPhone">01xxxxxxxxx</span>
         </div>
 
         <div class="screen-recording-shield" id="recordingShield">
           <div>
-            <h3 style="color:#f87171; margin-bottom:6px;">تم إيقاف العرض مؤقتاً</h3>
-            <p style="font-size:13px; color:#cbd5e1;">يرجى الرجوع لنافذة المنصة لمتابعة المشاهدة.</p>
+            <h3 style="color:#00D2FF; margin-bottom:6px;">تم إيقاف العرض مؤقتاً للحماية</h3>
+            <p style="font-size:13px; color:#cbd5e1;">يرجى الرجوع للنافذة النشطة لمتابعة المشاهدة.</p>
           </div>
         </div>
       </div>
@@ -146,10 +202,11 @@
     }
 
     document.getElementById("wmUserName").innerText = user.fullName;
-    document.getElementById("wmUserPhone").innerText = user.studentPhone || user.email;
+    document.getElementById("wmUserPhone").innerText = (user.studentPhone || user.email) + " • " + courseId;
 
-    function moveWatermark() {
-      var wm = document.getElementById("dynamicWatermark");
+    // حركة انسيابية ذكية للعلامة المائية
+    function moveSmartWatermark() {
+      var wm = document.getElementById("smartWatermark");
       var wrapper = document.getElementById("videoWrapper");
       if (!wm || !wrapper) return;
 
@@ -161,14 +218,19 @@
 
       wm.style.left = randX + "px";
       wm.style.top = randY + "px";
+      wm.style.opacity = (Math.random() * 0.35 + 0.25).toFixed(2);
     }
-    setInterval(moveWatermark, 4000);
-    setTimeout(moveWatermark, 500);
+    setInterval(moveSmartWatermark, 4500);
+    setTimeout(moveSmartWatermark, 600);
 
+    // حماية التبديل وفقدان التركيز
+    var isWindowFocused = true;
     window.addEventListener("blur", function() {
+      isWindowFocused = false;
       document.getElementById("recordingShield").style.display = "flex";
     });
     window.addEventListener("focus", function() {
+      isWindowFocused = true;
       document.getElementById("recordingShield").style.display = "none";
     });
 
@@ -180,11 +242,12 @@
         e.key === "PrintScreen"
       ) {
         e.preventDefault();
-        showToast("غير مسموح بالتقاط صور أو تسجيل المحاضرات", "error");
+        showToast("محتوى المحاضرة محمي بحقوق النشر", "error");
         return false;
       }
     });
 
+    // نظام احتساب مرات المشاهدة وتسجيل وقت البقاء الفعلي داخل الكورس
     var isUnlimited = course.maxViewsType === "unlimited" || !course.maxViews || Number(course.maxViews) === 0;
     var maxAllowed = Number(course.maxViews) || 0;
     var users = JSON.parse(localStorage.getItem("edu_users")) || [];
@@ -205,6 +268,28 @@
           : "الدخول (" + currentViews + " من " + maxAllowed + ") | المتبقي: " + (maxAllowed - currentViews);
       }
     }
+
+    // متتبع وقت المشاهدة الفعلي التراكمي
+    function recordWatchTime() {
+      if (!isWindowFocused) return;
+      
+      var tracking = JSON.parse(localStorage.getItem("edu_course_watch_logs")) || {};
+      if (!tracking[courseId]) tracking[courseId] = {};
+      if (!tracking[courseId][user.email]) {
+        tracking[courseId][user.email] = {
+          studentName: user.fullName,
+          studentPhone: user.studentPhone || user.email,
+          totalSeconds: 0,
+          lastActive: new Date().toLocaleString('ar-EG'),
+          sessionsCount: 1
+        };
+      }
+
+      tracking[courseId][user.email].totalSeconds += 5;
+      tracking[courseId][user.email].lastActive = new Date().toLocaleString('ar-EG');
+      localStorage.setItem("edu_course_watch_logs", JSON.stringify(tracking));
+    }
+    setInterval(recordWatchTime, 5000);
 
     document.getElementById("courseDesc").innerText = course.desc;
     document.getElementById("examLink").href = "exam.html?examId=" + (course.examId || 'e1');
