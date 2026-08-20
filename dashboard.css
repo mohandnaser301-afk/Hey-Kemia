@@ -25,7 +25,7 @@ html, body {
 }
 
 .sidebar {
-  width: 260px;
+  width: 270px;
   background: var(--bg-sidebar);
   backdrop-filter: var(--liquid-glass-blur);
   -webkit-backdrop-filter: blur(16px);
@@ -43,17 +43,17 @@ html, body {
 .mobile-sidebar-toggle-btn {
   display: none;
   width: 100%;
-  padding: 14px 16px;
+  padding: 13px 16px;
   background: rgba(255, 255, 255, 0.12);
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 12px;
   color: #ffffff;
   font-weight: 800;
-  font-size: 14px;
+  font-size: 13.5px;
   cursor: pointer;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   -webkit-appearance: none; /* إزالة الستايل الافتراضي لسفاري */
   appearance: none;
   touch-action: manipulation;
@@ -94,17 +94,27 @@ html, body {
   flex-shrink: 0;
 }
 
+.sidebar-section-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #94A3B8;
+  text-transform: uppercase;
+  margin: 14px 8px 6px;
+  letter-spacing: 0.5px;
+  display: block;
+}
+
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .nav-item {
-  padding: 12px 14px;
+  padding: 11px 13px;
   color: #d1d9ec;
   text-decoration: none;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 700;
   border-radius: 10px;
   transition: all 0.2s ease;
@@ -269,13 +279,21 @@ input, select, textarea {
     display: none;
     flex-direction: column;
     gap: 6px;
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(8, 11, 33, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    padding: 12px;
+    margin-top: 6px;
   }
 
   .sidebar-nav.show-mobile-menu {
     display: flex;
+    animation: fadeInMenu 0.25s ease;
+  }
+
+  @keyframes fadeInMenu {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .main-content {

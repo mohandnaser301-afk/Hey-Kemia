@@ -10,7 +10,7 @@ function sanitizeText(str) {
   return temp.innerHTML;
 }
 
-// 1. نافذة تأكيد مخصصة (Custom Modal بدلاً من confirm الافتراضية)
+// 1. نافذة تأكيد مخصصة (Custom Modal)
 function customConfirm(message, title, confirmText, cancelText) {
   title = title || "تأكيد الإجراء";
   confirmText = confirmText || "تأكيد";
@@ -22,7 +22,7 @@ function customConfirm(message, title, confirmText, cancelText) {
 
     var modal = document.createElement("div");
     modal.id = "hkCustomConfirmModal";
-    modal.style.cssText = "position:fixed; inset:0; background:rgba(8,10,33,0.78); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; z-index:999999; padding:16px; animation:fadeInModal 0.2s ease;";
+    modal.style.cssText = "position:fixed; inset:0; background:rgba(8,10,33,0.78); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; z-index:999999; padding:16px;";
     modal.innerHTML = 
       '<div style="background:#ffffff; color:#191b26; border-radius:18px; padding:24px; max-width:420px; width:100%; box-shadow:0 20px 45px rgba(0,0,0,0.35); text-align:center; border:1px solid rgba(0,210,255,0.2);">' +
         '<div style="width:48px; height:48px; background:rgba(0,210,255,0.12); color:#0284C7; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 12px; font-size:22px;">❓</div>' +
@@ -51,11 +51,8 @@ window.customConfirm = customConfirm;
 // 2. فحص وتنبيه تفعيل الإشعارات الإلزامي للطالب
 function checkAndPromptNotifications() {
   if (!("Notification" in window)) return;
-
-  // إذا تم السماح بها مسبقاً، لا يظهر التنبيه
   if (Notification.permission === "granted") return;
 
-  // عرض المودال الإلزامي للطالب
   var existing = document.getElementById("hkMandatoryNotifModal");
   if (existing) return;
 
@@ -64,7 +61,7 @@ function checkAndPromptNotifications() {
   modal.style.cssText = "position:fixed; inset:0; background:rgba(8,10,33,0.85); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; z-index:999998; padding:16px;";
   modal.innerHTML = 
     '<div style="background:#ffffff; color:#191b26; border-radius:20px; padding:28px 24px; max-width:440px; width:100%; box-shadow:0 25px 50px rgba(0,0,0,0.4); text-align:center; border:2px solid #00D2FF;">' +
-      '<div style="width:56px; height:56px; background:rgba(0,210,255,0.14); color:#0284C7; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 14px; font-size:26px; animation:ringBell 2s infinite;">🔔</div>' +
+      '<div style="width:56px; height:56px; background:rgba(0,210,255,0.14); color:#0284C7; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 14px; font-size:26px;">🔔</div>' +
       '<h3 style="font-size:18px; font-weight:900; color:#0E1338; margin-bottom:8px;">تفعيل إشعارات المنصة</h3>' +
       '<p style="font-size:13.5px; color:#64748B; margin-bottom:20px; line-height:1.6;">' +
         'لضمان استلام مواعيد المحاضرات الجديدة، نتائج الامتحانات، واعتمادات الدفع فوراً على هاتفك، يُرجى السماح بالإشعارات.' +
@@ -361,7 +358,6 @@ document.addEventListener("DOMContentLoaded", function() {
   monitorCurrentUserStatus();
   initGlobalRealtimeSync();
 
-  // فحص تنبيه الإشعارات للطلاب تلقائياً
   var currentUser = getCurrentUser();
   if (currentUser && currentUser.role === "STUDENT") {
     setTimeout(checkAndPromptNotifications, 1200);

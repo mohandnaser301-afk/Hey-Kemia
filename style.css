@@ -514,26 +514,24 @@ select {
 }
 
 /* =========================================================
-   5. النافبار الكبسولي الثابت
+   5. النافبار الكبسولي الثابت والمتجاوب مع الموبايل
    ========================================================= */
 .navbar-capsule-wrapper {
   position: fixed;
-  top: 16px;
+  top: 14px;
   left: 0;
   right: 0;
   z-index: 9999;
   display: flex;
   justify-content: center;
   padding: 0 16px;
-  pointer-events: none;
 }
 
 .navbar-capsule {
-  pointer-events: auto;
-  background: rgba(35, 39, 66, 0.75);
+  background: rgba(35, 39, 66, 0.78);
   backdrop-filter: blur(28px) saturate(190%);
   -webkit-backdrop-filter: blur(28px) saturate(190%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 50px;
   padding: 6px 14px 6px 18px;
   display: flex;
@@ -546,6 +544,7 @@ select {
     0 16px 40px rgba(8, 10, 33, 0.35);
   width: 100%;
   max-width: 1100px;
+  position: relative;
   transition: all 0.3s ease;
 }
 
@@ -637,6 +636,16 @@ select {
 .nav-btn-primary:hover {
   box-shadow: 0 0 22px rgba(0, 210, 255, 0.7);
   transform: translateY(-2px);
+}
+
+.nav-mobile-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 4px;
 }
 
 /* =========================================================
@@ -1289,9 +1298,34 @@ select {
 }
 
 @media (max-width: 768px) {
+  .nav-mobile-toggle { display: block; }
+
+  .capsule-links {
+    display: none;
+    position: absolute;
+    top: 54px;
+    left: 0;
+    right: 0;
+    background: rgba(14, 19, 56, 0.98);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    padding: 16px;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    z-index: 10000;
+  }
+
+  .capsule-links.show-mobile-nav { display: flex; }
+
+  .navbar-capsule {
+    border-radius: 24px;
+    padding: 8px 14px;
+  }
+
   .form-row { flex-direction: column; gap: 0; }
-  .capsule-links { display: none; }
-  .navbar-capsule { padding: 6px 12px 6px 14px; }
   .hero-editorial-stage {
     padding-top: 95px !important;
     min-height: 560px;

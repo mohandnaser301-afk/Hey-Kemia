@@ -41,9 +41,9 @@ function getFirebase() {
 
 // دالة تصغير وضغط الصور قبل إرسالها لـ Firestore لمنع تجاوز حد 1MB
 function compressImageBase64(base64Str, maxWidth, maxHeight, quality) {
-  maxWidth = maxWidth || 700;
-  maxHeight = maxHeight || 450;
-  quality = quality || 0.7;
+  maxWidth = maxWidth || 450;
+  maxHeight = maxHeight || 260;
+  quality = quality || 0.5;
 
   return new Promise((resolve) => {
     if (!base64Str || !base64Str.startsWith("data:image")) {
@@ -173,7 +173,7 @@ window.FirebaseService = {
     const fb = getFirebase();
     if (fb && fb.firestore) {
       if (courseData.image && courseData.image.startsWith("data:image")) {
-        courseData.image = await compressImageBase64(courseData.image, 600, 380, 0.65);
+        courseData.image = await compressImageBase64(courseData.image, 450, 260, 0.5);
       }
 
       if (courseId) {
