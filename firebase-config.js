@@ -1,8 +1,3 @@
-// =========================================================
-// محرك ربط Firebase السحابي لمنصة هي كيميا !
-// مزامنة لحظية شاملة ومعالجة الصور السحابية
-// =========================================================
-
 (function loadFirebaseSDKs() {
   const scripts = [
     "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js",
@@ -39,11 +34,10 @@ function getFirebase() {
   return firebase;
 }
 
-// دالة تصغير وضغط الصور قبل إرسالها لـ Firestore لمنع تجاوز حد 1MB
 function compressImageBase64(base64Str, maxWidth, maxHeight, quality) {
   maxWidth = maxWidth || 450;
   maxHeight = maxHeight || 260;
-  quality = quality || 0.5;
+  quality = quality || 0.45;
 
   return new Promise((resolve) => {
     if (!base64Str || !base64Str.startsWith("data:image")) {
@@ -75,7 +69,6 @@ function compressImageBase64(base64Str, maxWidth, maxHeight, quality) {
 window.compressImageBase64 = compressImageBase64;
 
 window.FirebaseService = {
-  // 1. تسجيل طالب جديد
   async registerStudent(userData) {
     const fb = getFirebase();
     let uid = "u_" + Date.now();
@@ -113,7 +106,6 @@ window.FirebaseService = {
     return userDoc;
   },
 
-  // 2. تسجيل الدخول
   async loginUser(email, password) {
     const fb = getFirebase();
     let foundUser = null;
@@ -123,19 +115,15 @@ window.FirebaseService = {
         const userCredential = await fb.auth().signInWithEmailAndPassword(email, password);
         const uid = userCredential.user.uid;
         const snap = await fb.firestore().collection("users").doc(uid).get();
-        if (snap.exists) {
-          foundUser = snap.data();
-        }
+        if (snap.exists) foundUser = snap.data();
       } catch (e) {
-        console.warn("Firestore lookup fallback:", e.message);
+        console.warn("Auth fallback:", e.message);
       }
     }
 
     if (!foundUser && fb && fb.firestore) {
       const qSnap = await fb.firestore().collection("users").where("email", "==", email.toLowerCase()).get();
-      if (!qSnap.empty) {
-        foundUser = qSnap.docs[0].data();
-      }
+      if (!qSnap.empty) foundUser = qSnap.docs[0].data();
     }
 
     if (foundUser) {
@@ -146,7 +134,6 @@ window.FirebaseService = {
     }
   },
 
-  // 3. تسجيل الخروج
   async logoutUser() {
     const fb = getFirebase();
     if (fb && fb.auth) {
@@ -156,7 +143,7 @@ window.FirebaseService = {
     window.location.href = "login.html";
   },
 
-  // 4. إدارة الكورسات سحابياً لحظياً
+  // 1. الكورسات اللحظية
   subscribeCourses(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -173,7 +160,7 @@ window.FirebaseService = {
     const fb = getFirebase();
     if (fb && fb.firestore) {
       if (courseData.image && courseData.image.startsWith("data:image")) {
-        courseData.image = await compressImageBase64(courseData.image, 450, 260, 0.5);
+        courseData.image = await compressImageBase64(courseData.image, 450, 260, 0.45);
       }
 
       if (courseId) {
@@ -193,7 +180,7 @@ window.FirebaseService = {
     }
   },
 
-  // 5. إدارة الامتحانات سحابياً لحظياً
+  // 2. الامتحانات اللحظية
   subscribeExams(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -225,7 +212,7 @@ window.FirebaseService = {
     }
   },
 
-  // 6. إدارة الطلاب والمستخدمين سحابياً لحظياً
+  // 3. المستخدمين اللحظيين
   subscribeUsers(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -235,13 +222,6 @@ window.FirebaseService = {
         localStorage.setItem("edu_users", JSON.stringify(list));
         if (callback) callback(list);
       });
-    }
-  },
-
-  async updateUserRole(uid, newRole) {
-    const fb = getFirebase();
-    if (fb && fb.firestore && uid) {
-      await fb.firestore().collection("users").doc(uid).update({ role: newRole });
     }
   },
 
@@ -259,6 +239,39 @@ window.FirebaseService = {
     const fb = getFirebase();
     if (fb && fb.firestore && uid) {
       await fb.firestore().collection("users").doc(uid).delete();
+    }
+  },
+
+  // 4. طلبات الدفع سحابياً لجميع الأجهزة
+  subscribePayments(callback) {
+    const fb = getFirebase();
+    if (fb && fb.firestore) {
+      return fb.firestore().collection("payments").orderBy("createdAt", "desc").onSnapshot(snap => {
+        const list = [];
+        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        localStorage.setItem("edu_payments", JSON.stringify(list));
+        if (callback) callback(list);
+      });
+    }
+  },
+
+  async submitPayment(paymentData) {
+    const fb = getFirebase();
+    if (fb && fb.firestore) {
+      if (paymentData.receipt && paymentData.receipt.startsWith("data:image")) {
+        paymentData.receipt = await compressImageBase64(paymentData.receipt, 400, 400, 0.4);
+      }
+      paymentData.createdAt = new Date().toISOString();
+      paymentData.status = "PENDING";
+      const ref = await fb.firestore().collection("payments").add(paymentData);
+      return ref.id;
+    }
+  },
+
+  async updatePaymentStatus(paymentId, status) {
+    const fb = getFirebase();
+    if (fb && fb.firestore && paymentId) {
+      await fb.firestore().collection("payments").doc(paymentId).update({ status: status });
     }
   }
 };

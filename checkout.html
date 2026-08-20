@@ -2,15 +2,37 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>هي كيميا ! - تأكيد الاشتراك والدفع</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>تأكيد الاشتراك والدفع - هي كيميا !</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    .payment-box { max-width: 520px; margin: 40px auto; }
-    .payment-instructions { background: #F8F9FC; border: 1.5px dashed var(--chem-gold); padding: 16px; border-radius: 12px; margin: 20px 0; }
+    .checkout-wrapper {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 95px 16px 40px;
+    }
+    .checkout-card {
+      background: #ffffff;
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 30px 24px;
+      max-width: 520px;
+      width: 100%;
+      box-shadow: 0 20px 45px rgba(0,0,0,0.06);
+    }
+    .vodafone-box {
+      background: #FFF5F5;
+      border: 1.5px dashed #EF4444;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      margin: 16px 0 20px;
+    }
   </style>
 </head>
-<body style="display: flex; flex-direction: column; min-height: 100vh;">
+<body>
 
   <div class="navbar-capsule-wrapper">
     <nav class="navbar-capsule">
@@ -18,115 +40,130 @@
         <div class="capsule-logo">HK</div>
         <span class="brand-text">هي كيميا<span>!</span></span>
       </a>
-      <a href="index.html#courses" class="nav-btn-link">إلغاء</a>
+      <div class="capsule-auth">
+        <a href="dashboard.html" class="nav-btn-primary">لوحة التحكم</a>
+      </div>
     </nav>
   </div>
 
-  <div class="container" style="flex: 1; display: flex; align-items: center;">
-    <div class="form-container payment-box">
-      <h2 style="color: var(--royal-indigo-base); font-size: 22px; font-weight: 900; text-align: center; margin-bottom: 4px;">إتمام الاشتراك والدفع</h2>
-      <p style="color: var(--text-muted); font-size: 13px; text-align: center; margin-bottom: 20px;">حول المبلغ عبر فودافون كاش أو فوري لتفعيل كورس أ/ محمد السعيد</p>
+  <div class="checkout-wrapper">
+    <div class="checkout-card">
+      <h2 style="font-size:20px; font-weight:900; color:var(--royal-indigo-base); margin-bottom:6px;">تأكيد الاشتراك وإرسال الإيصال</h2>
+      <p style="color:var(--text-muted); font-size:13px; margin-bottom:18px;">تحويل رسوم الاشتراك عبر فودافون كاش وتفعيل الكورس فوراً</p>
 
-      <div style="background: #F8F9FC; border: 1px solid var(--border-subtle); padding: 14px; border-radius: 10px;">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-          <span style="color: var(--text-muted);">الكورس:</span>
-          <strong id="courseTitle" style="color: var(--royal-indigo-base);">جاري التحميل...</strong>
-        </div>
-        <div style="display: flex; justify-content: space-between;">
-          <span style="color: var(--text-muted);">المبلغ المطلوب:</span>
-          <strong id="coursePrice" style="color: var(--chem-gold); font-size: 16px;">---</strong>
-        </div>
-      </div>
-
-      <div class="payment-instructions">
-        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-          <span>فودافون كاش:</span>
-          <strong style="color:var(--chem-gold);">01012345678</strong>
+      <div style="background:#F8FAFC; border:1px solid #E2E8F0; padding:14px; border-radius:12px; margin-bottom:15px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+          <span style="font-size:13px; color:var(--text-muted);">الكورس المختار:</span>
+          <strong id="checkoutCourseTitle" style="color:var(--royal-indigo-base);">-</strong>
         </div>
         <div style="display:flex; justify-content:space-between;">
-          <span>كود خدمة فوري:</span>
-          <strong style="color:var(--chem-gold);">987654</strong>
+          <span style="font-size:13px; color:var(--text-muted);">المبلغ المطلوب:</span>
+          <strong id="checkoutCoursePrice" style="color:#059669; font-size:16px;">- ج.م</strong>
         </div>
       </div>
 
-      <form id="paymentForm">
+      <div class="vodafone-box">
+        <span style="font-size:12px; color:#EF4444; font-weight:800;">رقم التحويل (فودافون كاش):</span>
+        <h3 style="font-size:20px; font-weight:900; color:#1E293B; letter-spacing:1px; margin:4px 0;">01012345678</h3>
+        <small style="color:#64748B; font-size:11.5px;">* يرجى إرسال المبلغ ثم إرفاق صورة واضحة من رسالة التحويل أدناه.</small>
+      </div>
+
+      <form id="checkoutPaymentForm">
+        <input type="hidden" id="checkoutCourseId">
         <div class="form-group">
-          <label>طريقة التحويل:</label>
-          <select id="paymentMethod" required>
-            <option value="vodafone">فودافون كاش</option>
-            <option value="fawry">فوري</option>
-          </select>
+          <label>رقم الهاتف الذي قمت بالتحويل منه:</label>
+          <input type="tel" id="checkoutSenderPhone" placeholder="01xxxxxxxxx" maxlength="11" required oninput="this.value=this.value.replace(/\D/g,'')">
         </div>
 
         <div class="form-group">
-          <label>صورة إيصال التحويل:</label>
-          <input type="file" id="receiptFile" accept="image/*" required>
+          <label>إرفاق صورة إيصال التحويل:</label>
+          <input type="file" id="checkoutReceiptFile" accept="image/*" required onchange="handleReceiptUpload(event)">
+          <input type="hidden" id="checkoutReceiptBase64">
         </div>
 
-        <button type="submit" class="btn btn-gold" style="width: 100%; padding: 12px; margin-top: 10px;">إرسال الإيصال وتأكيد الاشتراك</button>
+        <button type="submit" class="btn btn-primary" style="width:100%; padding:12px; font-size:14px; margin-top:8px;">إرسال طلب التفعيل الآن ←</button>
       </form>
     </div>
   </div>
 
-  <footer class="platform-footer" style="margin-top:auto;">
-    <div class="container">
-      <div class="footer-bottom-bar" style="border-top:none; padding-top:0;">
-        <p>© 2026 جميع الحقوق محفوظة لمنصة <strong>هي كيميا !</strong> - أ/ محمد السعيد</p>
-        <p>الدعم الفني وتأكيد الدفع: <strong style="color:var(--chem-gold);">01012345678</strong></p>
-      </div>
-    </div>
-  </footer>
-
+  <script src="firebase-config.js"></script>
   <script src="app.js"></script>
   <script>
-    var user = getCurrentUser();
-    if (!user) window.location.href = "login.html";
+    var currentSelectedCourse = null;
 
-    var urlParams = new URLSearchParams(window.location.search);
-    var courseId = urlParams.get("course") || "c1";
-
-    // إذا كان الطالب مشتركاً بالفعل في هذا الكورس يتم منعه من الدفع وتحويله للمحاضرات
-    if (user && user.enrolledCourses && user.enrolledCourses.includes(courseId)) {
-      showToast("أنت مشترك بالفعل في هذا الكورس!", "success");
-      setTimeout(function() {
-        window.location.replace("course-view.html?id=" + courseId);
-      }, 1000);
-    }
-
-    var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-    var course = courses.find(function(c) { return c.id == courseId; });
-
-    if (course) {
-      document.getElementById("courseTitle").innerText = course.title;
-      document.getElementById("coursePrice").innerText = course.price + " ج.م";
-    }
-
-    document.getElementById("paymentForm").addEventListener("submit", function(e) {
-      e.preventDefault();
-      var file = document.getElementById("receiptFile").files[0];
+    function handleReceiptUpload(event) {
+      var file = event.target.files[0];
+      if (!file) return;
       var reader = new FileReader();
-      reader.onload = function(event) {
-        var payments = JSON.parse(localStorage.getItem("edu_payments")) || [];
-        payments.push({
-          id: Date.now(),
-          userEmail: user.email,
-          userName: user.fullName,
-          studentPhone: user.studentPhone || "01000000000",
-          courseId: courseId,
-          courseTitle: course ? course.title : "كورس كيمياء",
-          amount: course ? course.price : 220,
-          method: document.getElementById("paymentMethod").value,
-          receipt: event.target.result,
-          status: "PENDING"
-        });
-        localStorage.setItem("edu_payments", JSON.stringify(payments));
-        logAdminAction("إرسال طلب دفع", "قام الطالب " + user.fullName + " برفع إيصال دفع.");
-        showToast("تم إرسال الإيصال بنجاح، جاري مراجعته وتفعيل الكورس", "success");
-        setTimeout(function() {
-          window.location.href = "dashboard.html";
-        }, 1200);
+      reader.onload = async function(e) {
+        var base64 = e.target.result;
+        var compressed = window.compressImageBase64 ? await window.compressImageBase64(base64, 400, 400, 0.4) : base64;
+        document.getElementById("checkoutReceiptBase64").value = compressed;
       };
-      if (file) reader.readAsDataURL(file);
+      reader.readAsDataURL(file);
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+      var user = getCurrentUser();
+      if (!user) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      var urlParams = new URLSearchParams(window.location.search);
+      var courseId = urlParams.get("course");
+      var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
+      currentSelectedCourse = courses.find(c => c.id == courseId);
+
+      if (!currentSelectedCourse) {
+        showToast("لم يتم العثور على الكورس المطلوب", "error");
+        setTimeout(function() { window.location.href = "index.html#courses"; }, 1000);
+        return;
+      }
+
+      document.getElementById("checkoutCourseId").value = currentSelectedCourse.id;
+      document.getElementById("checkoutCourseTitle").innerText = currentSelectedCourse.title;
+      document.getElementById("checkoutCoursePrice").innerText = currentSelectedCourse.price + " ج.م";
+    });
+
+    document.getElementById("checkoutPaymentForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      var user = getCurrentUser();
+      var senderPhone = document.getElementById("checkoutSenderPhone").value.trim();
+      var receiptImg = document.getElementById("checkoutReceiptBase64").value;
+
+      if (!senderPhone || senderPhone.length < 11) {
+        showToast("يرجى إدخال رقم الهاتف المحول منه بشكل صحيح (11 رقماً)", "error");
+        return;
+      }
+
+      if (!receiptImg) {
+        showToast("يرجى اختيار صورة واضحة لإيصال التحويل", "error");
+        return;
+      }
+
+      showToast("جاري إرسال طلب الدفع سحابياً للإدارة...", "info");
+
+      try {
+        var paymentData = {
+          userEmail: user.email.toLowerCase(),
+          userName: user.fullName,
+          studentPhone: senderPhone,
+          courseId: currentSelectedCourse.id,
+          courseTitle: currentSelectedCourse.title,
+          amount: currentSelectedCourse.price,
+          receipt: receiptImg
+        };
+
+        if (window.FirebaseService) {
+          await window.FirebaseService.submitPayment(paymentData);
+        }
+
+        showToast("تم إرسال إيصال التحويل بنجاح! سيتم التفعيل فور مراجعته.", "success");
+        setTimeout(function() { window.location.href = "dashboard.html"; }, 1500);
+      } catch (err) {
+        showToast("تعذر إرسال الإيصال: " + err.message, "error");
+      }
     });
   </script>
 </body>
