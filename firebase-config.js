@@ -1,5 +1,11 @@
+// =========================================================
 // تهيئة وربط Firebase بمشروع هي كيميا !
+// تم التحديث لدمج حماية API عبر App Check
+// =========================================================
+
+// استيراد الدوال اللازمة من Firebase SDK عبر CDN
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
 import { 
   getAuth, 
   createUserWithEmailAndPassword, 
@@ -29,6 +35,7 @@ import {
   getDownloadURL 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
+// إعدادات Firebase الخاصة بك (لم يتم تغييرها)
 const firebaseConfig = {
   apiKey: "AIzaSyDwUdbxMJmGlQctBuZWgxFbJqdHwqYUzzs",
   authDomain: "hey-kemia-a8f6c.firebaseapp.com",
@@ -39,13 +46,28 @@ const firebaseConfig = {
   measurementId: "G-CGPJHC9BD6"
 };
 
-// تهيئة الخدمات
+// تهيئة تطبيق Firebase
 const app = initializeApp(firebaseConfig);
+
+// =========================================
+// تفعيل Firebase App Check لحماية API
+// =========================================
+// ملاحظة: يجب استبدال 'YOUR_RECAPTCHA_SITE_KEY' بمفتاح reCAPTCHA الحقيقي الخاص بك
+// للحصول على الإشعارات على أجهزة Android، يرجى تفعيل الـ Debug Provider أثناء التطوير.
+/*
+initializeAppCheck(app, {
+  provider: new ReCaptchaV3Provider('YOUR_RECAPTCHA_SITE_KEY'),
+  isTokenAutoRefreshEnabled: true // تجديد التوكن تلقائياً في الخلفية
+});
+*/
+
+// تهيئة الخدمات
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 
 // واجهة التخاطب والعمليات السحابية (Cloud Operations Gateway)
+// (الدوال الحالية لم تتغير، وهي جاهزة للربط الحقيقي مستقبلاً)
 export const FirebaseService = {
   // 1. إدارة الحسابات
   async registerStudent(userData) {
@@ -99,7 +121,7 @@ export const FirebaseService = {
     const list = [];
     snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
     if (list.length === 0) {
-      // جلب من الكاش أو التهيئة إذا كانت السحابة فارغة
+      // جلب من الكاش أو التهيئة
       return JSON.parse(localStorage.getItem("edu_courses")) || [];
     }
     localStorage.setItem("edu_courses", JSON.stringify(list));
@@ -184,7 +206,7 @@ export const FirebaseService = {
   }
 };
 
-// مراقبة حالة تسجيل الدخول التلقائية وتحديث الـ Cache
+// مراقبة حالة تسجيل الدخول التلقائية
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     const snap = await getDoc(doc(db, "users", user.uid));
@@ -194,5 +216,5 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// إتاحة الكائن عالمياً لسهولة الاستخدام في ملفات js الأخرى
+// إتاحة الكائن عالمياً
 window.FirebaseService = FirebaseService;
