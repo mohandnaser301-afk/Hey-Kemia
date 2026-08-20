@@ -2,13 +2,13 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>هي كيميا ! - أ/ محمد السعيد</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- النافبار الكبسولي -->
+  <!-- النافبار الكبسولي المتجاوب -->
   <div class="navbar-capsule-wrapper anim-fade-up">
     <nav class="navbar-capsule">
       <a href="index.html" class="capsule-brand">
@@ -16,12 +16,15 @@
         <span class="brand-text">هي كيميا<span>!</span></span>
       </a>
 
-      <div class="capsule-links">
-        <a href="#hero">الرئيسية</a>
-        <a href="#courses">الكورسات المتاحة</a>
-        <a href="#honorRoll">لوحة الشرف</a>
-        <a href="https://wa.me/201000000000" target="_blank">حجز السنتر</a>
-        <a href="support.html">الدعم الفني</a>
+      <button type="button" class="nav-mobile-toggle" onclick="toggleMainMobileNav()">☰</button>
+
+      <div class="capsule-links" id="mainCapsuleNavLinks">
+        <a href="#hero" onclick="closeMobileNav()">الرئيسية</a>
+        <a href="#courses" onclick="closeMobileNav()">الكورسات المتاحة</a>
+        <a href="#generalExamsSection" onclick="closeMobileNav()" id="navGeneralExamsLink" style="display:none;">الامتحانات الشاملة</a>
+        <a href="#honorRoll" onclick="closeMobileNav()">لوحة الشرف</a>
+        <a href="https://wa.me/201000000000" target="_blank" onclick="closeMobileNav()">حجز السنتر</a>
+        <a href="support.html" onclick="closeMobileNav()">الدعم الفني</a>
       </div>
 
       <div class="capsule-auth" id="navAuthBox"></div>
@@ -102,7 +105,7 @@
   </section>
 
   <!-- الكورسات المتاحة -->
-  <section id="courses" style="padding: 30px 0 60px;">
+  <section id="courses" style="padding: 30px 0 40px;">
     <div class="container anim-fade-up">
       <div style="margin-bottom: 24px; text-align:right;">
         <span style="color:var(--cyan-accent); font-size:12px; font-weight:800; background:rgba(0, 210, 255, 0.1); padding:4px 14px; border-radius:20px;">المحتوى التدريبي</span>
@@ -111,6 +114,16 @@
       </div>
       <div class="courses-grid-layout" id="coursesListContainer"></div>
     </div>
+  </section>
+
+  <!-- قسم الامتحانات الشاملة (ديناميكي: يظهر فقط عند وجود امتحانات عامة وشاملة) -->
+  <section id="generalExamsSection" class="container anim-fade-up" style="display: none; padding: 20px 0 40px;">
+    <div style="margin-bottom: 24px; text-align:right;">
+      <span style="color:var(--cyan-accent); font-size:12px; font-weight:800; background:rgba(0, 210, 255, 0.1); padding:4px 14px; border-radius:20px;">تقييمات المستوى الشاملة</span>
+      <h2 style="font-size: 26px; font-weight: 900; color: var(--royal-indigo-base); margin-top:6px;">الامتحانات الشاملة والاختبارات التفاعلية</h2>
+      <p style="color: var(--text-muted); font-size: 14px;">اختبر نواتج تعلمك وقس مستواك مع تقييم فوري وتصحيح تلقائي</p>
+    </div>
+    <div class="courses-grid-layout" id="generalExamsGridContainer"></div>
   </section>
 
   <!-- الأسئلة الشائعة -->
@@ -186,8 +199,19 @@
     </div>
   </footer>
 
+  <script src="firebase-config.js"></script>
   <script src="app.js"></script>
   <script>
+    function toggleMainMobileNav() {
+      var links = document.getElementById("mainCapsuleNavLinks");
+      if (links) links.classList.toggle("show-mobile-nav");
+    }
+
+    function closeMobileNav() {
+      var links = document.getElementById("mainCapsuleNavLinks");
+      if (links) links.classList.remove("show-mobile-nav");
+    }
+
     function toggleFaq(el) {
       el.classList.toggle("active");
       var icon = el.querySelector(".faq-question span:last-child");
@@ -245,6 +269,99 @@
       }).join('');
     }
 
+    function renderCoursesSection(courses) {
+      var user = getCurrentUser();
+      var container = document.getElementById("coursesListContainer");
+      if (!container) return;
+
+      if (!courses || courses.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-muted); padding:20px;">لا توجد كورسات متاحة حالياً.</p>';
+        return;
+      }
+
+      container.innerHTML = courses.map(function(c) {
+        var isEnrolled = user && user.enrolledCourses && user.enrolledCourses.includes(c.id);
+        var isFreeCourse = c.isFree || Number(c.price) === 0;
+
+        var actionButton = isEnrolled
+          ? '<a href="course-view.html?id=' + c.id + '" class="btn btn-action-success" style="padding:10px 20px; font-size:13px; text-decoration:none;">دخول المحاضرات</a>'
+          : (isFreeCourse 
+              ? '<button onclick="handleEnrollClick(\'' + c.id + '\')" class="btn btn-cyan" style="padding:10px 20px; font-size:13px;">اشتراك فوري مجاني</button>'
+              : '<button onclick="handleEnrollClick(\'' + c.id + '\')" class="btn btn-primary" style="padding:10px 20px; font-size:13px;">الاشتراك الآن</button>');
+
+        var priceBlock = isFreeCourse 
+          ? '<div class="price-box"><span class="price-label-text">قيمة الاشتراك</span><span class="price-val free">مجاناً بالكامل</span></div>'
+          : '<div class="price-box"><span class="price-label-text">قيمة الاشتراك</span><span class="price-val">' + c.price + ' ج.م</span></div>';
+
+        var viewsBadgeText = (c.maxViewsType === 'unlimited' || !c.maxViews || Number(c.maxViews) === 0) 
+          ? 'مشاهدة مفتوحة' 
+          : (c.maxViews + ' مرات دخول');
+
+        var lessonsCount = (c.lessons || []).length;
+
+        return '<div class="course-liquid-card">' +
+          '<div class="course-liquid-media">' +
+            '<img src="' + (c.image || 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80') + '" class="course-liquid-img" alt="' + c.title + '">' +
+            '<div class="course-floating-tags">' +
+              '<span class="tag-glass-pill">' + (c.tag || 'الصف الثالث الثانوي') + '</span>' +
+              (isEnrolled 
+                ? '<span class="tag-glass-pill green">مشترك بالفعل</span>' 
+                : (isFreeCourse ? '<span class="tag-glass-pill cyan">كورس مجاني</span>' : '')) +
+            '</div>' +
+          '</div>' +
+          '<div class="course-liquid-body">' +
+            '<h3 class="course-liquid-title">' + c.title + '</h3>' +
+            '<p class="course-liquid-desc">' + (c.desc || '') + '</p>' +
+            '<div class="course-meta-row">' +
+              '<div class="course-meta-badge">📖 ' + lessonsCount + ' محاضرات</div>' +
+              '<div class="course-meta-badge">👁️ ' + viewsBadgeText + '</div>' +
+              '<div class="course-meta-badge">📝 بنك أسئلة وتدريبات</div>' +
+            '</div>' +
+            '<div class="course-liquid-footer">' +
+              priceBlock +
+              actionButton +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    function renderGeneralExams(exams) {
+      var generalExams = (exams || []).filter(function(e) { return e.isGeneral === true; });
+      var section = document.getElementById("generalExamsSection");
+      var navLink = document.getElementById("navGeneralExamsLink");
+      var container = document.getElementById("generalExamsGridContainer");
+
+      if (!section || !container) return;
+
+      if (generalExams.length === 0) {
+        section.style.display = "none";
+        if (navLink) navLink.style.display = "none";
+        container.innerHTML = "";
+      } else {
+        section.style.display = "block";
+        if (navLink) navLink.style.display = "inline-block";
+        container.innerHTML = generalExams.map(function(exam) {
+          return '<div class="course-liquid-card" style="border: 2px solid rgba(0, 210, 255, 0.35);">' +
+            '<div class="course-liquid-body" style="padding: 22px;">' +
+              '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">' +
+                '<span class="tag-glass-pill cyan">امتحان شامل عام</span>' +
+                '<span style="font-size:12px; color:var(--text-muted); font-weight:bold;">⏱️ ' + exam.durationMinutes + ' دقيقة</span>' +
+              '</div>' +
+              '<h3 class="course-liquid-title" style="margin-bottom:8px;">' + exam.title + '</h3>' +
+              '<div class="course-meta-row" style="margin-bottom:20px;">' +
+                '<div class="course-meta-badge">📝 ' + (exam.questions || []).length + ' أسئلة</div>' +
+                '<div class="course-meta-badge">🔄 ' + (exam.maxAttempts || 1) + ' محاولات مسموحة</div>' +
+              '</div>' +
+              '<div class="course-liquid-footer">' +
+                '<a href="exam.html?id=' + exam.id + '" class="btn btn-primary" style="width:100%; text-align:center; padding:10px; font-size:13.5px; text-decoration:none;">بدء الامتحان الآن 📝</a>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+        }).join("");
+      }
+    }
+
     document.addEventListener("DOMContentLoaded", function() {
       var user = getCurrentUser();
       var ctaContainer = document.getElementById("bottomCtaContainer");
@@ -254,60 +371,11 @@
 
       renderHonorRoll();
 
-      var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-      var container = document.getElementById("coursesListContainer");
-
-      if (courses.length === 0) {
-        container.innerHTML = '<p style="color:var(--text-muted); padding:20px;">لا توجد كورسات متاحة حالياً.</p>';
-      } else {
-        container.innerHTML = courses.map(function(c) {
-          var isEnrolled = user && user.enrolledCourses && user.enrolledCourses.includes(c.id);
-          var isFreeCourse = c.isFree || Number(c.price) === 0;
-
-          var actionButton = isEnrolled
-            ? '<a href="course-view.html?id=' + c.id + '" class="btn btn-action-success" style="padding:10px 20px; font-size:13px; text-decoration:none;">دخول المحاضرات</a>'
-            : (isFreeCourse 
-                ? '<button onclick="handleEnrollClick(\'' + c.id + '\')" class="btn btn-cyan" style="padding:10px 20px; font-size:13px;">اشتراك فوري مجاني</button>'
-                : '<button onclick="handleEnrollClick(\'' + c.id + '\')" class="btn btn-primary" style="padding:10px 20px; font-size:13px;">الاشتراك الآن</button>');
-
-          var priceBlock = isFreeCourse 
-            ? '<div class="price-box"><span class="price-label-text">قيمة الاشتراك</span><span class="price-val free">مجاناً بالكامل</span></div>'
-            : '<div class="price-box"><span class="price-label-text">قيمة الاشتراك</span><span class="price-val">' + c.price + ' ج.م</span></div>';
-
-          var viewsBadgeText = (c.maxViewsType === 'unlimited' || !c.maxViews || Number(c.maxViews) === 0) 
-            ? 'مشاهدة مفتوحة' 
-            : (c.maxViews + ' مرات دخول');
-
-          var lessonsCount = (c.lessons || []).length;
-
-          return '<div class="course-liquid-card">' +
-            '<div class="course-liquid-media">' +
-              '<img src="' + (c.image || 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80') + '" class="course-liquid-img" alt="' + c.title + '">' +
-              '<div class="course-floating-tags">' +
-                '<span class="tag-glass-pill">' + (c.tag || 'الصف الثالث الثانوي') + '</span>' +
-                (isEnrolled 
-                  ? '<span class="tag-glass-pill green">مشترك بالفعل</span>' 
-                  : (isFreeCourse ? '<span class="tag-glass-pill cyan">كورس مجاني</span>' : '')) +
-              '</div>' +
-            '</div>' +
-            '<div class="course-liquid-body">' +
-              '<h3 class="course-liquid-title">' + c.title + '</h3>' +
-              '<p class="course-liquid-desc">' + c.desc + '</p>' +
-              '<div class="course-meta-row">' +
-                '<div class="course-meta-badge">📖 ' + lessonsCount + ' محاضرات</div>' +
-                '<div class="course-meta-badge">👁️ ' + viewsBadgeText + '</div>' +
-                '<div class="course-meta-badge">📝 بنك أسئلة وتدريبات</div>' +
-              '</div>' +
-              '<div class="course-liquid-footer">' +
-                priceBlock +
-                actionButton +
-              '</div>' +
-            '</div>' +
-          '</div>';
-        }).join('');
-      }
-
-      var faqs = JSON.parse(localStorage.getItem("edu_faqs")) || [];
+      var faqs = JSON.parse(localStorage.getItem("edu_faqs")) || [
+        { q: "كيف يتم تفعيل الكورس بعد الاشتراك؟", a: "يتم التفعيل الفوري للكورسات المجانية، وبالنسبة للكورسات المدفوعة يتم مراجعة إيصال التحويل وتفعيل الكورس في غضون دقائق." },
+        { q: "هل يمكن مشاهدة المحاضرات أكثر من مرة؟", a: "نعم، كل كورس يتيح لك عدد مشاهدات محدد أو مشاهدة مفتوحة بحسب طبيعة المحتوى المنشور." },
+        { q: "كيف تظهر في لوحة الشرف الشهرية؟", a: "بتحقيق معدل 80% فأعلى في اختبارات الشهر الدورية الخاصة بالمنظومة." }
+      ];
       document.getElementById("faqContainer").innerHTML = faqs.map(function(f) {
         return '<div class="faq-item" onclick="toggleFaq(this)">' +
           '<div class="faq-question">' +
@@ -317,6 +385,12 @@
           '<div class="faq-answer">' + f.a + '</div>' +
         '</div>';
       }).join('');
+
+      var initCourses = JSON.parse(localStorage.getItem("edu_courses")) || [];
+      renderCoursesSection(initCourses);
+
+      var initExams = JSON.parse(localStorage.getItem("edu_exams")) || [];
+      renderGeneralExams(initExams);
     });
   </script>
 </body>

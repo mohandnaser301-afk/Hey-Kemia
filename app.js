@@ -47,19 +47,11 @@ function customConfirm(message, title, confirmText, cancelText) {
 }
 window.customConfirm = customConfirm;
 
-// 2. فحص وتنبيه تفعيل الإشعارات (يختفي نهائياً ولا يتكرر فور التفعيل أو الرفض)
+// 2. نظام الإشعارات المتوافق مع الهواتف (Touch-Event Trigger)
 function checkAndPromptNotifications() {
-  // فحص حالة الكاش المسجلة مسبقاً
   if (localStorage.getItem("hk_notif_prompt_handled") === "true") return;
-
   if (!("Notification" in window)) return;
-  
-  // إذا كانت الحالة granted أو denied
-  if (Notification.permission === "granted") {
-    localStorage.setItem("hk_notif_prompt_handled", "true");
-    return;
-  }
-  if (Notification.permission === "denied") {
+  if (Notification.permission === "granted" || Notification.permission === "denied") {
     localStorage.setItem("hk_notif_prompt_handled", "true");
     return;
   }
@@ -86,9 +78,9 @@ function checkAndPromptNotifications() {
   document.body.appendChild(modal);
 
   document.getElementById("hkAllowNotifBtn").onclick = function() {
+    modal.remove();
+    localStorage.setItem("hk_notif_prompt_handled", "true");
     Notification.requestPermission().then(function(permission) {
-      modal.remove();
-      localStorage.setItem("hk_notif_prompt_handled", "true");
       if (permission === "granted") {
         showToast("تم تفعيل إشعارات المنصة بنجاح على جهازك", "success");
         updateNavbarAndAuthGuards();
@@ -103,28 +95,16 @@ function checkAndPromptNotifications() {
 }
 window.checkAndPromptNotifications = checkAndPromptNotifications;
 
-// 3. نظام الإشعارات
 var swRegistration = null;
 function registerDeviceServiceWorker() {
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js")
       .then(function(reg) { swRegistration = reg; })
-      .catch(function(err) { console.log("Service Worker: ", err); });
+      .catch(function(err) { console.log("SW Error:", err); });
   }
 }
 
 function sendSystemPushNotification(title, body, targetEmail, targetUrl) {
-  var notifications = JSON.parse(localStorage.getItem("edu_system_notifications")) || [];
-  notifications.unshift({
-    id: "NOTIF_" + Date.now(),
-    title: title,
-    body: body,
-    targetEmail: targetEmail || "ALL",
-    targetUrl: targetUrl || "dashboard.html",
-    timestamp: new Date().toLocaleString("ar-EG")
-  });
-  localStorage.setItem("edu_system_notifications", JSON.stringify(notifications));
-
   var currentUser = getCurrentUser();
   if (currentUser && (targetEmail === "ALL" || targetEmail === currentUser.email)) {
     triggerDeviceNativeNotification(title, body, targetUrl);
@@ -156,29 +136,45 @@ function triggerDeviceNativeNotification(title, body, targetUrl) {
   }
 }
 
-// 4. مراقبة وطرد الحساب المحذوف لحظياً
+// 3. المراقبة اللحظية الصارمة لطرد الحساب المحذوف فوراً ومنعه من الدخول
 function monitorCurrentUserStatus() {
   var user = getCurrentUser();
-  if (!user || !user.uid) return;
+  if (!user || !user.email) return;
 
   var interval = setInterval(function() {
     if (window.firebase && firebase.firestore) {
       clearInterval(interval);
-      firebase.firestore().collection("users").doc(user.uid).onSnapshot(function(docSnap) {
-        if (!docSnap.exists) {
-          localStorage.removeItem("current_user");
-          showToast("تم حذف أو تعطيل هذا الحساب من قِبل الإدارة.", "error", "تنبيه");
-          setTimeout(function() { window.location.href = "login.html"; }, 1200);
-        } else {
-          var updated = docSnap.data();
-          if (updated.role !== user.role || JSON.stringify(updated.enrolledCourses) !== JSON.stringify(user.enrolledCourses)) {
-            localStorage.setItem("current_user", JSON.stringify(updated));
-            updateNavbarAndAuthGuards();
+      
+      // مراقبة المستند بالـ UID وبالـ Email
+      var docRef = user.uid ? firebase.firestore().collection("users").doc(user.uid) : null;
+      if (docRef) {
+        docRef.onSnapshot(function(docSnap) {
+          if (!docSnap.exists) {
+            forceLogoutUser();
+          } else {
+            var updated = docSnap.data();
+            if (updated.role !== user.role || JSON.stringify(updated.enrolledCourses) !== JSON.stringify(user.enrolledCourses)) {
+              localStorage.setItem("current_user", JSON.stringify(updated));
+              updateNavbarAndAuthGuards();
+            }
           }
-        }
-      });
+        }, function() {
+          forceLogoutUser();
+        });
+      }
     }
-  }, 250);
+  }, 200);
+}
+
+function forceLogoutUser() {
+  localStorage.removeItem("current_user");
+  if (window.firebase && firebase.auth) {
+    try { firebase.auth().signOut(); } catch(e) {}
+  }
+  showToast("تم حذف هذا الحساب من قِبل الإدارة.", "error", "تنبيه أمني");
+  setTimeout(function() {
+    window.location.replace("login.html");
+  }, 500);
 }
 
 function showToast(message, type, title) {
@@ -204,9 +200,8 @@ function showToast(message, type, title) {
   container.appendChild(toast);
   setTimeout(function() {
     toast.style.opacity = "0";
-    toast.style.transform = "translateX(-30px)";
     setTimeout(function() { toast.remove(); }, 300);
-  }, 4500);
+  }, 4000);
 }
 
 function logAdminAction(actionType, details) {
@@ -277,7 +272,6 @@ function updateNavbarAndAuthGuards() {
       } else if (user.role === "SUPPORT") {
         authBox.innerHTML = '<a href="support.html" class="nav-btn-primary">شات الدعم</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
       } else {
-        // يختفي زر الإشعارات بالكامل إذا كانت الحالة مفعلة أو تم التعامل معها
         var isNotifActive = ("Notification" in window) && Notification.permission === "granted";
         var notifBtn = isNotifActive ? "" : '<button onclick="checkAndPromptNotifications()" class="notif-bell-btn" title="تفعيل الإشعارات">🔔</button>';
         authBox.innerHTML = notifBtn + '<a href="dashboard.html" class="nav-btn-primary">لوحة الطالب (' + sanitizeText(user.fullName.split(" ")[0]) + ')</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
@@ -358,7 +352,7 @@ window.handleHeroEnroll = function() {
 window.handleEnrollClick = handleEnrollClick;
 window.logout = logout;
 
-// استماع لحظي للكورسات والامتحانات في صفحات الموقع العامة
+// استماع لحظي للكورسات والامتحانات العامة
 function initGlobalRealtimeSync() {
   var interval = setInterval(function() {
     if (window.FirebaseService && window.firebase && firebase.firestore) {
@@ -366,7 +360,9 @@ function initGlobalRealtimeSync() {
       window.FirebaseService.subscribeCourses(function(courses) {
         if (typeof renderCoursesSection === "function") renderCoursesSection(courses);
       });
-      window.FirebaseService.subscribeExams();
+      window.FirebaseService.subscribeExams(function(exams) {
+        if (typeof renderGeneralExams === "function") renderGeneralExams(exams);
+      });
     }
   }, 250);
 }
@@ -379,6 +375,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
   var currentUser = getCurrentUser();
   if (currentUser && currentUser.role === "STUDENT") {
-    setTimeout(checkAndPromptNotifications, 1200);
+    if (localStorage.getItem("hk_notif_prompt_handled") !== "true") {
+      setTimeout(checkAndPromptNotifications, 1200);
+    }
   }
 });
