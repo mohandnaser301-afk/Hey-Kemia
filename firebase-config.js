@@ -1,6 +1,6 @@
 // =========================================================
 // محرك ربط Firebase السحابي لمنصة هي كيميا !
-// مزامنة لحظية بين جميع الأجهزة
+// مزامنة لحظية شاملة ومعالجة الصور السحابية
 // =========================================================
 
 (function loadFirebaseSDKs() {
@@ -39,6 +39,41 @@ function getFirebase() {
   return firebase;
 }
 
+// دالة تصغير وضغط الصور قبل إرسالها لـ Firestore لمنع تجاوز حد 1MB
+function compressImageBase64(base64Str, maxWidth, maxHeight, quality) {
+  maxWidth = maxWidth || 700;
+  maxHeight = maxHeight || 450;
+  quality = quality || 0.7;
+
+  return new Promise((resolve) => {
+    if (!base64Str || !base64Str.startsWith("data:image")) {
+      return resolve(base64Str);
+    }
+    const img = new Image();
+    img.src = base64Str;
+    img.onload = () => {
+      let width = img.width;
+      let height = img.height;
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+      }
+      if (height > maxHeight) {
+        width = Math.round((width * maxHeight) / height);
+        height = maxHeight;
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = () => resolve(base64Str);
+  });
+}
+window.compressImageBase64 = compressImageBase64;
+
 window.FirebaseService = {
   // 1. تسجيل طالب جديد
   async registerStudent(userData) {
@@ -50,7 +85,7 @@ window.FirebaseService = {
         const userCredential = await fb.auth().createUserWithEmailAndPassword(userData.email, userData.password);
         uid = userCredential.user.uid;
       } catch (authErr) {
-        console.warn("Auth alert:", authErr.message);
+        console.warn("Auth Notice:", authErr.message);
       }
     }
 
@@ -92,7 +127,7 @@ window.FirebaseService = {
           foundUser = snap.data();
         }
       } catch (e) {
-        console.warn("Local fallback search:", e.message);
+        console.warn("Firestore lookup fallback:", e.message);
       }
     }
 
@@ -121,7 +156,7 @@ window.FirebaseService = {
     window.location.href = "login.html";
   },
 
-  // 4. الاستماع اللحظي للكورسات لجميع الأجهزة
+  // 4. إدارة الكورسات سحابياً لحظياً
   subscribeCourses(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -137,6 +172,10 @@ window.FirebaseService = {
   async saveCourse(courseData, courseId) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
+      if (courseData.image && courseData.image.startsWith("data:image")) {
+        courseData.image = await compressImageBase64(courseData.image, 600, 380, 0.65);
+      }
+
       if (courseId) {
         await fb.firestore().collection("courses").doc(courseId).set(courseData, { merge: true });
         return { id: courseId, ...courseData };
@@ -154,7 +193,7 @@ window.FirebaseService = {
     }
   },
 
-  // 5. الاستماع اللحظي للامتحانات
+  // 5. إدارة الامتحانات سحابياً لحظياً
   subscribeExams(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -186,7 +225,7 @@ window.FirebaseService = {
     }
   },
 
-  // 6. الاستماع اللحظي للمستخدمين والطلاب
+  // 6. إدارة الطلاب والمستخدمين سحابياً لحظياً
   subscribeUsers(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {

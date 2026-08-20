@@ -1,6 +1,6 @@
 // =========================================================
 // المحرك البرمجي وحصن الأمان لمنصة هي كيميا !
-// مزامنة لحظية في الوقت الفعلي + نوافذ مخصصة
+// مزامنة فورية كاملة + تنبيه إلزامي لتفعيل الإشعارات
 // =========================================================
 
 function sanitizeText(str) {
@@ -10,7 +10,7 @@ function sanitizeText(str) {
   return temp.innerHTML;
 }
 
-// 1. نافذة تأكيد مخصصة للموقع (Custom Confirmation Modal)
+// 1. نافذة تأكيد مخصصة (Custom Modal بدلاً من confirm الافتراضية)
 function customConfirm(message, title, confirmText, cancelText) {
   title = title || "تأكيد الإجراء";
   confirmText = confirmText || "تأكيد";
@@ -40,7 +40,6 @@ function customConfirm(message, title, confirmText, cancelText) {
       modal.remove();
       resolve(true);
     };
-
     document.getElementById("hkModalBtnCancel").onclick = function() {
       modal.remove();
       resolve(false);
@@ -49,29 +48,54 @@ function customConfirm(message, title, confirmText, cancelText) {
 }
 window.customConfirm = customConfirm;
 
-// 2. نظام الإشعارات
+// 2. فحص وتنبيه تفعيل الإشعارات الإلزامي للطالب
+function checkAndPromptNotifications() {
+  if (!("Notification" in window)) return;
+
+  // إذا تم السماح بها مسبقاً، لا يظهر التنبيه
+  if (Notification.permission === "granted") return;
+
+  // عرض المودال الإلزامي للطالب
+  var existing = document.getElementById("hkMandatoryNotifModal");
+  if (existing) return;
+
+  var modal = document.createElement("div");
+  modal.id = "hkMandatoryNotifModal";
+  modal.style.cssText = "position:fixed; inset:0; background:rgba(8,10,33,0.85); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; z-index:999998; padding:16px;";
+  modal.innerHTML = 
+    '<div style="background:#ffffff; color:#191b26; border-radius:20px; padding:28px 24px; max-width:440px; width:100%; box-shadow:0 25px 50px rgba(0,0,0,0.4); text-align:center; border:2px solid #00D2FF;">' +
+      '<div style="width:56px; height:56px; background:rgba(0,210,255,0.14); color:#0284C7; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 14px; font-size:26px; animation:ringBell 2s infinite;">🔔</div>' +
+      '<h3 style="font-size:18px; font-weight:900; color:#0E1338; margin-bottom:8px;">تفعيل إشعارات المنصة</h3>' +
+      '<p style="font-size:13.5px; color:#64748B; margin-bottom:20px; line-height:1.6;">' +
+        'لضمان استلام مواعيد المحاضرات الجديدة، نتائج الامتحانات، واعتمادات الدفع فوراً على هاتفك، يُرجى السماح بالإشعارات.' +
+      '</p>' +
+      '<button id="hkAllowNotifBtn" style="width:100%; padding:12px; background:linear-gradient(135deg, #00D2FF, #0284C7); color:#fff; border:none; border-radius:12px; font-weight:900; font-size:14.5px; cursor:pointer; box-shadow:0 4px 15px rgba(0,210,255,0.35);">تفعيل الإشعارات الآن 🔔</button>' +
+    '</div>';
+
+  document.body.appendChild(modal);
+
+  document.getElementById("hkAllowNotifBtn").onclick = function() {
+    Notification.requestPermission().then(function(permission) {
+      if (permission === "granted") {
+        modal.remove();
+        showToast("تم تفعيل إشعارات المنصة بنجاح على جهازك", "success");
+        updateNavbarAndAuthGuards();
+      } else {
+        modal.remove();
+        showToast("يمكنك تفعيل الإشعارات لاحقاً من إعدادات المتصفح", "info");
+      }
+    });
+  };
+}
+window.checkAndPromptNotifications = checkAndPromptNotifications;
+
+// 3. نظام الإشعارات
 var swRegistration = null;
 function registerDeviceServiceWorker() {
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js")
       .then(function(reg) { swRegistration = reg; })
       .catch(function(err) { console.log("Service Worker: ", err); });
-  }
-}
-
-function requestNotificationPermission(callback) {
-  if ("Notification" in window) {
-    if (Notification.permission === "granted") {
-      if (callback) callback(true);
-    } else if (Notification.permission !== "denied") {
-      Notification.requestPermission().then(function(p) {
-        if (callback) callback(p === "granted");
-      });
-    } else {
-      if (callback) callback(false);
-    }
-  } else {
-    if (callback) callback(false);
   }
 }
 
@@ -118,41 +142,7 @@ function triggerDeviceNativeNotification(title, body, targetUrl) {
   }
 }
 
-// 3. مراقبة أمان وحماية الصفحة
-function recordSecurityBreach(attackType, details, severity) {
-  severity = severity || "HIGH";
-  var currentUser = getCurrentUser() || { fullName: "غير مسجل", email: "guest@threat.net" };
-  var breaches = JSON.parse(localStorage.getItem("edu_hacker_logs")) || [];
-  breaches.unshift({
-    id: "HCK_" + Date.now(),
-    timestamp: new Date().toLocaleString("ar-EG"),
-    userName: sanitizeText(currentUser.fullName),
-    userEmail: sanitizeText(currentUser.email),
-    attackType: sanitizeText(attackType),
-    details: sanitizeText(details),
-    severity: severity,
-    userAgent: navigator.userAgent
-  });
-  localStorage.setItem("edu_hacker_logs", JSON.stringify(breaches));
-}
-
-function initSecurityGuards() {
-  document.addEventListener("keydown", function(e) {
-    if (
-      e.key === "F12" || 
-      (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "i" || e.key === "J" || e.key === "j" || e.key === "C" || e.key === "c")) ||
-      (e.ctrlKey && (e.key === "u" || e.key === "U" || e.key === "s" || e.key === "S" || e.key === "p" || e.key === "P"))
-    ) {
-      if (!window.location.pathname.includes("admin.html")) {
-        e.preventDefault();
-        recordSecurityBreach("محاولة فتح أدوات المطور", "الاختصار: " + e.key, "MEDIUM");
-        showToast("محتوى المنصة محمي بأنظمة الأمان", "error", "تنبيه أمان");
-      }
-    }
-  });
-}
-
-// 4. مراقبة وجود الحساب وتسجيل الخروج اللحظي إذا تم حذفه من قاعدة البيانات
+// 4. مراقبة وطرد الحساب المحذوف لحظياً
 function monitorCurrentUserStatus() {
   var user = getCurrentUser();
   if (!user || !user.uid) return;
@@ -163,10 +153,8 @@ function monitorCurrentUserStatus() {
       firebase.firestore().collection("users").doc(user.uid).onSnapshot(function(docSnap) {
         if (!docSnap.exists) {
           localStorage.removeItem("current_user");
-          showToast("تم تعطيل أو حذف هذا الحساب من قِبل الإدارة.", "error", "تنبيه الحساب");
-          setTimeout(function() {
-            window.location.href = "login.html";
-          }, 1500);
+          showToast("تم حذف هذا الحساب من قِبل الإدارة.", "error", "تنبيه");
+          setTimeout(function() { window.location.href = "login.html"; }, 1200);
         } else {
           var updated = docSnap.data();
           if (updated.role !== user.role || JSON.stringify(updated.enrolledCourses) !== JSON.stringify(user.enrolledCourses)) {
@@ -174,11 +162,9 @@ function monitorCurrentUserStatus() {
             updateNavbarAndAuthGuards();
           }
         }
-      }, function(err) {
-        console.warn("مراقبة الحساب:", err.message);
       });
     }
-  }, 300);
+  }, 250);
 }
 
 function showToast(message, type, title) {
@@ -243,7 +229,6 @@ function updateNavbarAndAuthGuards() {
 
   if (currentPath.includes("admin.html")) {
     if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN")) {
-      recordSecurityBreach("دخول غير مصرح للإدارة", "محاولة فتح لوحة الإدارة", "CRITICAL");
       window.location.replace("login.html");
       return;
     }
@@ -278,7 +263,7 @@ function updateNavbarAndAuthGuards() {
       } else if (user.role === "SUPPORT") {
         authBox.innerHTML = '<a href="support.html" class="nav-btn-primary">شات الدعم</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
       } else {
-        var notifStatus = (window.Notification && Notification.permission === "granted") ? "" : '<button onclick="enablePushNotifications()" class="notif-bell-btn" title="تفعيل الإشعارات">🔔</button>';
+        var notifStatus = (window.Notification && Notification.permission === "granted") ? "" : '<button onclick="checkAndPromptNotifications()" class="notif-bell-btn" title="تفعيل الإشعارات">🔔</button>';
         authBox.innerHTML = notifStatus + '<a href="dashboard.html" class="nav-btn-primary">لوحة الطالب (' + sanitizeText(user.fullName.split(" ")[0]) + ')</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
       }
     } else {
@@ -286,17 +271,6 @@ function updateNavbarAndAuthGuards() {
     }
   }
 }
-
-window.enablePushNotifications = function() {
-  requestNotificationPermission(function(granted) {
-    if (granted) {
-      showToast("تم تفعيل إشعارات الجهاز بنجاح", "success");
-      updateNavbarAndAuthGuards();
-    } else {
-      showToast("يرجى السماح بالإشعارات من إعدادات المتصفح", "error");
-    }
-  });
-};
 
 async function handleEnrollClick(courseId) {
   var user = getCurrentUser();
@@ -368,58 +342,28 @@ window.handleHeroEnroll = function() {
 window.handleEnrollClick = handleEnrollClick;
 window.logout = logout;
 
-// اللودر الكيميائي
-function injectChemicalPreloader() {
-  if (document.getElementById("chemicalPreloader")) return;
-  var preloader = document.createElement("div");
-  preloader.id = "chemicalPreloader";
-  preloader.innerHTML = 
-    '<div class="lab-stage-container">' +
-      '<div class="atomic-ring-1"><div class="electron-dot"></div></div>' +
-      '<div class="atomic-ring-2"><div class="electron-dot"></div></div>' +
-      '<div class="test-tube left-tube"><div class="tube-liquid"></div></div>' +
-      '<div class="test-tube right-tube"><div class="tube-liquid"></div></div>' +
-      '<div class="flask-steam"></div>' +
-      '<div class="main-flask-neck"></div>' +
-      '<div class="main-flask-box">' +
-        '<div class="flask-liquid-core"></div>' +
-        '<div class="lab-bubble"></div>' +
-        '<div class="lab-bubble"></div>' +
-      '</div>' +
-    '</div>' +
-    '<div class="loader-brand-title">منصة هي كيميا<span>!</span></div>' +
-    '<div class="loader-dynamic-phrase" id="loaderDynamicPhrase">جاري تحميل المنصة...</div>' +
-    '<div class="loader-counter-num" id="loaderCounterNum">0%</div>' +
-    '<div class="loader-bar-outer"><div class="loader-bar-inner" id="loaderBarFill"></div></div>';
-
-  document.body.prepend(preloader);
-
-  var startTime = Date.now();
-  var duration = 1500;
-  var barFill = document.getElementById("loaderBarFill");
-  var counterNum = document.getElementById("loaderCounterNum");
-
-  var timer = setInterval(function() {
-    var elapsed = Date.now() - startTime;
-    var progress = Math.min(100, Math.round((elapsed / duration) * 100));
-
-    if (barFill) barFill.style.width = progress + "%";
-    if (counterNum) counterNum.innerText = progress + "%";
-
-    if (progress >= 100) {
-      clearInterval(timer);
-      setTimeout(function() {
-        preloader.classList.add("hide-preloader");
-        setTimeout(function() { preloader.remove(); }, 350);
-      }, 80);
+// استماع لحظي للكورسات والامتحانات في صفحات الموقع العامة
+function initGlobalRealtimeSync() {
+  var interval = setInterval(function() {
+    if (window.FirebaseService && window.firebase && firebase.firestore) {
+      clearInterval(interval);
+      window.FirebaseService.subscribeCourses(function(courses) {
+        if (typeof renderCoursesSection === "function") renderCoursesSection(courses);
+      });
+      window.FirebaseService.subscribeExams();
     }
-  }, 25);
+  }, 250);
 }
 
 document.addEventListener("DOMContentLoaded", function() {
   registerDeviceServiceWorker();
-  initSecurityGuards();
-  injectChemicalPreloader();
   updateNavbarAndAuthGuards();
   monitorCurrentUserStatus();
+  initGlobalRealtimeSync();
+
+  // فحص تنبيه الإشعارات للطلاب تلقائياً
+  var currentUser = getCurrentUser();
+  if (currentUser && currentUser.role === "STUDENT") {
+    setTimeout(checkAndPromptNotifications, 1200);
+  }
 });

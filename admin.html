@@ -390,7 +390,7 @@
         <header class="topbar">
           <div>
             <h1 style="font-size:22px; font-weight:900; color:var(--royal-indigo-base);">سجلات الطلاب المسجلين</h1>
-            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">البحث، تفعيل الكورسات أو محاضرات محددة للطالب</p>
+            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">مزامنة لحظية مباشرة من قاعدة البيانات السحابية</p>
           </div>
         </header>
 
@@ -1696,19 +1696,24 @@
       }
     }
 
-    function handleImageUpload(event, mode) {
+    // معالجة وضغط صورة الغلاف تلقائياً فور اختيارها
+    async function handleImageUpload(event, mode) {
       var file = event.target.files[0];
       if (!file) return;
 
       var reader = new FileReader();
-      reader.onload = function(e) {
+      reader.onload = async function(e) {
         var base64Data = e.target.result;
+        var compressed = window.compressImageBase64 
+          ? await window.compressImageBase64(base64Data, 600, 380, 0.65) 
+          : base64Data;
+
         if (mode === "add") {
-          document.getElementById("addCourseImageBase64").value = base64Data;
-          document.getElementById("addCourseImgPreview").src = base64Data;
+          document.getElementById("addCourseImageBase64").value = compressed;
+          document.getElementById("addCourseImgPreview").src = compressed;
         } else {
-          document.getElementById("editCourseImageBase64").value = base64Data;
-          document.getElementById("editCourseImgPreview").src = base64Data;
+          document.getElementById("editCourseImageBase64").value = compressed;
+          document.getElementById("editCourseImgPreview").src = compressed;
         }
       };
       reader.readAsDataURL(file);
