@@ -8,7 +8,6 @@
 </head>
 <body>
 
-  <!-- النافبار الكبسولي -->
   <div class="navbar-capsule-wrapper">
     <nav class="navbar-capsule">
       <a href="index.html" class="capsule-brand">
@@ -17,8 +16,7 @@
       </a>
       <div class="capsule-links">
         <a href="index.html#hero">الرئيسية</a>
-        <a href="index.html#courses">الكورسات المتاحة</a>
-        <a href="index.html#honorRoll">لوحة الشرف</a>
+        <a href="index.html#courses">الكورسات</a>
         <a href="support.html">الدعم الفني</a>
       </div>
       <div class="capsule-auth" id="navAuthBox">
@@ -55,22 +53,22 @@
     </div>
   </div>
 
+  <script src="firebase-config.js"></script>
   <script src="app.js"></script>
   <script>
-    document.getElementById("loginForm").addEventListener("submit", function(e) {
+    document.getElementById("loginForm").addEventListener("submit", async function(e) {
       e.preventDefault();
 
       var email = document.getElementById("logEmail").value.trim().toLowerCase();
       var password = document.getElementById("logPassword").value;
 
-      var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-      var user = users.find(function(u) {
-        return u.email.toLowerCase() === email && u.password === password;
-      });
+      if (!confirm("هل تؤكد تسجيل الدخول بالحساب: " + email + "؟")) return;
 
-      if (user) {
-        localStorage.setItem("current_user", JSON.stringify(user));
-        showToast("مرحباً بك مجدداً يا " + user.fullName, "success");
+      showToast("جاري التحقق من البيانات...", "info");
+
+      try {
+        const user = await window.FirebaseService.loginUser(email, password);
+        showToast("مرحباً بك يا " + user.fullName, "success");
 
         setTimeout(function() {
           if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") {
@@ -82,9 +80,9 @@
             var redirect = urlParams.get("redirect");
             window.location.href = redirect ? decodeURIComponent(redirect) : "dashboard.html";
           }
-        }, 1000);
-      } else {
-        showToast("البريد الإلكتروني أو كلمة المرور غير صحيحة", "error");
+        }, 800);
+      } catch (err) {
+        showToast(err.message || "البريد الإلكتروني أو كلمة المرور غير صحيحة", "error");
       }
     });
   </script>

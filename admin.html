@@ -931,6 +931,8 @@
     </div>
   </div>
 
+  <!-- ربط السحابة وملفات التشغيل -->
+  <script type="module" src="firebase-config.js"></script>
   <script src="app.js"></script>
   <script>
     var allStudentsCache = [];
@@ -1659,7 +1661,6 @@
       var hackerLogs = JSON.parse(localStorage.getItem("edu_hacker_logs")) || [];
       var chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
 
-      // عزل الإداريين: حصر الطلاب فقط في قائمة الطلاب
       allStudentsCache = users.filter(function(u) { return u.role === "STUDENT"; });
 
       updateNotificationBadges(payments, hackerLogs, chats);
@@ -1759,7 +1760,10 @@
         }
 
         return "<tr>" +
-          "<td><strong>" + s.fullName + "</strong></td><td>" + s.email + "</td><td>" + s.studentPhone + "</td><td><span class=\"badge-success\">" + s.role + "</span></td>" +
+          "<td><strong>" + s.fullName + "</strong></td>" +
+          "<td>" + s.email + "</td>" +
+          "<td>" + s.studentPhone + "</td>" +
+          "<td><span class=\"badge-success\">" + s.role + "</span></td>" +
           "<td>" + actionBtns + "</td>" +
         "</tr>";
       }).join("");
