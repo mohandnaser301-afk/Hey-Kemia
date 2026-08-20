@@ -392,7 +392,10 @@
             <h1 style="font-size:22px; font-weight:900; color:var(--royal-indigo-base);">سجلات الطلاب المسجلين</h1>
             <p class="subtitle" style="color:var(--text-muted); font-size:13px;">البحث، تفعيل الكورسات أو محاضرات محددة للطالب</p>
           </div>
-          <button class="btn btn-action-danger" onclick="clearCachedAccounts()" style="padding:8px 14px;">🗑️ تنظيف الحسابات المحلية الوهمية</button>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-primary" onclick="renderAdmin()" style="padding:8px 14px;">🔄 تحديث البيانات من السحابة</button>
+            <button class="btn btn-action-danger" onclick="clearCachedAccounts()" style="padding:8px 14px;">🗑️ تنظيف الكاش المحلي</button>
+          </div>
         </header>
 
         <div class="student-filter-bar">
@@ -1106,7 +1109,6 @@
       }
     }
 
-    // تنظيف ومسح الحسابات المحلية الوهمية
     function clearCachedAccounts() {
       if (confirm("هل تريد تنظيف ومسح الحسابات المخزنة محلياً في هذا المتصفح؟ لن يتم مسح أي حساب مسجل في السحابة.")) {
         localStorage.setItem("edu_users", JSON.stringify([]));
@@ -1246,7 +1248,7 @@
       });
     }
 
-    function saveStudentCoursePermissions() {
+    async function saveStudentCoursePermissions() {
       var studentEmail = document.getElementById("permStudentEmailHidden").value;
       var users = JSON.parse(localStorage.getItem("edu_users")) || [];
       var uIdx = users.findIndex(function(u) { return u.email === studentEmail; });
@@ -1277,7 +1279,20 @@
         users[uIdx].enrolledCourses = newEnrolled;
         users[uIdx].customAllowedLessons = newCustomLessons;
 
+        // تحديث محلي
         localStorage.setItem("edu_users", JSON.stringify(users));
+
+        // تحديث في Firestore إذا كان المستخدم لديه uid
+        if (window.firebase && firebase.firestore && users[uIdx].uid) {
+          try {
+            await firebase.firestore().collection("users").doc(users[uIdx].uid).update({
+              enrolledCourses: newEnrolled,
+              customAllowedLessons: newCustomLessons
+            });
+          } catch (e) {
+            console.warn("تحديث السحابة:", e.message);
+          }
+        }
 
         var currentLoggedIn = getCurrentUser();
         if (currentLoggedIn && currentLoggedIn.email === studentEmail) {
@@ -1697,7 +1712,8 @@
       reader.readAsDataURL(file);
     }
 
-    function renderAdmin() {
+    // جلب الطلاب والبيانات من السحابة أولاً ثم عرضها
+    async function renderAdmin() {
       var user = getCurrentUser();
       if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN")) {
         showToast("عذراً، مخصص للإدارة فقط", "error");
@@ -1727,9 +1743,33 @@
         if (btnAddStaff) btnAddStaff.style.display = "none";
       }
 
+      // جلب المستخدمين سحابياً من Firestore لضمان ظهور الطلاب المسجلين من أجهزة أخرى
+      var users = JSON.parse(localStorage.getItem("edu_users")) || [];
+      if (window.firebase && firebase.firestore) {
+        try {
+          var snap = await firebase.firestore().collection("users").get();
+          if (!snap.empty) {
+            var cloudUsers = [];
+            snap.forEach(function(doc) {
+              cloudUsers.push(doc.data());
+            });
+            // دمج سحابي ومحلي
+            var mergedUsers = cloudUsers;
+            users.forEach(function(localU) {
+              if (!mergedUsers.some(function(cu) { return cu.email === localU.email; })) {
+                mergedUsers.push(localU);
+              }
+            });
+            users = mergedUsers;
+            localStorage.setItem("edu_users", JSON.stringify(users));
+          }
+        } catch (e) {
+          console.warn("جلب السحابة:", e.message);
+        }
+      }
+
       var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
       var payments = JSON.parse(localStorage.getItem("edu_payments")) || [];
-      var users = JSON.parse(localStorage.getItem("edu_users")) || [];
       var exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
       var logs = JSON.parse(localStorage.getItem("edu_activity_logs")) || [];
       var hackerLogs = JSON.parse(localStorage.getItem("edu_hacker_logs")) || [];
@@ -1834,10 +1874,7 @@
         }
 
         return "<tr>" +
-          "<td><strong>" + s.fullName + "</strong></td>" +
-          "<td>" + s.email + "</td>" +
-          "<td>" + s.studentPhone + "</td>" +
-          "<td><span class=\"badge-success\">" + s.role + "</span></td>" +
+          "<td><strong>" + s.fullName + "</strong></td><td>" + s.email + "</td><td>" + s.studentPhone + "</td><td><span class=\"badge-success\">" + s.role + "</span></td>" +
           "<td>" + actionBtns + "</td>" +
         "</tr>";
       }).join("");
@@ -1963,7 +2000,7 @@
       openModal("addStaffModal");
     }
 
-    document.getElementById("assignStaffRoleForm").addEventListener("submit", function(e) {
+    document.getElementById("assignStaffRoleForm").addEventListener("submit", async function(e) {
       e.preventDefault();
       var user = getCurrentUser();
       if (!user || user.role !== "SUPER_ADMIN") {
@@ -1986,6 +2023,12 @@
         users[uIdx].role = newRole;
         localStorage.setItem("edu_users", JSON.stringify(users));
 
+        if (window.firebase && firebase.firestore && users[uIdx].uid) {
+          try {
+            await firebase.firestore().collection("users").doc(users[uIdx].uid).update({ role: newRole });
+          } catch (err) {}
+        }
+
         logAdminAction("إسناد رتبة إدارية", "تمت ترقية الحساب: " + users[uIdx].fullName + " إلى رتبة: " + newRole);
         closeModal("addStaffModal");
         renderAdmin();
@@ -2005,7 +2048,7 @@
       openModal("editStaffRoleModal");
     }
 
-    function saveStaffRoleChange() {
+    async function saveStaffRoleChange() {
       var user = getCurrentUser();
       if (!user || user.role !== "SUPER_ADMIN") {
         showToast("غير مصرح لك بتعديل الرتب", "error");
@@ -2022,6 +2065,12 @@
         var oldRole = users[uIdx].role;
         users[uIdx].role = newRole;
         localStorage.setItem("edu_users", JSON.stringify(users));
+
+        if (window.firebase && firebase.firestore && users[uIdx].uid) {
+          try {
+            await firebase.firestore().collection("users").doc(users[uIdx].uid).update({ role: newRole });
+          } catch (err) {}
+        }
 
         logAdminAction("تعديل رتبة مسؤول", "تم تعديل رتبة " + users[uIdx].fullName + " من " + oldRole + " إلى " + newRole);
         closeModal("editStaffRoleModal");
@@ -2045,7 +2094,7 @@
       showToast("تم إرسال الإشعار بنجاح", "success");
     });
 
-    function approvePayment(id) {
+    async function approvePayment(id) {
       if (!confirm("هل تؤكد قبول وتفعيل هذا الطلب وإرسال إشعار فوري للطالب؟")) return;
 
       var payments = JSON.parse(localStorage.getItem("edu_payments")) || [];
@@ -2057,6 +2106,12 @@
         if (u) {
           if (!u.enrolledCourses) u.enrolledCourses = [];
           if (!u.enrolledCourses.includes(p.courseId)) u.enrolledCourses.push(p.courseId);
+
+          if (window.firebase && firebase.firestore && u.uid) {
+            try {
+              await firebase.firestore().collection("users").doc(u.uid).update({ enrolledCourses: u.enrolledCourses });
+            } catch (err) {}
+          }
         }
         localStorage.setItem("edu_payments", JSON.stringify(payments));
         localStorage.setItem("edu_users", JSON.stringify(users));
@@ -2077,7 +2132,7 @@
       }
     }
 
-    function deleteUser(email) {
+    async function deleteUser(email) {
       var currentUser = getCurrentUser();
       if (!currentUser || currentUser.role !== "SUPER_ADMIN") {
         showToast("حذف الحسابات مقتصر على المشرف العام فقط", "error");
@@ -2085,6 +2140,14 @@
       }
       if (confirm("هل تريد حذف هذا الحساب نهائياً؟")) {
         var users = JSON.parse(localStorage.getItem("edu_users")) || [];
+        var targetUser = users.find(function(u) { return u.email === email; });
+
+        if (targetUser && targetUser.uid && window.firebase && firebase.firestore) {
+          try {
+            await firebase.firestore().collection("users").doc(targetUser.uid).delete();
+          } catch (e) {}
+        }
+
         localStorage.setItem("edu_users", JSON.stringify(users.filter(function(u) { return u.email !== email; })));
         renderAdmin();
         showToast("تم حذف الحساب بنجاح", "info");
@@ -2255,7 +2318,6 @@
       }
     }
 
-    // تهيئة الأحداث مع دعم كامل للمس في Safari iOS
     document.addEventListener("DOMContentLoaded", function() {
       var toggleBtn = document.getElementById("mobileSidebarToggleBtn");
       if (toggleBtn) {
