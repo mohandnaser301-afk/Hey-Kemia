@@ -13,13 +13,23 @@
       user-select: none;
     }
 
+    /* إبعاد النافبار عن مشغل الفيديو */
+    .course-view-navbar-wrapper {
+      position: relative;
+      margin: 15px auto 25px auto;
+      display: flex;
+      justify-content: center;
+      padding: 0 16px;
+      z-index: 100;
+    }
+
     .course-player-layout {
       display: grid;
       grid-template-columns: 1fr 340px;
       gap: 25px;
       max-width: 1220px;
-      margin: 25px auto;
-      padding: 0 20px;
+      margin: 0 auto 30px auto;
+      padding: 0 16px;
     }
     
     .video-secure-container {
@@ -30,6 +40,7 @@
       aspect-ratio: 16/9;
       box-shadow: 0 10px 30px rgba(12,7,84,0.12);
       border: 1px solid var(--border-subtle);
+      width: 100%;
     }
     
     .video-secure-container iframe {
@@ -79,6 +90,7 @@
       border: 1px solid var(--border-subtle);
       padding: 20px;
       box-shadow: var(--liquid-glass-highlight);
+      height: fit-content;
     }
 
     .playlist-item {
@@ -89,7 +101,9 @@
       cursor: pointer;
       display: flex;
       justify-content: space-between;
+      align-items: center;
       transition: all 0.2s ease;
+      border: 1px solid transparent;
     }
 
     .playlist-item:hover {
@@ -102,6 +116,17 @@
       background: rgba(0, 210, 255, 0.1);
     }
 
+    .playlist-item.locked {
+      opacity: 0.6;
+      cursor: not-allowed;
+      background: #f1f3f9;
+    }
+
+    .playlist-item.locked:hover {
+      transform: none;
+      background: #f1f3f9;
+    }
+
     .views-badge {
       background: rgba(0, 210, 255, 0.12);
       border: 1px solid var(--cyan-accent);
@@ -110,33 +135,82 @@
       border-radius: 20px;
       font-size: 13px;
       font-weight: bold;
+      white-space: nowrap;
     }
 
     .blocked-screen {
       display: none;
       text-align: center;
-      padding: 60px 20px;
+      padding: 50px 20px;
       background: #fff;
       border: 1px solid #EF4444;
       border-radius: 18px;
       max-width: 600px;
-      margin: 60px auto;
+      margin: 40px auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+
+    .lesson-pdf-box {
+      margin-top: 15px;
+      background: #ffffff;
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
+
+    .pdf-download-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #f1f5f9;
+      color: var(--royal-indigo-base);
+      border: 1px solid #cbd5e1;
+      padding: 8px 14px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+      margin: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .pdf-download-btn:hover {
+      background: var(--cyan-accent-soft);
+      border-color: var(--cyan-accent);
+      color: #0284c7;
+      transform: translateY(-2px);
     }
     
     @media (max-width: 900px) {
-      .course-player-layout { grid-template-columns: 1fr; }
+      .course-player-layout {
+        grid-template-columns: 1fr;
+        padding: 0 12px;
+      }
+      .course-view-navbar-wrapper {
+        margin: 10px auto 18px auto;
+      }
+      .views-badge {
+        font-size: 11px;
+        padding: 4px 10px;
+      }
+      .playlist-card {
+        margin-top: 10px;
+        padding: 16px;
+      }
     }
   </style>
 </head>
 <body oncontextmenu="return false;">
 
-  <div class="navbar-capsule-wrapper">
-    <nav class="navbar-capsule">
+  <!-- النافبار في مكان مستقل أعلى الصفحة دون تداخل مع الفيديو -->
+  <div class="course-view-navbar-wrapper">
+    <nav class="navbar-capsule" style="position: relative;">
       <a href="index.html" class="capsule-brand">
         <div class="capsule-logo">HK</div>
         <span class="brand-text">هي كيميا<span>!</span></span>
       </a>
-      <div style="display:flex; align-items:center; gap:15px;">
+      <div style="display:flex; align-items:center; gap:10px;">
         <span class="views-badge" id="viewsDisplay">المشاهدة: --</span>
         <a href="dashboard.html" class="nav-btn-link">لوحة التحكم</a>
       </div>
@@ -171,17 +245,23 @@
         </div>
       </div>
 
-      <div style="margin-top: 20px;">
-        <h2 id="currentLessonTitle" style="color:var(--royal-indigo-base); font-size:22px; font-weight:900;">جاري تحميل المحاضرة...</h2>
-        <p id="courseDesc" style="color:var(--text-muted); margin-top:8px; font-size:14px;"></p>
+      <div style="margin-top: 18px;">
+        <h2 id="currentLessonTitle" style="color:var(--royal-indigo-base); font-size:20px; font-weight:900;">جاري تحميل المحاضرة...</h2>
+        <p id="courseDesc" style="color:var(--text-muted); margin-top:6px; font-size:13.5px; line-height:1.6;"></p>
+        
+        <!-- مساحة ملفات PDF التابعة للمحاضرة الحالية -->
+        <div class="lesson-pdf-box" id="lessonPdfSection" style="display:none;">
+          <h4 style="font-size:14px; font-weight:800; color:var(--royal-indigo-base); margin-bottom:8px;">📄 ملحقات ومذكرات المحاضرة (PDF):</h4>
+          <div id="lessonPdfList" style="display:flex; flex-wrap:wrap;"></div>
+        </div>
       </div>
     </main>
 
     <aside class="playlist-card">
-      <h3 style="color:var(--royal-indigo-base); margin-bottom:15px; font-size:16px; font-weight:800;">فهرس المحاضرات</h3>
+      <h3 style="color:var(--royal-indigo-base); margin-bottom:15px; font-size:15px; font-weight:800;">فهرس المحاضرات</h3>
       <div id="lessonsList"></div>
-      <div style="margin-top: 25px; border-top: 1px solid var(--border-subtle); padding-top: 15px;">
-        <a id="examLink" href="#" class="btn btn-primary" style="width: 100%; display: block; text-align: center;">دخول امتحان الكورس</a>
+      <div style="margin-top: 20px; border-top: 1px solid var(--border-subtle); padding-top: 15px;">
+        <a id="examLink" href="#" class="btn btn-primary" style="width: 100%; display: block; text-align: center;">دخول امتحان الكورس 📝</a>
       </div>
     </aside>
   </div>
@@ -204,7 +284,6 @@
     document.getElementById("wmUserName").innerText = user.fullName;
     document.getElementById("wmUserPhone").innerText = (user.studentPhone || user.email) + " • " + courseId;
 
-    // حركة انسيابية ذكية للعلامة المائية
     function moveSmartWatermark() {
       var wm = document.getElementById("smartWatermark");
       var wrapper = document.getElementById("videoWrapper");
@@ -223,7 +302,6 @@
     setInterval(moveSmartWatermark, 4500);
     setTimeout(moveSmartWatermark, 600);
 
-    // حماية التبديل وفقدان التركيز
     var isWindowFocused = true;
     window.addEventListener("blur", function() {
       isWindowFocused = false;
@@ -247,7 +325,7 @@
       }
     });
 
-    // نظام احتساب مرات المشاهدة وتسجيل وقت البقاء الفعلي داخل الكورس
+    // التحقق من مرات الدخول المسموحة
     var isUnlimited = course.maxViewsType === "unlimited" || !course.maxViews || Number(course.maxViews) === 0;
     var maxAllowed = Number(course.maxViews) || 0;
     var users = JSON.parse(localStorage.getItem("edu_users")) || [];
@@ -264,12 +342,11 @@
         document.getElementById("blockedScreen").style.display = "block";
       } else {
         document.getElementById("viewsDisplay").innerText = isUnlimited 
-          ? "المشاهدة: مفتوحة (غير محدودة)" 
-          : "الدخول (" + currentViews + " من " + maxAllowed + ") | المتبقي: " + (maxAllowed - currentViews);
+          ? "المشاهدة: مفتوحة" 
+          : "الدخول (" + currentViews + " من " + maxAllowed + ") | متبقي: " + Math.max(0, maxAllowed - currentViews);
       }
     }
 
-    // متتبع وقت المشاهدة الفعلي التراكمي
     function recordWatchTime() {
       if (!isWindowFocused) return;
       
@@ -295,22 +372,64 @@
     document.getElementById("examLink").href = "exam.html?examId=" + (course.examId || 'e1');
 
     var lessons = course.lessons || [];
+    var isStaff = user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "SUPPORT";
+    var customAllowed = (user.customAllowedLessons && user.customAllowedLessons[courseId]) || [];
+    var hasFullCourse = user.enrolledCourses && user.enrolledCourses.includes(courseId);
+
+    var firstPlayableLesson = null;
+
     document.getElementById("lessonsList").innerHTML = lessons.map(function(l, idx) {
-      return '<div class="playlist-item ' + (idx === 0 ? 'active' : '') + '" onclick="playLesson(\'' + l.videoUrl + '\', \'' + l.title + '\', this)">' +
-        '<div><h4 style="font-size:13px; color:var(--royal-indigo-base); font-weight:800;">' + (idx + 1) + '. ' + l.title + '</h4><span style="font-size:11px; color:var(--text-muted);">' + l.duration + '</span></div>' +
-      '</div>';
+      var isAllowed = isStaff || (hasFullCourse && customAllowed.length === 0) || customAllowed.includes(l.id);
+
+      if (isAllowed && !firstPlayableLesson) {
+        firstPlayableLesson = l;
+      }
+
+      if (isAllowed) {
+        return '<div class="playlist-item ' + (firstPlayableLesson && firstPlayableLesson.id === l.id ? 'active' : '') + '" onclick="playLesson(' + idx + ', this)">' +
+          '<div><h4 style="font-size:13px; color:var(--royal-indigo-base); font-weight:800;">' + (idx + 1) + '. ' + l.title + '</h4><span style="font-size:11px; color:var(--text-muted);">' + l.duration + '</span></div>' +
+          '<span style="color:#10b981; font-size:13px;">▶</span>' +
+        '</div>';
+      } else {
+        return '<div class="playlist-item locked" onclick="showToast(\'هذه المحاضرة غير مفعلة بحسابك، تواصل مع الإدارة لتفعيلها\', \'error\')">' +
+          '<div><h4 style="font-size:13px; color:#94a3b8; font-weight:700;">' + (idx + 1) + '. ' + l.title + '</h4><span style="font-size:11px; color:#94a3b8;">' + l.duration + '</span></div>' +
+          '<span style="color:#ef4444; font-size:13px;">🔒</span>' +
+        '</div>';
+      }
     }).join('');
 
-    if (lessons.length > 0) {
-      document.getElementById("mainPlayer").src = lessons[0].videoUrl;
-      document.getElementById("currentLessonTitle").innerText = lessons[0].title;
+    function updateLessonPdfSection(lesson) {
+      var pdfBox = document.getElementById("lessonPdfSection");
+      var pdfList = document.getElementById("lessonPdfList");
+      var pdfs = lesson.pdfs || [];
+
+      if (pdfs.length > 0) {
+        pdfList.innerHTML = pdfs.map(function(p, i) {
+          return '<a href="' + p.url + '" target="_blank" download class="pdf-download-btn">📥 ' + (p.name || ('مذكرة ' + (i+1) + ' (PDF)')) + '</a>';
+        }).join('');
+        pdfBox.style.display = "block";
+      } else {
+        pdfBox.style.display = "none";
+        pdfList.innerHTML = "";
+      }
     }
 
-    function playLesson(url, title, el) {
-      document.getElementById("mainPlayer").src = url;
-      document.getElementById("currentLessonTitle").innerText = title;
+    if (firstPlayableLesson) {
+      document.getElementById("mainPlayer").src = firstPlayableLesson.videoUrl;
+      document.getElementById("currentLessonTitle").innerText = firstPlayableLesson.title;
+      updateLessonPdfSection(firstPlayableLesson);
+    } else {
+      document.getElementById("currentLessonTitle").innerText = "لا توجد محاضرات مفعلة بحسابك في هذا الكورس حالياً";
+    }
+
+    function playLesson(idx, el) {
+      var l = lessons[idx];
+      if (!l) return;
+      document.getElementById("mainPlayer").src = l.videoUrl;
+      document.getElementById("currentLessonTitle").innerText = l.title;
       document.querySelectorAll(".playlist-item").forEach(function(item) { item.classList.remove("active"); });
       el.classList.add("active");
+      updateLessonPdfSection(l);
     }
   </script>
 </body>

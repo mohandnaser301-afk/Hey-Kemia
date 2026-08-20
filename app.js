@@ -1,6 +1,5 @@
-// --- المحرك البرمجي وحصن الأمان لمنصة هي كيميا ! ---
+// المحرك البرمجي وحصن الأمان لمنصة هي كيميا
 
-// 1. نظام الحماية وسد ثغرات المتصفح وحقن الأكواد (Anti-XSS Sanitizer)
 function sanitizeText(str) {
   if (!str) return "";
   var temp = document.createElement("div");
@@ -8,15 +7,119 @@ function sanitizeText(str) {
   return temp.innerHTML;
 }
 
-// 2. تسجيل ورصد محاولات الاختراق في لوحة الإدارة (Hacker Log System)
+// 1. تسجيل وتفعيل Service Worker على جهاز الطالب للإشعارات Native
+var swRegistration = null;
+function registerDeviceServiceWorker() {
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js")
+      .then(function(reg) {
+        swRegistration = reg;
+      })
+      .catch(function(err) {
+        console.log("Service Worker Registration Failed: ", err);
+      });
+  }
+}
+
+// 2. طلب إذن إشعارات النظام من جهاز الطالب
+function requestNotificationPermission(callback) {
+  if ("Notification" in window) {
+    if (Notification.permission === "granted") {
+      if (callback) callback(true);
+    } else if (Notification.permission !== "denied") {
+      Notification.requestPermission().then(function(permission) {
+        var granted = permission === "granted";
+        if (callback) callback(granted);
+      });
+    } else {
+      if (callback) callback(false);
+    }
+  } else {
+    if (callback) callback(false);
+  }
+}
+
+// 3. إرسال الإشعار الحقيقي إلى نظام تشغيل جهاز الطالب (موبايل / كمبيوتر)
+function sendSystemPushNotification(title, body, targetEmail, targetUrl) {
+  var notifications = JSON.parse(localStorage.getItem("edu_system_notifications")) || [];
+  var notifPayload = {
+    id: "NOTIF_" + Date.now(),
+    title: title,
+    body: body,
+    targetEmail: targetEmail || "ALL",
+    targetUrl: targetUrl || "dashboard.html",
+    timestamp: new Date().toLocaleString("ar-EG")
+  };
+  notifications.unshift(notifPayload);
+  localStorage.setItem("edu_system_notifications", JSON.stringify(notifications));
+
+  var currentUser = getCurrentUser();
+  if (currentUser && (targetEmail === "ALL" || targetEmail === currentUser.email)) {
+    triggerDeviceNativeNotification(title, body, targetUrl);
+    showToast(body, "info", title);
+  }
+}
+
+function triggerDeviceNativeNotification(title, body, targetUrl) {
+  if (!("Notification" in window) || Notification.permission !== "granted") {
+    return;
+  }
+
+  // محاولة الإرسال عبر Service Worker (يعمل على أجهزة الأندرويد والكمبيوتر حتى في الخلفية)
+  if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({
+      type: "TRIGGER_NATIVE_NOTIFICATION",
+      title: title,
+      body: body,
+      url: targetUrl || "dashboard.html"
+    });
+  } else if (swRegistration && swRegistration.showNotification) {
+    swRegistration.showNotification(title, {
+      body: body,
+      icon: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=192&q=80",
+      vibrate: [200, 100, 200],
+      data: { url: targetUrl || "dashboard.html" }
+    });
+  } else {
+    // Fallback مباشر لنظام التشغيل إذا لم يعمل الـ SW
+    try {
+      var n = new Notification(title, {
+        body: body,
+        icon: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=192&q=80"
+      });
+      n.onclick = function() {
+        window.focus();
+        window.location.href = targetUrl || "dashboard.html";
+      };
+    } catch (e) {
+      console.log(e);
+    }
+  }
+}
+
+// 4. الاستماع الفوري لتحديثات الإشعارات عبر النوافذ المفتوحة عبر LocalStorage
+window.addEventListener("storage", function(e) {
+  if (e.key === "edu_system_notifications") {
+    var notifications = JSON.parse(e.newValue || "[]");
+    if (notifications.length > 0) {
+      var latest = notifications[0];
+      var currentUser = getCurrentUser();
+      if (currentUser && (latest.targetEmail === "ALL" || latest.targetEmail === currentUser.email)) {
+        triggerDeviceNativeNotification(latest.title, latest.body, latest.targetUrl);
+        showToast(latest.body, "info", latest.title);
+      }
+    }
+  }
+});
+
 function recordSecurityBreach(attackType, details, severity) {
   severity = severity || "HIGH";
-  var currentUser = getCurrentUser() || { fullName: "مجهول / IP مشبوه", email: "guest@threat.net" };
+  var currentUser = getCurrentUser() || { fullName: "حساب غير مسجل", email: "guest@threat.net" };
   var breaches = JSON.parse(localStorage.getItem("edu_hacker_logs")) || [];
   
   breaches.unshift({
     id: "HCK_" + Date.now(),
-    timestamp: new Date().toLocaleString('ar-EG'),
+    timestamp: new Date().toLocaleString("ar-EG"),
     userName: sanitizeText(currentUser.fullName),
     userEmail: sanitizeText(currentUser.email),
     attackType: sanitizeText(attackType),
@@ -26,9 +129,19 @@ function recordSecurityBreach(attackType, details, severity) {
   });
   
   localStorage.setItem("edu_hacker_logs", JSON.stringify(breaches));
+
+  // تسجيل المخالفة سحابياً إذا توفرت الخدمة
+  if (window.FirebaseService) {
+    window.FirebaseService.logHackerThreat({
+      userName: currentUser.fullName,
+      userEmail: currentUser.email,
+      attackType: attackType,
+      details: details,
+      severity: severity
+    }).catch(err => console.log("Firebase Log Fail", err));
+  }
 }
 
-// 3. التحقق الصارم من سلامة الجلسة ومنع تزوير الصلاحيات بالـ LocalStorage
 function verifySessionIntegrity() {
   var user = getCurrentUser();
   if (!user) return;
@@ -37,13 +150,12 @@ function verifySessionIntegrity() {
   var dbUser = users.find(function(u) { return u.email === user.email; });
 
   if (dbUser && user.role !== dbUser.role) {
-    recordSecurityBreach("تزوير صلاحيات (Privilege Escalation)", "حاول المستخدم تزوير رتبته محلياً إلى: " + user.role, "CRITICAL");
+    recordSecurityBreach("محاولة رفع صلاحيات", "محاولة تعديل رتبة الحساب محلياً إلى: " + user.role, "CRITICAL");
     user.role = dbUser.role;
     localStorage.setItem("current_user", JSON.stringify(user));
   }
 }
 
-// 4. كاشف فتح أدوات المطورين ومحاولات الفحص البرمجي
 function initSecurityGuards() {
   document.addEventListener("keydown", function(e) {
     if (
@@ -53,8 +165,8 @@ function initSecurityGuards() {
     ) {
       if (!window.location.pathname.includes("admin.html")) {
         e.preventDefault();
-        recordSecurityBreach("محاولة فتح DevTools أو تصوير", "تم الضغط على اختصار: " + e.key, "MEDIUM");
-        showToast("محتوى المنصة محمي بأنظمة الأمان المشفرة", "error");
+        recordSecurityBreach("فحص العناصر أو محاولة تسجيل شاشة", "تم استخدام الاختصار: " + e.key, "MEDIUM");
+        showToast("محتوى المنصة محمي بأنظمة الأمان المشفرة", "error", "تنبيه أمان");
       }
     }
   });
@@ -70,7 +182,7 @@ function initPlatformDatabase() {
       studentPhone: "01000000000",
       parentPhone: "01000000000",
       governorate: "كفر الشيخ",
-      schoolName: "إدارة هي كيميا !",
+      schoolName: "إدارة المنصة",
       educationType: "GENERAL",
       role: "SUPER_ADMIN",
       enrolledCourses: ["c1", "c2"],
@@ -92,8 +204,8 @@ function initPlatformDatabase() {
         tag: "الصف الثالث الثانوي",
         image: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80",
         lessons: [
-          { id: 1, title: "المحاضرة 1: مدخل السلسلة الانتقالية الأولى وحالات التأكسد", videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", duration: "45 دقيقة" },
-          { id: 2, title: "المحاضرة 2: الخواص المغناطيسية والألوان والسبائك", videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", duration: "50 دقيقة" }
+          { id: 1, title: "المحاضرة 1: مدخل السلسلة الانتقالية الأولى وحالات التأكسد", videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", duration: "45 دقيقة", pdfs: [] },
+          { id: 2, title: "المحاضرة 2: الخواص المغناطيسية والألوان والسبائك", videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", duration: "50 دقيقة", pdfs: [] }
         ],
         attachments: [{ name: "مذكرة تفاعلات الحديد والأكاسيد (PDF)", size: "3.8 MB" }],
         examId: "e1"
@@ -109,8 +221,8 @@ function initPlatformDatabase() {
         tag: "الصف الثالث الثانوي",
         image: "https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?auto=format&fit=crop&w=800&q=80",
         lessons: [
-          { id: 1, title: "المحاضرة 1: مقدمة التسمية ونظام الأيوباك", videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", duration: "55 دقيقة" },
-          { id: 2, title: "المحاضرة 2: الألكانات والألكينات والتفاعلات الإضافية", videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", duration: "65 دقيقة" }
+          { id: 1, title: "المحاضرة 1: مقدمة التسمية ونظام الأيوباك", videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", duration: "55 دقيقة", pdfs: [] },
+          { id: 2, title: "المحاضرة 2: الألكانات والألكينات والتفاعلات الإضافية", videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", duration: "65 دقيقة", pdfs: [] }
         ],
         attachments: [{ name: "مخطط التفاعلات العضوية الشامل", size: "6.2 MB" }],
         examId: "e2"
@@ -140,9 +252,9 @@ function initPlatformDatabase() {
 
   if (!localStorage.getItem("edu_faqs")) {
     localStorage.setItem("edu_faqs", JSON.stringify([
-      { q: "كيف يمكنني الاشتراك في كورسات أ/ محمد السعيد؟", a: "للكورسات المجانية: اضغط اشتراك ويتم تفعيلها فوراً بحسابك. للكورسات المدفوعة: اضغط على 'الاشتراك في الكورس'، وحول الرسوم عبر فودافون كاش أو فوري وارفع صورة الإيصال." },
-      { q: "هل يمكنني مشاهدة المحاضرات أكثر من مرة؟", a: "نعم، الكورسات توفر إما مشاهدة مفتوحة غير محدودة أو عدد مرات دخول محدد وكافٍ جداً للمراجعة." },
-      { q: "ماذا يحدث إذا واجهت مسألة صعبة أثناء المذاكرة؟", a: "توفر المنصة شات مباشر للتواصل مع أ/ محمد السعيد وفريق الدعم لطرح الأسئلة ومتابعة الإجابات خطوة بخطوة." }
+      { q: "كيف يمكنني الاشتراك في الكورسات؟", a: "للكورسات المجانية: يتم التفعيل فورا. للكورسات المدفوعة: يتم تحويل الرسوم ورفع صورة الإيصال ليتم الاعتماد." },
+      { q: "هل يمكنني مشاهدة المحاضرات أكثر من مرة؟", a: "نعم، الكورسات توفر إما مشاهدة مفتوحة أو عدد مرات دخول محدد وكاف للدراسة." },
+      { q: "كيف أتواصل مع الدعم؟", a: "توفر المنصة محادثة مباشرة للمتابعة وطرح الأسئلة على مدار اليوم." }
     ]));
   }
 
@@ -151,15 +263,15 @@ function initPlatformDatabase() {
   if (!localStorage.getItem("edu_live_chats")) localStorage.setItem("edu_live_chats", JSON.stringify([]));
   if (!localStorage.getItem("edu_course_watch_logs")) localStorage.setItem("edu_course_watch_logs", JSON.stringify({}));
   if (!localStorage.getItem("edu_hacker_logs")) localStorage.setItem("edu_hacker_logs", JSON.stringify([]));
+  if (!localStorage.getItem("edu_system_notifications")) localStorage.setItem("edu_system_notifications", JSON.stringify([]));
   if (!localStorage.getItem("edu_activity_logs")) {
     localStorage.setItem("edu_activity_logs", JSON.stringify([
-      { id: Date.now(), actorName: "أ/ محمد السعيد", actorRole: "SUPER_ADMIN", actionType: "تهيئة المنصة", details: "تم تشغيل منصة هي كيميا بنجاح مع تفعيل نظام الحماية المطور.", timestamp: new Date().toLocaleString('ar-EG') }
+      { id: Date.now(), actorName: "أ/ محمد السعيد", actorRole: "SUPER_ADMIN", actionType: "تهيئة المنظومة", details: "تم تشغيل المنصة بنجاح وتفعيل أنظمة الحماية السحابية.", timestamp: new Date().toLocaleString("ar-EG") }
     ]));
   }
 }
 initPlatformDatabase();
 
-// إعداد اللودينج وتشغيله لمرة واحدة فقط لمدة 3 ثوانٍ
 var preloaderActive = false;
 function injectChemicalPreloader() {
   if (document.getElementById("chemicalPreloader") || preloaderActive) return;
@@ -184,7 +296,7 @@ function injectChemicalPreloader() {
       '</div>' +
     '</div>' +
     '<div class="loader-brand-title">منصة هي كيميا<span>!</span></div>' +
-    '<div class="loader-dynamic-phrase" id="loaderDynamicPhrase">جاري تحضير المحاليل والتفاعلات...</div>' +
+    '<div class="loader-dynamic-phrase" id="loaderDynamicPhrase">جاري تحميل المنصة والمحاضرات المشفرة...</div>' +
     '<div class="loader-counter-num" id="loaderCounterNum">0%</div>' +
     '<div class="loader-bar-outer"><div class="loader-bar-inner" id="loaderBarFill"></div></div>';
 
@@ -197,9 +309,9 @@ function injectChemicalPreloader() {
   var phraseElem = document.getElementById("loaderDynamicPhrase");
 
   var phrases = [
-    { at: 0, text: "جاري تحضير المحاليل والتفاعلات الكيميائية..." },
-    { at: 35, text: "تجهيز نواتج التعلم وتدريبات أ/ محمد السعيد..." },
-    { at: 75, text: "اكتمال التفاعل.. أهلاً بك في المنظومة!" }
+    { at: 0, text: "جاري تحضير المحتوى التعليمي المشفر..." },
+    { at: 35, text: "تجهيز الاختبارات ونواتج تعلم أ/ محمد السعيد..." },
+    { at: 75, text: "اكتمل التفاعل الكيميائي.. أهلاً بك!" }
   ];
 
   var timer = setInterval(function() {
@@ -227,7 +339,7 @@ function injectChemicalPreloader() {
 
 function showToast(message, type, title) {
   type = type || "info";
-  title = title || (type === "success" ? "تم بنجاح" : type === "error" ? "تنبيه" : "معلومات");
+  title = title || (type === "success" ? "تم بنجاح" : type === "error" ? "تنبيه" : "إشعار");
 
   var container = document.getElementById("toastContainer");
   if (!container) {
@@ -251,11 +363,11 @@ function showToast(message, type, title) {
     toast.style.opacity = "0";
     toast.style.transform = "translateX(-30px)";
     setTimeout(function() { toast.remove(); }, 300);
-  }, 4000);
+  }, 4500);
 }
 
 function logAdminAction(actionType, details) {
-  var user = getCurrentUser() || { fullName: "زائر", role: "GUEST" };
+  var user = getCurrentUser() || { fullName: "غير مسجل", role: "GUEST" };
   var logs = JSON.parse(localStorage.getItem("edu_activity_logs")) || [];
   logs.unshift({
     id: Date.now(),
@@ -263,7 +375,7 @@ function logAdminAction(actionType, details) {
     actorRole: sanitizeText(user.role),
     actionType: sanitizeText(actionType),
     details: sanitizeText(details),
-    timestamp: new Date().toLocaleString('ar-EG')
+    timestamp: new Date().toLocaleString("ar-EG")
   });
   localStorage.setItem("edu_activity_logs", JSON.stringify(logs));
 }
@@ -273,28 +385,46 @@ function getCurrentUser() {
   return data ? JSON.parse(data) : null;
 }
 
+// تعديل Logout ليستخدم خدمة Firebase
 function logout() {
-  localStorage.removeItem("current_user");
-  window.location.href = "login.html";
+  if (window.FirebaseService) {
+    window.FirebaseService.logoutUser();
+  } else {
+    localStorage.removeItem("current_user");
+    window.location.href = "login.html";
+  }
 }
 
-// حماية مسارات وقوائم المنصة
+// حماية المسارات (لم يتم تغيير أي منطق قديم)
 function updateNavbarAndAuthGuards() {
   verifySessionIntegrity();
   var user = getCurrentUser();
   var currentPath = window.location.pathname.toLowerCase();
 
-  // منع الدخول لصفحات الإدارة لغير المسؤولين
   if (currentPath.includes("admin.html")) {
     if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN")) {
-      recordSecurityBreach("محاولة دخول غير مصرح للوحة الإدارة", "محاولة دخول بدون صلاحيات لصفحة admin.html", "CRITICAL");
+      recordSecurityBreach("دخول غير مصرح للإدارة", "محاولة فتح لوحة الإدارة بدون رتبة مسؤولة", "CRITICAL");
       window.location.replace("login.html");
       return;
     }
   }
 
-  // منع دخول لوحة الطالب لمن لم يسجل
-  if (currentPath.includes("dashboard.html") || currentPath.includes("course-view.html") || currentPath.includes("exam.html")) {
+  if (currentPath.includes("dashboard.html")) {
+    if (!user) {
+      window.location.replace("login.html");
+      return;
+    }
+    if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") {
+      window.location.replace("admin.html");
+      return;
+    }
+    if (user.role === "SUPPORT") {
+      window.location.replace("support.html");
+      return;
+    }
+  }
+
+  if (currentPath.includes("course-view.html") || currentPath.includes("exam.html")) {
     if (!user) {
       window.location.replace("login.html");
       return;
@@ -316,14 +446,14 @@ function updateNavbarAndAuthGuards() {
   if (authBox) {
     if (user) {
       if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") {
-        authBox.innerHTML = '<a href="admin.html" class="nav-btn-primary">لوحة الإدارة</a><button onclick="logout()" class="nav-btn-link">خروج</button>';
+        authBox.innerHTML = '<a href="admin.html" class="nav-btn-primary">لوحة الإدارة</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
       } else if (user.role === "SUPPORT") {
-        authBox.innerHTML = '<a href="support.html" class="nav-btn-primary">شات الدعم</a><button onclick="logout()" class="nav-btn-link">خروج</button>';
+        authBox.innerHTML = '<a href="support.html" class="nav-btn-primary">شات الدعم</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
       } else {
-        authBox.innerHTML = '<a href="dashboard.html" class="nav-btn-primary">لوحة الطالب (' + sanitizeText(user.fullName.split(' ')[0]) + ')</a><button onclick="logout()" class="nav-btn-link">خروج</button>';
+        authBox.innerHTML = '<a href="dashboard.html" class="nav-btn-primary">لوحة الطالب (' + sanitizeText(user.fullName.split(" ")[0]) + ')</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
       }
     } else {
-      authBox.innerHTML = '<a href="login.html" class="nav-btn-link">دخول</a><a href="register.html" class="nav-btn-primary">حساب جديد</a>';
+      authBox.innerHTML = '<a href="login.html" class="nav-btn-link">تسجيل الدخول</a><a href="register.html" class="nav-btn-primary">حساب جديد</a>';
     }
   }
 
@@ -346,8 +476,16 @@ function handleEnrollClick(courseId) {
     return;
   }
 
+  if (user.role !== "STUDENT") {
+    showToast("الحسابات الإدارية تستعرض المحتوى مباشرة", "info");
+    setTimeout(function() {
+      window.location.href = "course-view.html?id=" + courseId;
+    }, 800);
+    return;
+  }
+
   if (user.enrolledCourses && user.enrolledCourses.includes(courseId)) {
-    showToast("أنت مشترك بالفعل في هذا الكورس، جاري تحويلك للمحاضرات", "success");
+    showToast("أنت مشترك بالفعل في هذا الكورس", "success");
     setTimeout(function() {
       window.location.href = "course-view.html?id=" + courseId;
     }, 800);
@@ -358,6 +496,11 @@ function handleEnrollClick(courseId) {
   var course = courses.find(function(c) { return c.id == courseId; });
 
   if (course && (course.isFree || Number(course.price) === 0)) {
+    if (!confirm("هل تؤكد رغبتك في الاشتراك بالكورس المجاني: " + course.title + "؟")) {
+      return;
+    }
+
+    // هنا يتم تفعيل الكورس مجانياً (سيتم تعديل منطق الحفظ سحابياً في ملفات html المستقبلية)
     var users = JSON.parse(localStorage.getItem("edu_users")) || [];
     var uIdx = users.findIndex(function(u) { return u.email === user.email; });
     if (uIdx !== -1) {
@@ -368,8 +511,8 @@ function handleEnrollClick(courseId) {
       user.enrolledCourses = users[uIdx].enrolledCourses;
       localStorage.setItem("current_user", JSON.stringify(user));
 
-      logAdminAction("اشتراك مجاني", "اشترك الطالب " + user.fullName + " في الكورس المجاني: " + course.title);
-      showToast("تم تفعيل الكورس المجاني بحسابك بنجاح!", "success");
+      logAdminAction("اشتراك كورس مجاني", "اشترك الطالب " + user.fullName + " في الكورس: " + course.title);
+      showToast("تم تفعيل الكورس في حسابك بنجاح", "success");
       setTimeout(function() {
         window.location.href = "course-view.html?id=" + courseId;
       }, 1000);
@@ -377,10 +520,13 @@ function handleEnrollClick(courseId) {
     }
   }
 
-  window.location.href = "checkout.html?course=" + courseId;
+  if (confirm("هل تريد الانتقال لصفحة تأكيد ودفع رسوم الكورس: " + (course ? course.title : "") + "؟")) {
+    window.location.href = "checkout.html?course=" + courseId;
+  }
 }
 
 document.addEventListener("DOMContentLoaded", function() {
+  registerDeviceServiceWorker();
   initSecurityGuards();
   injectChemicalPreloader();
   updateNavbarAndAuthGuards();

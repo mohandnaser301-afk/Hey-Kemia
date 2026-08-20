@@ -3,16 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>هي كيميا ! - بروفايل الطالب</title>
+  <title>هي كيميا ! - لوحة الطالب</title>
   <link rel="stylesheet" href="dashboard.css">
   <style>
-    .live-chat-bubble-btn { position: fixed; bottom: 25px; left: 25px; background: var(--chem-gold); color: var(--royal-indigo-deep); width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; z-index: 9999; box-shadow: 0 10px 25px rgba(12,7,84,0.25); }
-    .live-chat-window { display: none; position: fixed; bottom: 90px; left: 25px; width: 350px; height: 460px; background: #fff; border: 1px solid var(--border-subtle); border-radius: 18px; z-index: 9999; flex-direction: column; overflow: hidden; box-shadow: 0 20px 40px rgba(12,7,84,0.18); }
-    .chat-win-header { background: var(--royal-indigo-base); color:#fff; padding: 12px 16px; display: flex; justify-content: space-between; align-items:center; }
-    .chat-win-messages { flex: 1; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #F8F9FC; }
-    .student-bubble { align-self: flex-end; background: var(--chem-gold); color: var(--royal-indigo-deep); font-weight: 700; padding: 8px 12px; border-radius: 12px; max-width: 80%; font-size: 13px; }
-    .support-bubble { align-self: flex-start; background: #E2E8F0; color: #0F172A; padding: 8px 12px; border-radius: 12px; max-width: 80%; font-size: 13px; }
-    .chat-win-input { padding: 10px 14px; background: #fff; border-top: 1px solid var(--border-subtle); display: flex; gap: 8px; }
+    .enrolled-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 18px;
+    }
+    .student-badge-pill {
+      background: var(--cyan-accent-soft);
+      border: 1px solid var(--cyan-accent);
+      color: #0284c7;
+      padding: 3px 12px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 800;
+      display: inline-block;
+    }
   </style>
 </head>
 <body>
@@ -20,134 +29,154 @@
   <div class="dashboard-wrapper">
     <aside class="sidebar">
       <div class="sidebar-brand"><h2>هي كيميا<span>!</span></h2></div>
+      
       <div class="user-profile-summary">
-        <div class="avatar" id="dashAvatar">ط</div>
-        <div class="user-info"><h4 id="dashName" style="color:#fff; font-size:14px;">اسم الطالب</h4><span class="badge" id="dashMeta" style="color:var(--chem-gold-light); font-size:11px;">طالب مسجل</span></div>
+        <div class="avatar">🎓</div>
+        <div class="user-info">
+          <h4 id="studentFullName" style="color:#fff; font-size:13.5px;">طالب المنصة</h4>
+          <span class="badge" style="color: var(--cyan-accent); font-size:11px;">طالب ثانوي</span>
+        </div>
       </div>
+
       <nav class="sidebar-nav">
-        <a href="dashboard.html" class="nav-item active">لوحة التحكم</a>
-        <a href="#my-courses" class="nav-item">كورساتي المفعلة</a>
-        <a href="#exams" class="nav-item">درجات الامتحانات</a>
-        <a href="javascript:void(0)" onclick="toggleChatWindow()" class="nav-item" style="color:var(--chem-gold-light);">شات أ/ محمد السعيد والدعم</a>
-        <a href="index.html#courses" class="nav-item">تصفح الكورسات</a>
-        <a href="javascript:void(0)" onclick="logout()" class="nav-item logout">تسجيل الخروج</a>
+        <a href="#myCoursesSection" class="nav-item active"><span>كورساتي ومحاضراتي</span></a>
+        <a href="support.html" class="nav-item"><span>شات الدعم والأسئلة</span></a>
+        <a href="index.html#courses" class="nav-item"><span>تصفح كل الكورسات</span></a>
+        <a href="index.html" class="nav-item"><span>الرئيسية</span></a>
+        <a href="javascript:void(0)" onclick="logout()" class="nav-item logout"><span>تسجيل الخروج</span></a>
       </nav>
     </aside>
 
     <main class="main-content">
       <header class="topbar">
-        <div><h1 style="font-size:24px; font-weight:900; color:var(--royal-indigo-base);">مرحباً بك يا <span id="welcomeName">طالب</span></h1><p class="subtitle" style="color:var(--text-muted); font-size:13px;">منظومة كيمياء الثانوية العامة مع أ/ محمد السعيد</p></div>
-        <span class="school-tag" id="dashSchool" style="background:#fff; border:1px solid var(--border-subtle); padding:6px 14px; border-radius:20px; font-size:13px; font-weight:700;">المدرسة</span>
+        <div>
+          <h1 style="font-size:22px; font-weight:900; color:var(--royal-indigo-base);">أهلاً بك يا <span id="studentGreetingName">بطل الكيمياء</span> 👋</h1>
+          <p class="subtitle" style="color:var(--text-muted); font-size:13px;">تابع محاضراتك وتدريباتك الأكاديمية مع أ/ محمد السعيد</p>
+        </div>
+        <div>
+          <span class="student-badge-pill" id="studentGovDisplay">محافظة: كفر الشيخ</span>
+        </div>
       </header>
 
       <section class="stats-grid">
-        <div class="stat-card"><span class="stat-icon">📚</span><div><h3 id="enrolledCount" style="font-size:22px; font-weight:900;">0</h3><p style="font-size:12px; color:var(--text-muted);">الكورسات المفعلة</p></div></div>
-        <div class="stat-card"><span class="stat-icon">🎯</span><div><h3 id="averageScore" style="font-size:22px; font-weight:900;">0%</h3><p style="font-size:12px; color:var(--text-muted);">متوسط الامتحانات</p></div></div>
-        <div class="stat-card"><span class="stat-icon">📝</span><div><h3 id="completedExamsCount" style="font-size:22px; font-weight:900;">0</h3><p style="font-size:12px; color:var(--text-muted);">الامتحانات المكتملة</p></div></div>
-        <div class="stat-card"><span class="stat-icon">🏆</span><div><h3 id="studentRating" style="font-size:18px; font-weight:900; color:var(--chem-gold);">مستجد</h3><p style="font-size:12px; color:var(--text-muted);">التقييم العام</p></div></div>
-      </section>
-
-      <section id="my-courses" style="margin-bottom:30px;">
-        <h2 style="font-size:18px; font-weight:900; color:var(--royal-indigo-base); margin-bottom:15px;">الكورسات المفعلة بحسابك</h2>
-        <div class="courses-grid-layout" id="coursesContainer"></div>
-      </section>
-
-      <section id="exams">
-        <h2 style="font-size:18px; font-weight:900; color:var(--royal-indigo-base); margin-bottom:15px;">سجل درجات الامتحانات</h2>
-        <div class="table-container">
-          <table class="exams-table">
-            <thead><tr><th>اسم الامتحان</th><th>المادة</th><th>التاريخ</th><th>الدرجة</th><th>النسبة</th><th>الحالة</th></tr></thead>
-            <tbody id="examsTableBody"></tbody>
-          </table>
+        <div class="stat-card">
+          <span class="stat-icon">📚</span>
+          <div>
+            <h3 id="studentEnrolledCount" style="font-size:20px; font-weight:900;">0</h3>
+            <p style="font-size:12px; color:var(--text-muted);">الكورسات المشترك بها</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon">📝</span>
+          <div>
+            <h3 id="studentExamsCompletedCount" style="font-size:20px; font-weight:900;">0</h3>
+            <p style="font-size:12px; color:var(--text-muted);">الامتحانات المسلمة</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon">🏆</span>
+          <div>
+            <h3 id="studentAvgScore" style="font-size:20px; font-weight:900;">0%</h3>
+            <p style="font-size:12px; color:var(--text-muted);">متوسط الدرجات</p>
+          </div>
         </div>
       </section>
-    </main>
-  </div>
 
-  <div class="live-chat-bubble-btn" onclick="toggleChatWindow()">💬</div>
-  <div class="live-chat-window" id="liveChatWindow">
-    <div class="chat-win-header">
-      <h4 style="font-size:13px; font-weight:800;">شات أ/ محمد السعيد والدعم</h4>
-      <button onclick="toggleChatWindow()" style="background:none; border:none; color:#fff; cursor:pointer; font-size:16px;">✕</button>
-    </div>
-    <div class="chat-win-messages" id="studentChatMessages"></div>
-    <form class="chat-win-input" id="studentSendForm">
-      <input type="text" id="studentMsgInput" placeholder="اكتب سؤالك وسنرد فوراً..." required>
-      <button type="submit" class="btn btn-primary" style="padding:6px 14px; font-size:13px;">إرسال</button>
-    </form>
+      <div id="myCoursesSection" style="margin-top: 30px;">
+        <h2 style="font-size:18px; font-weight:900; color:var(--royal-indigo-base); margin-bottom: 6px;">مناهجي وكورساتي المفعلة</h2>
+        <p style="color:var(--text-muted); font-size:13px;">اضغط على الكورس لمتابعة الدروس وحل الاختبارات</p>
+        <div class="enrolled-grid" id="enrolledCoursesList"></div>
+      </div>
+
+      <div style="margin-top: 35px;">
+        <h2 style="font-size:18px; font-weight:900; color:var(--royal-indigo-base); margin-bottom: 12px;">سجل درجات الاختبارات</h2>
+        <div class="table-container">
+          <table class="exams-table">
+            <thead>
+              <tr>
+                <th>عنوان الامتحان</th>
+                <th>تاريخ التسليم</th>
+                <th>الدرجة المحققة</th>
+                <th>النسبة المئوية</th>
+              </tr>
+            </thead>
+            <tbody id="studentExamsHistoryBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
   </div>
 
   <script src="app.js"></script>
   <script>
     var user = getCurrentUser();
-    if (!user) window.location.href = "login.html";
-
-    document.getElementById("dashName").innerText = user.fullName;
-    document.getElementById("dashAvatar").innerText = user.fullName.slice(0, 2);
-    document.getElementById("dashMeta").innerText = (user.educationType === 'AZHAR' ? 'أزهر' : 'عام') + ' - ' + (user.governorate || 'مصر');
-    document.getElementById("dashSchool").innerText = user.schoolName || 'المنصة';
-    document.getElementById("welcomeName").innerText = user.fullName.split(" ")[0];
-
-    var allCourses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-    var myCourses = allCourses.filter(function(c) { return user.enrolledCourses && user.enrolledCourses.includes(c.id); });
-    document.getElementById("enrolledCount").innerText = myCourses.length;
-
-    var coursesCont = document.getElementById("coursesContainer");
-    if (myCourses.length === 0) {
-      coursesCont.innerHTML = '<div style="background:#fff; padding:25px; border-radius:14px; text-align:center; border:1px dashed var(--border-subtle); grid-column:1/-1;"><p style="color:var(--text-muted); margin-bottom:12px;">لست مشتركاً في أي كورس حالياً.</p><a href="index.html#courses" class="btn btn-primary">تصفح الكورسات المتاحة</a></div>';
-    } else {
-      coursesCont.innerHTML = myCourses.map(function(c) {
-        return '<div class="course-clean-card">' +
-          '<div class="course-clean-body">' +
-            '<span class="course-clean-tag">كورس مفعّل</span>' +
-            '<h3 style="color:var(--royal-indigo-base); font-size:18px; margin-bottom:8px;">' + c.title + '</h3>' +
-            '<p style="color:var(--text-muted); font-size:13px; margin-bottom:15px;">' + c.desc + '</p>' +
-            '<a href="course-view.html?id=' + c.id + '" class="btn btn-primary" style="width:100%;">دخول المحاضرات</a>' +
-          '</div>' +
-        '</div>';
-      }).join('');
+    
+    // عزل بروفايل الطالب: إذا كان المستخدم إدارياً يتم تحويله للوحة الإدارة فوراً
+    if (!user) {
+      window.location.href = "login.html";
+    } else if (user.role !== "STUDENT") {
+      showToast("الحسابات الإدارية تستخدم لوحة الإدارة فقط", "info");
+      setTimeout(function() {
+        if (user.role === "SUPPORT") window.location.href = "support.html";
+        else window.location.href = "admin.html";
+      }, 500);
     }
 
-    var submissions = JSON.parse(localStorage.getItem("edu_submissions")) || [];
-    var mySubs = submissions.filter(function(s) { return s.userEmail === user.email; });
-    document.getElementById("completedExamsCount").innerText = mySubs.length;
-    if (mySubs.length > 0) {
-      var avg = Math.round(mySubs.reduce(function(acc, curr) { return acc + curr.percentage; }, 0) / mySubs.length);
-      document.getElementById("averageScore").innerText = avg + "%";
-      document.getElementById("studentRating").innerText = avg >= 85 ? "ممتاز" : avg >= 65 ? "جيد جداً" : "مستمر بالتدريب";
-      document.getElementById("examsTableBody").innerHTML = mySubs.map(function(s) {
-        return '<tr><td>' + s.examTitle + '</td><td>' + s.subject + '</td><td>' + s.date + '</td><td>' + s.score + '/' + s.total + '</td><td>' + s.percentage + '%</td><td><span class="badge-success">تم التسليم</span></td></tr>';
-      }).join('');
-    }
+    if (user && user.role === "STUDENT") {
+      document.getElementById("studentFullName").innerText = user.fullName;
+      document.getElementById("studentGreetingName").innerText = user.fullName.split(' ')[0];
+      document.getElementById("studentGovDisplay").innerText = "محافظة: " + (user.governorate || "مصر");
 
-    function toggleChatWindow() {
-      var win = document.getElementById("liveChatWindow");
-      win.style.display = (win.style.display === "flex") ? "none" : "flex";
-      if (win.style.display === "flex") renderLiveMessages();
-    }
+      var allCourses = JSON.parse(localStorage.getItem("edu_courses")) || [];
+      var enrolledIds = user.enrolledCourses || [];
+      var enrolledCourses = allCourses.filter(function(c) { return enrolledIds.includes(c.id); });
 
-    function renderLiveMessages() {
-      var chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
-      var myChats = chats.filter(function(c) { return c.studentEmail === user.email; });
-      var container = document.getElementById("studentChatMessages");
-      container.innerHTML = myChats.map(function(c) {
-        return '<div class="' + (c.sender === 'student' ? 'student-bubble' : 'support-bubble') + '">' + c.text + '</div>';
-      }).join('');
-      container.scrollTop = container.scrollHeight;
-    }
+      document.getElementById("studentEnrolledCount").innerText = enrolledCourses.length;
 
-    document.getElementById("studentSendForm").addEventListener("submit", function(e) {
-      e.preventDefault();
-      var input = document.getElementById("studentMsgInput");
-      var text = input.value.trim();
-      if (!text) return;
-      var chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
-      chats.push({ id: Date.now(), studentEmail: user.email, studentName: user.fullName, sender: "student", text: text, time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) });
-      localStorage.setItem("edu_live_chats", JSON.stringify(chats));
-      input.value = "";
-      renderLiveMessages();
-    });
-    setInterval(function() { if (document.getElementById("liveChatWindow").style.display === "flex") renderLiveMessages(); }, 1500);
+      var coursesContainer = document.getElementById("enrolledCoursesList");
+      if (enrolledCourses.length === 0) {
+        coursesContainer.innerHTML = '<div style="background:#fff; border:1px solid var(--border-subtle); padding:25px; border-radius:12px; text-align:center; color:var(--text-muted); grid-column: 1 / -1;">أنت غير مشترك في أي كورسات حالياً. <a href="index.html#courses" style="color:var(--cyan-accent); font-weight:bold;">تصفح الكورسات المتاحة</a></div>';
+      } else {
+        coursesContainer.innerHTML = enrolledCourses.map(function(c) {
+          return '<div class="course-liquid-card">' +
+            '<div class="course-liquid-media">' +
+              '<img src="' + c.image + '" class="course-liquid-img" alt="' + c.title + '">' +
+            '</div>' +
+            '<div class="course-liquid-body">' +
+              '<h3 class="course-liquid-title" style="font-size:16px;">' + c.title + '</h3>' +
+              '<p class="course-liquid-desc">' + c.desc.substring(0, 75) + '...</p>' +
+              '<div class="course-liquid-footer">' +
+                '<span style="font-size:12px; font-weight:bold; color:var(--cyan-accent);">' + (c.lessons || []).length + ' محاضرات</span>' +
+                '<a href="course-view.html?id=' + c.id + '" class="btn btn-cyan" style="padding:6px 14px; font-size:12px;">مشاهدة الكورس ▶</a>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      }
+
+      var submissions = JSON.parse(localStorage.getItem("edu_submissions")) || [];
+      var mySubs = submissions.filter(function(s) { return s.userEmail === user.email; });
+
+      document.getElementById("studentExamsCompletedCount").innerText = mySubs.length;
+      if (mySubs.length > 0) {
+        var avg = Math.round(mySubs.reduce(function(sum, s) { return sum + (Number(s.percentage) || 0); }, 0) / mySubs.length);
+        document.getElementById("studentAvgScore").innerText = avg + "%";
+      }
+
+      var examsTable = document.getElementById("studentExamsHistoryBody");
+      if (mySubs.length === 0) {
+        examsTable.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:20px;">لم تقم بتسليم أي امتحانات بعد.</td></tr>';
+      } else {
+        examsTable.innerHTML = mySubs.map(function(s) {
+          return '<tr>' +
+            '<td><strong>' + s.examTitle + '</strong></td>' +
+            '<td>' + s.date + '</td>' +
+            '<td>' + s.score + ' من ' + s.total + '</td>' +
+            '<td><strong style="color:' + (s.percentage >= 60 ? '#10b981' : '#ef4444') + ';">' + s.percentage + '%</strong></td>' +
+          '</tr>';
+        }).join('');
+      }
+    }
   </script>
 </body>
 </html>
