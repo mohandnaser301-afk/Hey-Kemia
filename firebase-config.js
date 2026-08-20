@@ -1,6 +1,6 @@
 // =========================================================
 // محرك ربط Firebase السحابي لمنصة هي كيميا !
-// متوافق بنسبة 100% مع المتصفح والعمليات السحابية المباشرة
+// مزامنة لحظية بين جميع الأجهزة
 // =========================================================
 
 (function loadFirebaseSDKs() {
@@ -40,7 +40,7 @@ function getFirebase() {
 }
 
 window.FirebaseService = {
-  // 1. تسجيل طالب جديد في Auth و Firestore
+  // 1. تسجيل طالب جديد
   async registerStudent(userData) {
     const fb = getFirebase();
     let uid = "u_" + Date.now();
@@ -50,7 +50,7 @@ window.FirebaseService = {
         const userCredential = await fb.auth().createUserWithEmailAndPassword(userData.email, userData.password);
         uid = userCredential.user.uid;
       } catch (authErr) {
-        console.warn("تنبيه في Auth:", authErr.message);
+        console.warn("Auth alert:", authErr.message);
       }
     }
 
@@ -71,18 +71,10 @@ window.FirebaseService = {
     };
 
     if (fb && fb.firestore) {
-      try {
-        await fb.firestore().collection("users").doc(uid).set(userDoc);
-      } catch (dbErr) {
-        console.warn("تعذر الحفظ في Firestore:", dbErr.message);
-      }
+      await fb.firestore().collection("users").doc(uid).set(userDoc);
     }
 
-    const users = JSON.parse(localStorage.getItem("edu_users")) || [];
-    users.push(userDoc);
-    localStorage.setItem("edu_users", JSON.stringify(users));
     localStorage.setItem("current_user", JSON.stringify(userDoc));
-
     return userDoc;
   },
 
@@ -100,13 +92,15 @@ window.FirebaseService = {
           foundUser = snap.data();
         }
       } catch (e) {
-        console.warn("فحص محلي:", e.message);
+        console.warn("Local fallback search:", e.message);
       }
     }
 
-    if (!foundUser) {
-      const users = JSON.parse(localStorage.getItem("edu_users")) || [];
-      foundUser = users.find(u => u.email.toLowerCase() === email.toLowerCase() && (u.password === password || !u.password));
+    if (!foundUser && fb && fb.firestore) {
+      const qSnap = await fb.firestore().collection("users").where("email", "==", email.toLowerCase()).get();
+      if (!qSnap.empty) {
+        foundUser = qSnap.docs[0].data();
+      }
     }
 
     if (foundUser) {
@@ -127,23 +121,17 @@ window.FirebaseService = {
     window.location.href = "login.html";
   },
 
-  // 4. إدارة الكورسات سحابياً
-  async getCourses() {
+  // 4. الاستماع اللحظي للكورسات لجميع الأجهزة
+  subscribeCourses(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
-      try {
-        const snap = await fb.firestore().collection("courses").get();
-        if (!snap.empty) {
-          const list = [];
-          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-          localStorage.setItem("edu_courses", JSON.stringify(list));
-          return list;
-        }
-      } catch (e) {
-        console.warn("جلب الكورسات:", e.message);
-      }
+      return fb.firestore().collection("courses").onSnapshot(snap => {
+        const list = [];
+        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        localStorage.setItem("edu_courses", JSON.stringify(list));
+        if (callback) callback(list);
+      });
     }
-    return JSON.parse(localStorage.getItem("edu_courses")) || [];
   },
 
   async saveCourse(courseData, courseId) {
@@ -166,23 +154,17 @@ window.FirebaseService = {
     }
   },
 
-  // 5. إدارة الامتحانات سحابياً
-  async getExams() {
+  // 5. الاستماع اللحظي للامتحانات
+  subscribeExams(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
-      try {
-        const snap = await fb.firestore().collection("exams").get();
-        if (!snap.empty) {
-          const list = [];
-          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-          localStorage.setItem("edu_exams", JSON.stringify(list));
-          return list;
-        }
-      } catch (e) {
-        console.warn("جلب الامتحانات:", e.message);
-      }
+      return fb.firestore().collection("exams").onSnapshot(snap => {
+        const list = [];
+        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        localStorage.setItem("edu_exams", JSON.stringify(list));
+        if (callback) callback(list);
+      });
     }
-    return JSON.parse(localStorage.getItem("edu_exams")) || [];
   },
 
   async saveExam(examData, examId) {
@@ -204,23 +186,17 @@ window.FirebaseService = {
     }
   },
 
-  // 6. جلب وإدارة المستخدمين والطلاب سحابياً
-  async getUsers() {
+  // 6. الاستماع اللحظي للمستخدمين والطلاب
+  subscribeUsers(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
-      try {
-        const snap = await fb.firestore().collection("users").get();
-        if (!snap.empty) {
-          const list = [];
-          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-          localStorage.setItem("edu_users", JSON.stringify(list));
-          return list;
-        }
-      } catch (e) {
-        console.warn("جلب المستخدمين:", e.message);
-      }
+      return fb.firestore().collection("users").onSnapshot(snap => {
+        const list = [];
+        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        localStorage.setItem("edu_users", JSON.stringify(list));
+        if (callback) callback(list);
+      });
     }
-    return JSON.parse(localStorage.getItem("edu_users")) || [];
   },
 
   async updateUserRole(uid, newRole) {
@@ -237,6 +213,13 @@ window.FirebaseService = {
         enrolledCourses: enrolledCourses,
         customAllowedLessons: customLessons || {}
       });
+    }
+  },
+
+  async deleteUser(uid) {
+    const fb = getFirebase();
+    if (fb && fb.firestore && uid) {
+      await fb.firestore().collection("users").doc(uid).delete();
     }
   }
 };

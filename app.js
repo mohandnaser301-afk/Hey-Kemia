@@ -1,6 +1,6 @@
 // =========================================================
 // المحرك البرمجي وحصن الأمان لمنصة هي كيميا !
-// متوافق بنسبة 100% بدون أي أخطاء في المتصفح ومربوط سحابياً
+// مزامنة لحظية في الوقت الفعلي + نوافذ مخصصة
 // =========================================================
 
 function sanitizeText(str) {
@@ -10,7 +10,46 @@ function sanitizeText(str) {
   return temp.innerHTML;
 }
 
-// 1. نظام إشعارات الأجهزة (Service Worker)
+// 1. نافذة تأكيد مخصصة للموقع (Custom Confirmation Modal)
+function customConfirm(message, title, confirmText, cancelText) {
+  title = title || "تأكيد الإجراء";
+  confirmText = confirmText || "تأكيد";
+  cancelText = cancelText || "إلغاء";
+
+  return new Promise(function(resolve) {
+    var existing = document.getElementById("hkCustomConfirmModal");
+    if (existing) existing.remove();
+
+    var modal = document.createElement("div");
+    modal.id = "hkCustomConfirmModal";
+    modal.style.cssText = "position:fixed; inset:0; background:rgba(8,10,33,0.78); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; z-index:999999; padding:16px; animation:fadeInModal 0.2s ease;";
+    modal.innerHTML = 
+      '<div style="background:#ffffff; color:#191b26; border-radius:18px; padding:24px; max-width:420px; width:100%; box-shadow:0 20px 45px rgba(0,0,0,0.35); text-align:center; border:1px solid rgba(0,210,255,0.2);">' +
+        '<div style="width:48px; height:48px; background:rgba(0,210,255,0.12); color:#0284C7; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 12px; font-size:22px;">❓</div>' +
+        '<h3 style="font-size:17px; font-weight:900; color:#0E1338; margin-bottom:8px;">' + sanitizeText(title) + '</h3>' +
+        '<p style="font-size:13.5px; color:#64748B; margin-bottom:22px; line-height:1.6;">' + sanitizeText(message) + '</p>' +
+        '<div style="display:flex; gap:10px; justify-content:center;">' +
+          '<button id="hkModalBtnConfirm" style="flex:1; padding:11px 18px; background:linear-gradient(135deg, #0E1338, #1D255E); color:#fff; border:none; border-radius:10px; font-weight:800; font-size:13.5px; cursor:pointer;">' + sanitizeText(confirmText) + '</button>' +
+          '<button id="hkModalBtnCancel" style="flex:1; padding:11px 18px; background:#F1F5F9; color:#475569; border:1px solid #CBD5E1; border-radius:10px; font-weight:800; font-size:13.5px; cursor:pointer;">' + sanitizeText(cancelText) + '</button>' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(modal);
+
+    document.getElementById("hkModalBtnConfirm").onclick = function() {
+      modal.remove();
+      resolve(true);
+    };
+
+    document.getElementById("hkModalBtnCancel").onclick = function() {
+      modal.remove();
+      resolve(false);
+    };
+  });
+}
+window.customConfirm = customConfirm;
+
+// 2. نظام الإشعارات
 var swRegistration = null;
 function registerDeviceServiceWorker() {
   if ("serviceWorker" in navigator) {
@@ -79,7 +118,7 @@ function triggerDeviceNativeNotification(title, body, targetUrl) {
   }
 }
 
-// 2. حصن الأمان ومنع محاولات الاختراق
+// 3. مراقبة أمان وحماية الصفحة
 function recordSecurityBreach(attackType, details, severity) {
   severity = severity || "HIGH";
   var currentUser = getCurrentUser() || { fullName: "غير مسجل", email: "guest@threat.net" };
@@ -113,105 +152,35 @@ function initSecurityGuards() {
   });
 }
 
-// 3. تهيئة ومزامنة البيانات الأساسية للمنصة
-async function initPlatformDatabase() {
-  var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-  if (!users.some(function(u) { return u.email.toLowerCase() === "superadmin@platform.com"; })) {
-    users.unshift({
-      fullName: "أ/ محمد السعيد (المشرف العام)",
-      email: "superadmin@platform.com",
-      password: "admin123",
-      studentPhone: "01000000000",
-      parentPhone: "01000000000",
-      governorate: "كفر الشيخ",
-      schoolName: "إدارة المنصة",
-      educationType: "GENERAL",
-      role: "SUPER_ADMIN",
-      enrolledCourses: ["c1", "c2"],
-      courseAccessCount: {}
-    });
-    localStorage.setItem("edu_users", JSON.stringify(users));
-  }
+// 4. مراقبة وجود الحساب وتسجيل الخروج اللحظي إذا تم حذفه من قاعدة البيانات
+function monitorCurrentUserStatus() {
+  var user = getCurrentUser();
+  if (!user || !user.uid) return;
 
-  // جلب الكورسات السحابية وتحديث الكاش
-  if (window.FirebaseService) {
-    try {
-      await window.FirebaseService.getCourses();
-    } catch (e) {}
-  }
-
-  if (!localStorage.getItem("edu_courses")) {
-    var defaultCourses = [
-      {
-        id: "c1",
-        title: "كورس التأسيس ومدخل الكيمياء (مجاني)",
-        desc: "محاضرات تأسيسية مجانية لشرح قواعد التوزيع الإلكتروني وأعداد التأكسد الهامة.",
-        price: 0,
-        isFree: true,
-        maxViewsType: "unlimited",
-        maxViews: 0,
-        tag: "الصف الثالث الثانوي",
-        image: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80",
-        lessons: [
-          { id: 1, title: "المحاضرة 1: مدخل السلسلة الانتقالية الأولى وحالات التأكسد", videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", duration: "45 دقيقة", pdfs: [] },
-          { id: 2, title: "المحاضرة 2: الخواص المغناطيسية والألوان والسبائك", videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", duration: "50 دقيقة", pdfs: [] }
-        ],
-        examId: "e1"
-      },
-      {
-        id: "c2",
-        title: "كورس الكيمياء العضوية الشامل",
-        desc: "تأسيس الهيدروكربونات، التسمية بنظام الأيوباك، وتفاعلات الكحولات والأحماض بأعلى نواتج التعلم مع أ/ محمد السعيد.",
-        price: 300,
-        isFree: false,
-        maxViewsType: "limited",
-        maxViews: 6,
-        tag: "الصف الثالث الثانوي",
-        image: "https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?auto=format&fit=crop&w=800&q=80",
-        lessons: [
-          { id: 1, title: "المحاضرة 1: مقدمة التسمية ونظام الأيوباك", videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", duration: "55 دقيقة", pdfs: [] },
-          { id: 2, title: "المحاضرة 2: الألكانات والألكينات والتفاعلات الإضافية", videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", duration: "65 دقيقة", pdfs: [] }
-        ],
-        examId: "e2"
-      }
-    ];
-    localStorage.setItem("edu_courses", JSON.stringify(defaultCourses));
-  }
-
-  if (!localStorage.getItem("edu_exams")) {
-    var defaultExams = [
-      {
-        id: "e1",
-        courseId: "c1",
-        isGeneral: false,
-        title: "امتحان العناصر الانتقالية وتفاعلات الأكاسيد",
-        subject: "كيمياء 3 ث",
-        durationMinutes: 20,
-        maxAttempts: 2,
-        questions: [
-          { q: "أي من الأيونات الآتية يعتبر دايامغناطيسي وغير ملون؟", options: ["Sc³⁺", "Fe²⁺", "Cu²⁺", "Cr³⁺"], correct: 0 },
-          { q: "عند تسخين أوكسالات الحديد II بمعزل عن الهواء يتكون:", options: ["أكسيد الحديد III", "أكسيد الحديد II", "أكسيد الحديد المغناطيسي", "برادة الحديد"], correct: 1 }
-        ]
-      }
-    ];
-    localStorage.setItem("edu_exams", JSON.stringify(defaultExams));
-  }
-
-  if (!localStorage.getItem("edu_payments")) localStorage.setItem("edu_payments", JSON.stringify([]));
-  if (!localStorage.getItem("edu_submissions")) localStorage.setItem("edu_submissions", JSON.stringify([]));
-  if (!localStorage.getItem("edu_live_chats")) localStorage.setItem("edu_live_chats", JSON.stringify([]));
-  if (!localStorage.getItem("edu_course_watch_logs")) localStorage.setItem("edu_course_watch_logs", JSON.stringify({}));
-  if (!localStorage.getItem("edu_hacker_logs")) localStorage.setItem("edu_hacker_logs", JSON.stringify([]));
-  if (!localStorage.getItem("edu_system_notifications")) localStorage.setItem("edu_system_notifications", JSON.stringify([]));
-  if (!localStorage.getItem("edu_activity_logs")) {
-    localStorage.setItem("edu_activity_logs", JSON.stringify([
-      { id: Date.now(), actorName: "أ/ محمد السعيد", actorRole: "SUPER_ADMIN", actionType: "تشغيل المنصة", details: "تم تشغيل المنصة بنجاح.", timestamp: new Date().toLocaleString("ar-EG") }
-    ]));
-  }
+  var interval = setInterval(function() {
+    if (window.firebase && firebase.firestore) {
+      clearInterval(interval);
+      firebase.firestore().collection("users").doc(user.uid).onSnapshot(function(docSnap) {
+        if (!docSnap.exists) {
+          localStorage.removeItem("current_user");
+          showToast("تم تعطيل أو حذف هذا الحساب من قِبل الإدارة.", "error", "تنبيه الحساب");
+          setTimeout(function() {
+            window.location.href = "login.html";
+          }, 1500);
+        } else {
+          var updated = docSnap.data();
+          if (updated.role !== user.role || JSON.stringify(updated.enrolledCourses) !== JSON.stringify(user.enrolledCourses)) {
+            localStorage.setItem("current_user", JSON.stringify(updated));
+            updateNavbarAndAuthGuards();
+          }
+        }
+      }, function(err) {
+        console.warn("مراقبة الحساب:", err.message);
+      });
+    }
+  }, 300);
 }
-initPlatformDatabase();
 
-// 4. واجهة المستخدم والتنبيهات
 function showToast(message, type, title) {
   type = type || "info";
   title = title || (type === "success" ? "تم بنجاح" : type === "error" ? "تنبيه" : "إشعار");
@@ -268,7 +237,6 @@ function logout() {
   }
 }
 
-// 5. حماية المسارات وعزل الرتب
 function updateNavbarAndAuthGuards() {
   var user = getCurrentUser();
   var currentPath = window.location.pathname.toLowerCase();
@@ -317,14 +285,6 @@ function updateNavbarAndAuthGuards() {
       authBox.innerHTML = '<a href="login.html" class="nav-btn-link">تسجيل الدخول</a><a href="register.html" class="nav-btn-primary">حساب جديد</a>';
     }
   }
-
-  if (user) {
-    document.querySelectorAll(".footer-links-list a").forEach(function(link) {
-      if (link.getAttribute("href") === "login.html" || link.getAttribute("href") === "register.html") {
-        link.parentElement.style.display = "none";
-      }
-    });
-  }
 }
 
 window.enablePushNotifications = function() {
@@ -364,7 +324,8 @@ async function handleEnrollClick(courseId) {
   var course = courses.find(function(c) { return c.id == courseId; });
 
   if (course && (course.isFree || Number(course.price) === 0)) {
-    if (!confirm("هل تؤكد رغبتك في الاشتراك بالكورس المجاني: " + course.title + "؟")) return;
+    var confirmed = await customConfirm("هل تؤكد رغبتك في الاشتراك بالكورس المجاني: " + course.title + "؟", "تأكيد الاشتراك");
+    if (!confirmed) return;
 
     var users = JSON.parse(localStorage.getItem("edu_users")) || [];
     var uIdx = users.findIndex(function(u) { return u.email === user.email; });
@@ -379,18 +340,17 @@ async function handleEnrollClick(courseId) {
       }
 
       localStorage.setItem("edu_users", JSON.stringify(users));
-
       user.enrolledCourses = users[uIdx].enrolledCourses;
       localStorage.setItem("current_user", JSON.stringify(user));
 
-      logAdminAction("اشتراك كورس مجاني", "اشترك الطالب " + user.fullName + " في: " + course.title);
       showToast("تم تفعيل الكورس في حسابك بنجاح", "success");
       setTimeout(function() { window.location.href = "course-view.html?id=" + courseId; }, 1000);
       return;
     }
   }
 
-  if (confirm("هل تريد الانتقال لصفحة تأكيد ودفع رسوم الكورس: " + (course ? course.title : "") + "؟")) {
+  var proceed = await customConfirm("هل تريد الانتقال لصفحة تأكيد ودفع رسوم الكورس: " + (course ? course.title : "") + "؟", "الاشتراك بالكورس");
+  if (proceed) {
     window.location.href = "checkout.html?course=" + courseId;
   }
 }
@@ -435,7 +395,7 @@ function injectChemicalPreloader() {
   document.body.prepend(preloader);
 
   var startTime = Date.now();
-  var duration = 1800;
+  var duration = 1500;
   var barFill = document.getElementById("loaderBarFill");
   var counterNum = document.getElementById("loaderCounterNum");
 
@@ -450,10 +410,10 @@ function injectChemicalPreloader() {
       clearInterval(timer);
       setTimeout(function() {
         preloader.classList.add("hide-preloader");
-        setTimeout(function() { preloader.remove(); }, 400);
-      }, 100);
+        setTimeout(function() { preloader.remove(); }, 350);
+      }, 80);
     }
-  }, 30);
+  }, 25);
 }
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -461,4 +421,5 @@ document.addEventListener("DOMContentLoaded", function() {
   initSecurityGuards();
   injectChemicalPreloader();
   updateNavbarAndAuthGuards();
+  monitorCurrentUserStatus();
 });

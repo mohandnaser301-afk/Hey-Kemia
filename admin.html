@@ -392,10 +392,6 @@
             <h1 style="font-size:22px; font-weight:900; color:var(--royal-indigo-base);">سجلات الطلاب المسجلين</h1>
             <p class="subtitle" style="color:var(--text-muted); font-size:13px;">البحث، تفعيل الكورسات أو محاضرات محددة للطالب</p>
           </div>
-          <div style="display:flex; gap:8px;">
-            <button class="btn btn-primary" onclick="renderAdmin()" style="padding:8px 14px;">🔄 تحديث من السحابة</button>
-            <button class="btn btn-action-danger" onclick="clearCachedAccounts()" style="padding:8px 14px;">🗑️ تنظيف الكاش</button>
-          </div>
         </header>
 
         <div class="student-filter-bar">
@@ -607,7 +603,7 @@
     </main>
   </div>
 
-  <!-- مودال ترقية حساب مسجل للإدارة (Master Admin Only) -->
+  <!-- مودال ترقية حساب مسجل للإدارة -->
   <div id="addStaffModal" class="modal">
     <div class="modal-content" style="max-width:500px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -1109,14 +1105,6 @@
       }
     }
 
-    function clearCachedAccounts() {
-      if (confirm("هل تريد تنظيف الكاش المحلي في هذا المتصفح؟ لن يتم مسح أي حساب مسجل في السحابة.")) {
-        localStorage.setItem("edu_users", JSON.stringify([]));
-        showToast("تم تنظيف الكاش المحلي بنجاح", "success");
-        renderAdmin();
-      }
-    }
-
     function addLessonRow(mode, title, video, duration, pdfs) {
       var container = document.getElementById(mode === "add" ? "addLessonsContainer" : "editLessonsContainer");
       var row = document.createElement("div");
@@ -1298,8 +1286,7 @@
 
         logAdminAction("تعديل صلاحيات المحاضرات", "تم تحديث الكورسات والمحاضرات المسموحة للطالب: " + users[uIdx].fullName);
         closeModal("studentCoursePermissionsModal");
-        await renderAdmin();
-        showToast("تم حفظ الصلاحيات سحابياً بنجاح ✓", "success");
+        showToast("تم حفظ الصلاحيات وتفعيلها لجميع الأجهزة بنجاح ✓", "success");
       }
     }
 
@@ -1406,7 +1393,6 @@
         }
         logAdminAction("إنشاء امتحان", "تم نشر امتحان جديد: " + title);
         closeModal("addExamModal");
-        await renderAdmin();
         showToast("تم نشر الامتحان سحابياً لجميع الطلاب بنجاح ✓", "success");
       } catch (err) {
         showToast("خطأ في النشر السحابي: " + err.message, "error");
@@ -1470,9 +1456,6 @@
 
     async function saveEditedExam() {
       var examId = document.getElementById("editExamIdHidden").value;
-      var exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
-      var currentExam = exams.find(function(e) { return e.id === examId; });
-
       var title = document.getElementById("editExamTitleInput").value.trim();
       var duration = parseInt(document.getElementById("editExamDurationInput").value) || 20;
       var maxAttempts = parseInt(document.getElementById("editExamMaxAttemptsInput").value) || 1;
@@ -1521,7 +1504,6 @@
         }
         logAdminAction("تعديل امتحان", "تم تعديل بيانات وأسئلة الامتحان: " + title);
         closeModal("editExamModal");
-        await renderAdmin();
         showToast("تم حفظ تعديلات الامتحان سحابياً بنجاح ✓", "success");
       } catch (err) {
         showToast("خطأ أثناء التحديث السحابي: " + err.message, "error");
@@ -1587,7 +1569,6 @@
         }
         logAdminAction("إضافة كورس", "تمت إضافة كورس: " + newCourse.title + (isFree ? " (مجاني)" : ""));
         closeModal("addCourseModal");
-        await renderAdmin();
         showToast("تم نشر الكورس الجديد وظهر لجميع المستخدمين الآن ✓", "success");
       } catch (err) {
         showToast("خطأ أثناء النشر السحابي: " + err.message, "error");
@@ -1681,7 +1662,6 @@
         }
         logAdminAction("تعديل كورس", "تم حفظ وتعديل كورس: " + title);
         closeModal("editCourseModal");
-        await renderAdmin();
         showToast("تم حفظ وتحديث الكورس للجميع بنجاح ✓", "success");
       } catch (err) {
         showToast("خطأ أثناء التحديث السحابي: " + err.message, "error");
@@ -1734,7 +1714,7 @@
       reader.readAsDataURL(file);
     }
 
-    async function renderAdmin() {
+    function renderAdmin() {
       var user = getCurrentUser();
       if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN")) {
         showToast("عذراً، مخصص للإدارة فقط", "error");
@@ -1764,25 +1744,9 @@
         if (btnAddStaff) btnAddStaff.style.display = "none";
       }
 
-      // جلب الكورسات والامتحانات والمستخدمين من السحابة مباشرة
-      var courses = [];
-      var exams = [];
-      var users = [];
-
-      if (window.FirebaseService) {
-        try {
-          courses = await window.FirebaseService.getCourses();
-          exams = await window.FirebaseService.getExams();
-          users = await window.FirebaseService.getUsers();
-        } catch (e) {
-          console.warn("جلب السحابة:", e.message);
-        }
-      }
-
-      if (courses.length === 0) courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-      if (exams.length === 0) exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
-      if (users.length === 0) users = JSON.parse(localStorage.getItem("edu_users")) || [];
-
+      var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
+      var exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
+      var users = JSON.parse(localStorage.getItem("edu_users")) || [];
       var payments = JSON.parse(localStorage.getItem("edu_payments")) || [];
       var logs = JSON.parse(localStorage.getItem("edu_activity_logs")) || [];
       var hackerLogs = JSON.parse(localStorage.getItem("edu_hacker_logs")) || [];
@@ -2048,7 +2012,6 @@
 
         logAdminAction("إسناد رتبة إدارية", "تمت ترقية الحساب: " + users[uIdx].fullName + " إلى رتبة: " + newRole);
         closeModal("addStaffModal");
-        await renderAdmin();
         showToast("تمت ترقية الحساب سحابياً بنجاح إلى الطاقم الإداري ✓", "success");
       }
     });
@@ -2092,7 +2055,6 @@
 
         logAdminAction("تعديل رتبة مسؤول", "تم تعديل رتبة " + users[uIdx].fullName + " من " + oldRole + " إلى " + newRole);
         closeModal("editStaffRoleModal");
-        await renderAdmin();
         showToast("تم تحديث رتبة المسؤول سحابياً بنجاح ✓", "success");
       }
     }
@@ -2113,7 +2075,8 @@
     });
 
     async function approvePayment(id) {
-      if (!confirm("هل تؤكد قبول وتفعيل هذا الطلب وإرسال إشعار فوري للطالب؟")) return;
+      var confirmed = await customConfirm("هل تؤكد قبول وتفعيل هذا الطلب وإرسال إشعار فوري للطالب؟", "اعتماد الدفع");
+      if (!confirmed) return;
 
       var payments = JSON.parse(localStorage.getItem("edu_payments")) || [];
       var users = JSON.parse(localStorage.getItem("edu_users")) || [];
@@ -2135,14 +2098,13 @@
         localStorage.setItem("edu_users", JSON.stringify(users));
 
         sendSystemPushNotification("تم تفعيل الكورس بنجاح", "مرحباً " + p.userName + "، تم اعتماد إيصال الدفع وتفعيل كورس: " + p.courseTitle + " في حسابك.", p.userEmail);
-
-        await renderAdmin();
         showToast("تم تفعيل الكورس وإرسال الإشعار الفوري للطالب ✓", "success");
       }
     }
 
     async function deleteExam(id) {
-      if (confirm("هل تريد حذف هذا الامتحان سحابياً نهائياً؟")) {
+      var confirmed = await customConfirm("هل تريد حذف هذا الامتحان سحابياً ونهائياً؟", "حذف الامتحان");
+      if (confirmed) {
         if (window.FirebaseService) {
           try {
             await window.FirebaseService.deleteExam(id);
@@ -2150,7 +2112,6 @@
         }
         var exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
         localStorage.setItem("edu_exams", JSON.stringify(exams.filter(function(x) { return x.id != id; })));
-        await renderAdmin();
         showToast("تم حذف الامتحان سحابياً بنجاح", "info");
       }
     }
@@ -2161,19 +2122,22 @@
         showToast("حذف الحسابات مقتصر على المشرف العام فقط", "error");
         return;
       }
-      if (confirm("هل تريد حذف هذا الحساب نهائياً؟")) {
+
+      var confirmed = await customConfirm("هل تريد حذف هذا الحساب نهائياً؟ سيتم تسجيل خروجه فوراً من أي جهاز.", "حذف الحساب نهائياً");
+      if (confirmed) {
         var users = JSON.parse(localStorage.getItem("edu_users")) || [];
         var targetUser = users.find(function(u) { return u.email === email; });
 
-        if (targetUser && targetUser.uid && window.firebase && firebase.firestore) {
+        if (targetUser && targetUser.uid && window.FirebaseService) {
           try {
-            await firebase.firestore().collection("users").doc(targetUser.uid).delete();
-          } catch (e) {}
+            await window.FirebaseService.deleteUser(targetUser.uid);
+          } catch (e) {
+            console.warn("حذف سحابي:", e.message);
+          }
         }
 
         localStorage.setItem("edu_users", JSON.stringify(users.filter(function(u) { return u.email !== email; })));
-        await renderAdmin();
-        showToast("تم حذف الحساب بنجاح", "info");
+        showToast("تم حذف الحساب من السحابة بنجاح وسيتم طرده تلقائياً ✓", "info");
       }
     }
 
@@ -2182,7 +2146,8 @@
       var target = courses[courseIndex];
       if (!target) return;
 
-      if (confirm("هل تريد حذف كورس: " + target.title + " نهائياً من السحابة؟")) {
+      var confirmed = await customConfirm("هل تريد حذف كورس: " + target.title + " نهائياً من السحابة لجميع الطلاب؟", "حذف الكورس");
+      if (confirmed) {
         if (window.FirebaseService && target.id) {
           try {
             await window.FirebaseService.deleteCourse(target.id);
@@ -2191,13 +2156,13 @@
         courses.splice(courseIndex, 1);
         localStorage.setItem("edu_courses", JSON.stringify(courses));
         logAdminAction("حذف كورس", "تم حذف كورس: " + target.title);
-        await renderAdmin();
         showToast("تم حذف الكورس سحابياً بنجاح", "info");
       }
     }
 
-    function clearHackerLogs() {
-      if (confirm("هل تريد مسح سجل محاولات الاختراق؟")) {
+    async function clearHackerLogs() {
+      var confirmed = await customConfirm("هل تريد مسح سجل محاولات الاختراق؟", "مسح سجل الأمان");
+      if (confirmed) {
         localStorage.setItem("edu_hacker_logs", JSON.stringify([]));
         renderAdmin();
         showToast("تم مسح السجل بنجاح", "info");
@@ -2346,6 +2311,7 @@
       }
     }
 
+    // تفعيل الاستماع اللحظي (Realtime Listeners) لجميع البيانات
     document.addEventListener("DOMContentLoaded", function() {
       var toggleBtn = document.getElementById("mobileSidebarToggleBtn");
       if (toggleBtn) {
@@ -2355,6 +2321,17 @@
           toggleMobileSidebarMenu();
         });
       }
+
+      var initInterval = setInterval(function() {
+        if (window.FirebaseService && window.firebase && firebase.firestore) {
+          clearInterval(initInterval);
+          
+          window.FirebaseService.subscribeCourses(function() { renderAdmin(); });
+          window.FirebaseService.subscribeExams(function() { renderAdmin(); });
+          window.FirebaseService.subscribeUsers(function() { renderAdmin(); });
+        }
+      }, 250);
+
       renderAdmin();
     });
   </script>
