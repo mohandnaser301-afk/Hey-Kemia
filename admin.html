@@ -1705,7 +1705,7 @@
       reader.onload = async function(e) {
         var base64Data = e.target.result;
         var compressed = window.compressImageBase64 
-          ? await window.compressImageBase64(base64Data, 600, 380, 0.65) 
+          ? await window.compressImageBase64(base64Data, 450, 260, 0.5) 
           : base64Data;
 
         if (mode === "add") {
@@ -2128,21 +2128,29 @@
         return;
       }
 
-      var confirmed = await customConfirm("هل تريد حذف هذا الحساب نهائياً؟ سيتم تسجيل خروجه فوراً من أي جهاز.", "حذف الحساب نهائياً");
+      var confirmed = await customConfirm("هل تريد حذف هذا الحساب نهائياً؟ سيتم تسجيل خروجه فوراً ومسحه من قاعدة البيانات.", "حذف الحساب نهائياً");
       if (confirmed) {
         var users = JSON.parse(localStorage.getItem("edu_users")) || [];
         var targetUser = users.find(function(u) { return u.email === email; });
 
-        if (targetUser && targetUser.uid && window.FirebaseService) {
+        // حذف مباشر من Firestore بالـ UID أو بالـ Email
+        if (window.firebase && firebase.firestore) {
           try {
-            await window.FirebaseService.deleteUser(targetUser.uid);
+            if (targetUser && targetUser.uid) {
+              await firebase.firestore().collection("users").doc(targetUser.uid).delete();
+            } else {
+              var qSnap = await firebase.firestore().collection("users").where("email", "==", email.toLowerCase()).get();
+              qSnap.forEach(async function(d) {
+                await d.ref.delete();
+              });
+            }
           } catch (e) {
             console.warn("حذف سحابي:", e.message);
           }
         }
 
         localStorage.setItem("edu_users", JSON.stringify(users.filter(function(u) { return u.email !== email; })));
-        showToast("تم حذف الحساب من السحابة بنجاح وسيتم طرده تلقائياً ✓", "info");
+        showToast("تم مسح الحساب من قاعدة البيانات بنجاح وسيتم طرده فوراً ✓", "success");
       }
     }
 

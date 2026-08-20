@@ -1,6 +1,5 @@
 // =========================================================
 // المحرك البرمجي وحصن الأمان لمنصة هي كيميا !
-// مزامنة فورية كاملة + تنبيه إلزامي لتفعيل الإشعارات
 // =========================================================
 
 function sanitizeText(str) {
@@ -48,10 +47,22 @@ function customConfirm(message, title, confirmText, cancelText) {
 }
 window.customConfirm = customConfirm;
 
-// 2. فحص وتنبيه تفعيل الإشعارات الإلزامي للطالب
+// 2. فحص وتنبيه تفعيل الإشعارات (يختفي نهائياً ولا يتكرر فور التفعيل أو الرفض)
 function checkAndPromptNotifications() {
+  // فحص حالة الكاش المسجلة مسبقاً
+  if (localStorage.getItem("hk_notif_prompt_handled") === "true") return;
+
   if (!("Notification" in window)) return;
-  if (Notification.permission === "granted") return;
+  
+  // إذا كانت الحالة granted أو denied
+  if (Notification.permission === "granted") {
+    localStorage.setItem("hk_notif_prompt_handled", "true");
+    return;
+  }
+  if (Notification.permission === "denied") {
+    localStorage.setItem("hk_notif_prompt_handled", "true");
+    return;
+  }
 
   var existing = document.getElementById("hkMandatoryNotifModal");
   if (existing) return;
@@ -64,24 +75,30 @@ function checkAndPromptNotifications() {
       '<div style="width:56px; height:56px; background:rgba(0,210,255,0.14); color:#0284C7; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 14px; font-size:26px;">🔔</div>' +
       '<h3 style="font-size:18px; font-weight:900; color:#0E1338; margin-bottom:8px;">تفعيل إشعارات المنصة</h3>' +
       '<p style="font-size:13.5px; color:#64748B; margin-bottom:20px; line-height:1.6;">' +
-        'لضمان استلام مواعيد المحاضرات الجديدة، نتائج الامتحانات، واعتمادات الدفع فوراً على هاتفك، يُرجى السماح بالإشعارات.' +
+        'لضمان استلام مواعيد المحاضرات الجديدة، نتائج الامتحانات، واعتمادات الدفع فوراً على هاتفك، يُرجى تفعيل الإشعارات.' +
       '</p>' +
-      '<button id="hkAllowNotifBtn" style="width:100%; padding:12px; background:linear-gradient(135deg, #00D2FF, #0284C7); color:#fff; border:none; border-radius:12px; font-weight:900; font-size:14.5px; cursor:pointer; box-shadow:0 4px 15px rgba(0,210,255,0.35);">تفعيل الإشعارات الآن 🔔</button>' +
+      '<div style="display:flex; gap:10px;">' +
+        '<button id="hkAllowNotifBtn" style="flex:2; padding:12px; background:linear-gradient(135deg, #00D2FF, #0284C7); color:#fff; border:none; border-radius:12px; font-weight:900; font-size:14px; cursor:pointer;">تفعيل الإشعارات الآن 🔔</button>' +
+        '<button id="hkDismissNotifBtn" style="flex:1; padding:12px; background:#F1F5F9; color:#64748B; border:1px solid #CBD5E1; border-radius:12px; font-weight:800; font-size:13px; cursor:pointer;">لاحقاً</button>' +
+      '</div>' +
     '</div>';
 
   document.body.appendChild(modal);
 
   document.getElementById("hkAllowNotifBtn").onclick = function() {
     Notification.requestPermission().then(function(permission) {
+      modal.remove();
+      localStorage.setItem("hk_notif_prompt_handled", "true");
       if (permission === "granted") {
-        modal.remove();
         showToast("تم تفعيل إشعارات المنصة بنجاح على جهازك", "success");
         updateNavbarAndAuthGuards();
-      } else {
-        modal.remove();
-        showToast("يمكنك تفعيل الإشعارات لاحقاً من إعدادات المتصفح", "info");
       }
     });
+  };
+
+  document.getElementById("hkDismissNotifBtn").onclick = function() {
+    modal.remove();
+    localStorage.setItem("hk_notif_prompt_handled", "true");
   };
 }
 window.checkAndPromptNotifications = checkAndPromptNotifications;
@@ -150,7 +167,7 @@ function monitorCurrentUserStatus() {
       firebase.firestore().collection("users").doc(user.uid).onSnapshot(function(docSnap) {
         if (!docSnap.exists) {
           localStorage.removeItem("current_user");
-          showToast("تم حذف هذا الحساب من قِبل الإدارة.", "error", "تنبيه");
+          showToast("تم حذف أو تعطيل هذا الحساب من قِبل الإدارة.", "error", "تنبيه");
           setTimeout(function() { window.location.href = "login.html"; }, 1200);
         } else {
           var updated = docSnap.data();
@@ -260,8 +277,10 @@ function updateNavbarAndAuthGuards() {
       } else if (user.role === "SUPPORT") {
         authBox.innerHTML = '<a href="support.html" class="nav-btn-primary">شات الدعم</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
       } else {
-        var notifStatus = (window.Notification && Notification.permission === "granted") ? "" : '<button onclick="checkAndPromptNotifications()" class="notif-bell-btn" title="تفعيل الإشعارات">🔔</button>';
-        authBox.innerHTML = notifStatus + '<a href="dashboard.html" class="nav-btn-primary">لوحة الطالب (' + sanitizeText(user.fullName.split(" ")[0]) + ')</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
+        // يختفي زر الإشعارات بالكامل إذا كانت الحالة مفعلة أو تم التعامل معها
+        var isNotifActive = ("Notification" in window) && Notification.permission === "granted";
+        var notifBtn = isNotifActive ? "" : '<button onclick="checkAndPromptNotifications()" class="notif-bell-btn" title="تفعيل الإشعارات">🔔</button>';
+        authBox.innerHTML = notifBtn + '<a href="dashboard.html" class="nav-btn-primary">لوحة الطالب (' + sanitizeText(user.fullName.split(" ")[0]) + ')</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
       }
     } else {
       authBox.innerHTML = '<a href="login.html" class="nav-btn-link">تسجيل الدخول</a><a href="register.html" class="nav-btn-primary">حساب جديد</a>';

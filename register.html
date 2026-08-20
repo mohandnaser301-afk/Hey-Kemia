@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>إنشاء حساب طالب جديد - هي كيميا !</title>
   <link rel="stylesheet" href="style.css">
   <style>
@@ -11,252 +11,34 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 90px 16px 40px;
+      padding: 95px 16px 40px;
       position: relative;
-      background: radial-gradient(circle at 10% 20%, rgba(0, 210, 255, 0.08) 0%, transparent 40%),
-                  radial-gradient(circle at 90% 80%, rgba(14, 19, 56, 0.06) 0%, transparent 40%);
     }
-
     .auth-card-modern {
       background: rgba(255, 255, 255, 0.94);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.8);
-      box-shadow: 0 20px 50px rgba(14, 19, 56, 0.09), 
-                  0 1px 3px rgba(0, 0, 0, 0.04),
-                  inset 0 1px 1px rgba(255, 255, 255, 0.9);
+      box-shadow: 0 20px 50px rgba(14, 19, 56, 0.09);
       border-radius: 24px;
-      padding: 36px 32px;
-      max-width: 560px;
+      padding: 34px 28px;
+      max-width: 540px;
       width: 100%;
       position: relative;
-      overflow: hidden;
     }
-
-    .auth-card-modern::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 4px;
-      background: linear-gradient(90deg, #00D2FF, var(--royal-indigo-base), #00D2FF);
-      background-size: 200% 100%;
-      animation: gradientMove 4s ease infinite;
-    }
-
-    @keyframes gradientMove {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-
-    .brand-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(0, 210, 255, 0.1);
-      border: 1px solid rgba(0, 210, 255, 0.3);
-      padding: 5px 14px;
-      border-radius: 50px;
-      color: #0284C7;
-      font-size: 12px;
-      font-weight: 800;
-      margin-bottom: 12px;
-    }
-
-    /* شريط الخطوات المتطور */
-    .stepper-container {
-      margin: 22px 0 28px;
-      position: relative;
-    }
-
-    .stepper-nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: relative;
-      z-index: 2;
-    }
-
-    .stepper-track-bg {
-      position: absolute;
-      top: 20px;
-      left: 24px;
-      right: 24px;
-      height: 4px;
-      background: #E2E8F0;
-      border-radius: 4px;
-      z-index: 1;
-    }
-
-    .stepper-track-fill {
-      position: absolute;
-      top: 20px;
-      right: 24px;
-      height: 4px;
-      background: linear-gradient(90deg, #00D2FF, #0284C7);
-      border-radius: 4px;
-      z-index: 1;
-      transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-      width: 0%;
-      box-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
-    }
-
-    .step-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      cursor: default;
-    }
-
-    .step-circle {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: #FFFFFF;
-      border: 2px solid #CBD5E1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 900;
-      font-size: 13.5px;
-      color: #94A3B8;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.04);
-    }
-
-    .step-label {
-      font-size: 11.5px;
-      font-weight: 800;
-      color: #94A3B8;
-      transition: color 0.3s ease;
-      white-space: nowrap;
-    }
-
-    .step-item.active .step-circle {
-      border-color: #00D2FF;
-      background: var(--royal-indigo-base);
-      color: #FFFFFF;
-      box-shadow: 0 0 0 4px rgba(0, 210, 255, 0.18), 0 6px 14px rgba(14, 19, 56, 0.25);
-      transform: scale(1.05);
-    }
-
-    .step-item.active .step-label {
-      color: var(--royal-indigo-base);
-    }
-
-    .step-item.completed .step-circle {
-      background: #10B981;
-      border-color: #10B981;
-      color: #FFFFFF;
-      box-shadow: 0 4px 10px rgba(16, 185, 129, 0.25);
-    }
-
-    .step-item.completed .step-label {
-      color: #10B981;
-    }
-
-    /* محتوى الخطوات */
-    .form-step-pane {
-      display: none;
-    }
-
-    .form-step-pane.active {
-      display: block;
-      animation: slidePaneIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-
-    @keyframes slidePaneIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px) scale(0.99);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-
-    .step-actions-bar {
-      display: flex;
-      gap: 12px;
-      margin-top: 22px;
-      padding-top: 18px;
-      border-top: 1px solid #EEF2F6;
-    }
-
-    .btn-step-prev {
-      background: #F1F5F9;
-      color: #475569;
-      border: 1px solid #CBD5E1;
-      padding: 11px 20px;
-      border-radius: 12px;
-      font-size: 13.5px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .btn-step-prev:hover {
-      background: #E2E8F0;
-      color: #1E293B;
-    }
-
-    .btn-step-next {
-      background: linear-gradient(135deg, var(--royal-indigo-base) 0%, #1D255E 100%);
-      color: #FFFFFF;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 12px;
-      font-size: 14px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: all 0.25s ease;
-      box-shadow: 0 4px 14px rgba(14, 19, 56, 0.2);
-    }
-
-    .btn-step-next:hover {
-      transform: translateY(-1.5px);
-      box-shadow: 0 6px 18px rgba(14, 19, 56, 0.3);
-    }
-
-    .btn-step-submit {
-      background: linear-gradient(135deg, #00D2FF 0%, #0284C7 100%);
-      color: #FFFFFF;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 12px;
-      font-size: 14px;
-      font-weight: 900;
-      cursor: pointer;
-      transition: all 0.25s ease;
-      box-shadow: 0 4px 15px rgba(0, 210, 255, 0.35);
-    }
-
-    .btn-step-submit:hover {
-      transform: translateY(-1.5px);
-      box-shadow: 0 8px 22px rgba(0, 210, 255, 0.45);
-    }
-
-    @media (max-width: 540px) {
-      .auth-card-modern {
-        padding: 26px 18px;
-        border-radius: 20px;
-      }
-      .step-circle {
-        width: 34px;
-        height: 34px;
-        font-size: 12px;
-      }
-      .step-label {
-        font-size: 10px;
-      }
-      .stepper-track-bg, .stepper-track-fill {
-        top: 17px;
-      }
-    }
+    .stepper-container { margin: 20px 0 26px; position: relative; }
+    .stepper-nav { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2; }
+    .stepper-track-bg { position: absolute; top: 18px; left: 24px; right: 24px; height: 3px; background: #E2E8F0; z-index: 1; }
+    .stepper-track-fill { position: absolute; top: 18px; right: 24px; height: 3px; background: #00D2FF; z-index: 1; transition: width 0.3s ease; width: 0%; }
+    .step-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .step-circle { width: 36px; height: 36px; border-radius: 50%; background: #fff; border: 2px solid #CBD5E1; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; color: #94A3B8; }
+    .step-item.active .step-circle { border-color: #00D2FF; background: var(--royal-indigo-base); color: #fff; }
+    .step-item.completed .step-circle { background: #10B981; border-color: #10B981; color: #fff; }
+    .step-label { font-size: 11px; font-weight: 800; color: #64748B; }
+    .form-step-pane { display: none; }
+    .form-step-pane.active { display: block; animation: fadeInStep 0.25s ease; }
+    @keyframes fadeInStep { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .step-actions-bar { display: flex; gap: 10px; margin-top: 20px; padding-top: 14px; border-top: 1px solid #EEF2F6; }
   </style>
 </head>
 <body>
@@ -267,46 +49,33 @@
         <div class="capsule-logo">HK</div>
         <span class="brand-text">هي كيميا<span>!</span></span>
       </a>
-      <div class="capsule-links">
-        <a href="index.html#hero">الرئيسية</a>
+      <button type="button" class="nav-mobile-toggle" onclick="toggleNavMenu()">☰</button>
+      <div class="capsule-links" id="mainNavLinks">
+        <a href="index.html">الرئيسية</a>
         <a href="index.html#courses">الكورسات</a>
         <a href="support.html">الدعم الفني</a>
       </div>
-      <div class="capsule-auth" id="navAuthBox">
+      <div class="capsule-auth">
         <a href="login.html" class="nav-btn-link">تسجيل الدخول</a>
       </div>
     </nav>
   </div>
 
   <div class="auth-page-wrapper">
-    <div class="auth-card-modern anim-fade-up">
+    <div class="auth-card-modern">
       
       <div style="text-align: center;">
-        <span class="brand-badge">منظومة الصف الثالث الثانوي</span>
-        <h1 style="font-size: 23px; font-weight: 900; color: var(--royal-indigo-base); margin-bottom: 4px;">إنشاء حساب طالب جديد</h1>
-        <p style="color: var(--text-muted); font-size: 13px;">ابدأ رحلتك الأكاديمية مع الأستاذ محمد السعيد</p>
+        <h1 style="font-size: 22px; font-weight: 900; color: var(--royal-indigo-base); margin-bottom: 4px;">إنشاء حساب طالب جديد</h1>
+        <p style="color: var(--text-muted); font-size: 13px;">منظومة الكيمياء للأستاذ محمد السعيد</p>
       </div>
 
-      <!-- مؤشر الخطوات العصري -->
       <div class="stepper-container">
         <div class="stepper-track-bg"></div>
         <div class="stepper-track-fill" id="stepProgressBar"></div>
-        
         <div class="stepper-nav">
-          <div class="step-item active" id="stepItem1">
-            <div class="step-circle" id="bubble1">1</div>
-            <span class="step-label">البيانات الشخصية</span>
-          </div>
-
-          <div class="step-item" id="stepItem2">
-            <div class="step-circle" id="bubble2">2</div>
-            <span class="step-label">التواصل والدراسة</span>
-          </div>
-
-          <div class="step-item" id="stepItem3">
-            <div class="step-circle" id="bubble3">3</div>
-            <span class="step-label">الأمان وكلمة المرور</span>
-          </div>
+          <div class="step-item active" id="stepItem1"><div class="step-circle" id="bubble1">1</div><span class="step-label">البيانات الشخصية</span></div>
+          <div class="step-item" id="stepItem2"><div class="step-circle" id="bubble2">2</div><span class="step-label">التواصل والدراسة</span></div>
+          <div class="step-item" id="stepItem3"><div class="step-circle" id="bubble3">3</div><span class="step-label">كلمة المرور</span></div>
         </div>
       </div>
 
@@ -315,8 +84,9 @@
         <!-- الخطوة 1: البيانات الشخصية -->
         <div class="form-step-pane active" id="stepPane1">
           <div class="form-group">
-            <label>الاسم ثلاثي أو رباعي:</label>
-            <input type="text" id="regFullName" placeholder="محمد أحمد السعيد" required>
+            <label>الاسم ثلاثي أو رباعي (باللغة العربية فقط):</label>
+            <input type="text" id="regFullName" placeholder="محمد أحمد السعيد" required oninput="validateArabicInput(this)">
+            <small style="color: #64748b; font-size: 11px; margin-top: 3px;">* يقبل الحروف والمسافات العربية فقط.</small>
           </div>
 
           <div class="form-group">
@@ -358,7 +128,7 @@
           </div>
 
           <div class="step-actions-bar">
-            <button type="button" class="btn-step-next" style="width: 100%;" onclick="goToStep(2)">متابعة الخطوة التالية ←</button>
+            <button type="button" class="btn btn-primary" style="width: 100%;" onclick="goToStep(2)">متابعة الخطوة التالية ←</button>
           </div>
         </div>
 
@@ -366,12 +136,14 @@
         <div class="form-step-pane" id="stepPane2">
           <div class="form-group">
             <label>رقم هاتف الطالب (واتساب):</label>
-            <input type="tel" id="regStudentPhone" placeholder="010xxxxxxxx" required>
+            <input type="tel" id="regStudentPhone" placeholder="01xxxxxxxxx" maxlength="11" required oninput="validateEgyptianPhoneInput(this)">
+            <small style="color: #64748b; font-size: 11px; margin-top: 3px;">* يجب أن يتكون من 11 رقماً مصرياً يبدأ بـ (010, 011, 012, 015).</small>
           </div>
 
           <div class="form-group">
             <label>رقم هاتف ولي الأمر:</label>
-            <input type="tel" id="regParentPhone" placeholder="01xxxxxxxxx" required>
+            <input type="tel" id="regParentPhone" placeholder="01xxxxxxxxx" maxlength="11" required oninput="validateEgyptianPhoneInput(this)">
+            <small style="color: #64748b; font-size: 11px; margin-top: 3px;">* 11 رقماً مصرياً ويبدأ بـ (010, 011, 012, 015).</small>
           </div>
 
           <div class="form-row">
@@ -389,17 +161,16 @@
           </div>
 
           <div class="step-actions-bar">
-            <button type="button" class="btn-step-prev" onclick="goToStep(1)">→ السابق</button>
-            <button type="button" class="btn-step-next" style="flex:1;" onclick="goToStep(3)">متابعة الخطوة الأخيرة ←</button>
+            <button type="button" class="btn btn-outline" onclick="goToStep(1)">→ السابق</button>
+            <button type="button" class="btn btn-primary" style="flex:1;" onclick="goToStep(3)">متابعة الخطوة الأخيرة ←</button>
           </div>
         </div>
 
-        <!-- الخطوة 3: الأمان وكلمة المرور -->
+        <!-- الخطوة 3: كلمة المرور -->
         <div class="form-step-pane" id="stepPane3">
           <div class="form-group">
             <label>كلمة المرور:</label>
             <input type="password" id="regPassword" placeholder="••••••••" required>
-            <small style="color: var(--text-muted); font-size: 11.5px; margin-top: 3px; display: block;">* يفضل أن تتكون من 6 خانات أو أكثر.</small>
           </div>
 
           <div class="form-group">
@@ -408,14 +179,14 @@
           </div>
 
           <div class="step-actions-bar">
-            <button type="button" class="btn-step-prev" onclick="goToStep(2)">→ السابق</button>
-            <button type="submit" class="btn-step-submit" style="flex:1;">إتمام التسجيل والدخول ✓</button>
+            <button type="button" class="btn btn-outline" onclick="goToStep(2)">→ السابق</button>
+            <button type="submit" class="btn btn-primary" style="flex:1; background:linear-gradient(135deg,#00D2FF,#0284C7);">إتمام التسجيل والدخول ✓</button>
           </div>
         </div>
 
       </form>
 
-      <div style="text-align:center; margin-top: 20px; font-size: 13.5px; color: var(--text-muted);">
+      <div style="text-align:center; margin-top: 18px; font-size: 13px; color: var(--text-muted);">
         لديك حساب بالفعل؟ <a href="login.html" style="color:var(--cyan-accent); font-weight:800; text-decoration:none;">تسجيل الدخول</a>
       </div>
     </div>
@@ -426,12 +197,60 @@
   <script>
     var currentStep = 1;
 
-    function goToStep(step) {
+    function toggleNavMenu() {
+      var links = document.getElementById("mainNavLinks");
+      if (links) links.classList.toggle("show-mobile-nav");
+    }
+
+    // تقييد الاسم باللغة العربية فقط
+    function validateArabicInput(input) {
+      input.value = input.value.replace(/[^\u0600-\u06FF\s]/g, "");
+    }
+
+    function isArabicOnly(text) {
+      return /^[\u0600-\u06FF\s]+$/.test(text);
+    }
+
+    // تقييد خانة الهاتف بالأرقام فقط وحد أقصى 11 رقماً
+    function validateEgyptianPhoneInput(input) {
+      input.value = input.value.replace(/\D/g, "");
+      if (input.value.length > 11) {
+        input.value = input.value.slice(0, 11);
+      }
+    }
+
+    // التحقق من صحة رقم الهاتف المصري
+    function isValidEgyptianPhone(phone) {
+      return /^(010|011|012|015)\d{8}$/.test(phone);
+    }
+
+    async function checkAccountDuplicates(name, email, phone) {
+      if (window.firebase && firebase.firestore) {
+        var db = firebase.firestore();
+        
+        var nameSnap = await db.collection("users").where("fullName", "==", name).get();
+        if (!nameSnap.empty) throw new Error("هذا الاسم مسجل بالفعل، يرجى كتابة الاسم ثلاثياً أو رباعياً بوضوح.");
+
+        var emailSnap = await db.collection("users").where("email", "==", email.toLowerCase()).get();
+        if (!emailSnap.empty) throw new Error("هذا البريد الإلكتروني مستخدم بالفعل بحساب نشط.");
+
+        var phoneSnap = await db.collection("users").where("studentPhone", "==", phone).get();
+        if (!phoneSnap.empty) throw new Error("رقم هاتف الطالب هذا مسجل بحساب آخر بالفعل.");
+      }
+    }
+
+    async function goToStep(step) {
       if (step === 2 && currentStep === 1) {
         var name = document.getElementById("regFullName").value.trim();
         var email = document.getElementById("regEmail").value.trim();
+
         if (!name || !email) {
-          showToast("يرجى إدخال الاسم والبريد الإلكتروني أولاً", "error");
+          showToast("يرجى إدخال الاسم والبريد الإلكتروني", "error");
+          return;
+        }
+
+        if (!isArabicOnly(name) || name.length < 5) {
+          showToast("يجب إدخال اسم الطالب كاملاً باللغة العربية فقط", "error");
           return;
         }
       }
@@ -440,17 +259,30 @@
         var sPhone = document.getElementById("regStudentPhone").value.trim();
         var pPhone = document.getElementById("regParentPhone").value.trim();
         var school = document.getElementById("regSchoolName").value.trim();
+
         if (!sPhone || !pPhone || !school) {
-          showToast("يرجى ملء بيانات التواصل واسم المدرسة", "error");
+          showToast("يرجى ملء جميع أرقام التواصل واسم المدرسة", "error");
+          return;
+        }
+
+        if (!isValidEgyptianPhone(sPhone)) {
+          showToast("رقم هاتف الطالب يجب أن يكون 11 رقماً مصرياً يبدأ بـ (010, 011, 012, 015)", "error");
+          return;
+        }
+
+        if (!isValidEgyptianPhone(pPhone)) {
+          showToast("رقم هاتف ولي الأمر يجب أن يكون 11 رقماً مصرياً يبدأ بـ (010, 011, 012, 015)", "error");
+          return;
+        }
+
+        if (sPhone === pPhone) {
+          showToast("يجب أن يكون رقم ولي الأمر مختلفاً عن رقم الطالب", "error");
           return;
         }
       }
 
       currentStep = step;
-
-      document.querySelectorAll(".form-step-pane").forEach(function(pane) {
-        pane.classList.remove("active");
-      });
+      document.querySelectorAll(".form-step-pane").forEach(p => p.classList.remove("active"));
       document.getElementById("stepPane" + step).classList.add("active");
 
       var progressPercent = step === 1 ? 0 : step === 2 ? 50 : 100;
@@ -459,9 +291,7 @@
       for (var i = 1; i <= 3; i++) {
         var item = document.getElementById("stepItem" + i);
         var bubble = document.getElementById("bubble" + i);
-        
         item.classList.remove("active", "completed");
-
         if (i < step) {
           item.classList.add("completed");
           bubble.innerHTML = "✓";
@@ -490,25 +320,35 @@
         return;
       }
 
-      var newUser = {
-        fullName: document.getElementById("regFullName").value.trim(),
-        email: document.getElementById("regEmail").value.trim(),
-        password: password,
-        studentPhone: document.getElementById("regStudentPhone").value.trim(),
-        parentPhone: document.getElementById("regParentPhone").value.trim(),
-        governorate: document.getElementById("regGovernorate").value,
-        educationType: document.getElementById("regEducationType").value,
-        schoolName: document.getElementById("regSchoolName").value.trim()
-      };
+      var name = document.getElementById("regFullName").value.trim();
+      var email = document.getElementById("regEmail").value.trim().toLowerCase();
+      var studentPhone = document.getElementById("regStudentPhone").value.trim();
+      var parentPhone = document.getElementById("regParentPhone").value.trim();
 
-      showToast("جاري إنشاء وتأمين حسابك...", "info");
+      if (!isValidEgyptianPhone(studentPhone) || !isValidEgyptianPhone(parentPhone)) {
+        showToast("تأكد من إدخال أرقام هواتف مصرية صحيحة (11 رقماً)", "error");
+        return;
+      }
+
+      showToast("جاري فحص البيانات وتأمين الحساب...", "info");
 
       try {
+        await checkAccountDuplicates(name, email, studentPhone);
+
+        var newUser = {
+          fullName: name,
+          email: email,
+          password: password,
+          studentPhone: studentPhone,
+          parentPhone: parentPhone,
+          governorate: document.getElementById("regGovernorate").value,
+          educationType: document.getElementById("regEducationType").value,
+          schoolName: document.getElementById("regSchoolName").value.trim()
+        };
+
         await window.FirebaseService.registerStudent(newUser);
-        showToast("تم إنشاء الحساب بنجاح، جاري الدخول للوحة التحكم...", "success");
-        setTimeout(function() {
-          window.location.href = "dashboard.html";
-        }, 1100);
+        showToast("تم إنشاء الحساب بنجاح، جاري الدخول...", "success");
+        setTimeout(function() { window.location.href = "dashboard.html"; }, 1100);
       } catch (err) {
         showToast(err.message || "حدث خطأ أثناء التسجيل", "error");
       }
