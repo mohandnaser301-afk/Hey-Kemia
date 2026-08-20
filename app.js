@@ -1,6 +1,6 @@
 // =========================================================
 // المحرك البرمجي وحصن الأمان لمنصة هي كيميا !
-// متوافق بنسبة 100% بدون أي أخطاء في المتصفح
+// متوافق بنسبة 100% بدون أي أخطاء في المتصفح ومربوط سحابياً
 // =========================================================
 
 function sanitizeText(str) {
@@ -113,10 +113,9 @@ function initSecurityGuards() {
   });
 }
 
-// 3. تهيئة البيانات الأساسية للمنصة
-function initPlatformDatabase() {
+// 3. تهيئة ومزامنة البيانات الأساسية للمنصة
+async function initPlatformDatabase() {
   var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-  // المشرف العام الافتراضي إذا كانت القاعدة فارغة
   if (!users.some(function(u) { return u.email.toLowerCase() === "superadmin@platform.com"; })) {
     users.unshift({
       fullName: "أ/ محمد السعيد (المشرف العام)",
@@ -132,6 +131,13 @@ function initPlatformDatabase() {
       courseAccessCount: {}
     });
     localStorage.setItem("edu_users", JSON.stringify(users));
+  }
+
+  // جلب الكورسات السحابية وتحديث الكاش
+  if (window.FirebaseService) {
+    try {
+      await window.FirebaseService.getCourses();
+    } catch (e) {}
   }
 
   if (!localStorage.getItem("edu_courses")) {
@@ -267,7 +273,6 @@ function updateNavbarAndAuthGuards() {
   var user = getCurrentUser();
   var currentPath = window.location.pathname.toLowerCase();
 
-  // منع الدخول للإدارة لغير المشرفين
   if (currentPath.includes("admin.html")) {
     if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN")) {
       recordSecurityBreach("دخول غير مصرح للإدارة", "محاولة فتح لوحة الإدارة", "CRITICAL");
@@ -276,7 +281,6 @@ function updateNavbarAndAuthGuards() {
     }
   }
 
-  // منع الإدارة من دخول صفحة الطالب
   if (currentPath.includes("dashboard.html")) {
     if (!user) { window.location.replace("login.html"); return; }
     if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") { window.location.replace("admin.html"); return; }
@@ -334,7 +338,7 @@ window.enablePushNotifications = function() {
   });
 };
 
-function handleEnrollClick(courseId) {
+async function handleEnrollClick(courseId) {
   var user = getCurrentUser();
   if (!user) {
     showToast("يرجى تسجيل الدخول أولاً للاشتراك في الكورس", "info");
@@ -367,6 +371,13 @@ function handleEnrollClick(courseId) {
     if (uIdx !== -1) {
       if (!users[uIdx].enrolledCourses) users[uIdx].enrolledCourses = [];
       users[uIdx].enrolledCourses.push(courseId);
+
+      if (window.FirebaseService && users[uIdx].uid) {
+        try {
+          await window.FirebaseService.updateUserPermissions(users[uIdx].uid, users[uIdx].enrolledCourses, users[uIdx].customAllowedLessons);
+        } catch (e) {}
+      }
+
       localStorage.setItem("edu_users", JSON.stringify(users));
 
       user.enrolledCourses = users[uIdx].enrolledCourses;
