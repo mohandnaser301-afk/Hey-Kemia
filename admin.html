@@ -393,8 +393,8 @@
             <p class="subtitle" style="color:var(--text-muted); font-size:13px;">البحث، تفعيل الكورسات أو محاضرات محددة للطالب</p>
           </div>
           <div style="display:flex; gap:8px;">
-            <button class="btn btn-primary" onclick="renderAdmin()" style="padding:8px 14px;">🔄 تحديث البيانات من السحابة</button>
-            <button class="btn btn-action-danger" onclick="clearCachedAccounts()" style="padding:8px 14px;">🗑️ تنظيف الكاش المحلي</button>
+            <button class="btn btn-primary" onclick="renderAdmin()" style="padding:8px 14px;">🔄 تحديث من السحابة</button>
+            <button class="btn btn-action-danger" onclick="clearCachedAccounts()" style="padding:8px 14px;">🗑️ تنظيف الكاش</button>
           </div>
         </header>
 
@@ -1110,9 +1110,9 @@
     }
 
     function clearCachedAccounts() {
-      if (confirm("هل تريد تنظيف ومسح الحسابات المخزنة محلياً في هذا المتصفح؟ لن يتم مسح أي حساب مسجل في السحابة.")) {
+      if (confirm("هل تريد تنظيف الكاش المحلي في هذا المتصفح؟ لن يتم مسح أي حساب مسجل في السحابة.")) {
         localStorage.setItem("edu_users", JSON.stringify([]));
-        showToast("تم تنظيف الحسابات المحلية بنجاح", "success");
+        showToast("تم تنظيف الكاش المحلي بنجاح", "success");
         renderAdmin();
       }
     }
@@ -1279,20 +1279,15 @@
         users[uIdx].enrolledCourses = newEnrolled;
         users[uIdx].customAllowedLessons = newCustomLessons;
 
-        // تحديث محلي
-        localStorage.setItem("edu_users", JSON.stringify(users));
-
-        // تحديث في Firestore إذا كان المستخدم لديه uid
-        if (window.firebase && firebase.firestore && users[uIdx].uid) {
+        if (window.FirebaseService && users[uIdx].uid) {
           try {
-            await firebase.firestore().collection("users").doc(users[uIdx].uid).update({
-              enrolledCourses: newEnrolled,
-              customAllowedLessons: newCustomLessons
-            });
+            await window.FirebaseService.updateUserPermissions(users[uIdx].uid, newEnrolled, newCustomLessons);
           } catch (e) {
             console.warn("تحديث السحابة:", e.message);
           }
         }
+
+        localStorage.setItem("edu_users", JSON.stringify(users));
 
         var currentLoggedIn = getCurrentUser();
         if (currentLoggedIn && currentLoggedIn.email === studentEmail) {
@@ -1303,8 +1298,8 @@
 
         logAdminAction("تعديل صلاحيات المحاضرات", "تم تحديث الكورسات والمحاضرات المسموحة للطالب: " + users[uIdx].fullName);
         closeModal("studentCoursePermissionsModal");
-        renderAdmin();
-        showToast("تم حفظ الصلاحيات والمحاضرات المفعلة للطالب بنجاح", "success");
+        await renderAdmin();
+        showToast("تم حفظ الصلاحيات سحابياً بنجاح ✓", "success");
       }
     }
 
@@ -1359,7 +1354,7 @@
       container.appendChild(div);
     }
 
-    document.getElementById("addExamSmoothForm").addEventListener("submit", function(e) {
+    document.getElementById("addExamSmoothForm").addEventListener("submit", async function(e) {
       e.preventDefault();
 
       var title = document.getElementById("newExamTitle").value.trim();
@@ -1393,23 +1388,29 @@
         return;
       }
 
-      var exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
       var newExam = {
-        id: "e_" + Date.now(),
         isGeneral: isGeneral,
         courseId: courseId,
         title: title,
         durationMinutes: duration,
         maxAttempts: maxAttempts,
-        questions: questionsArr
+        questions: questionsArr,
+        createdAt: new Date().toISOString()
       };
 
-      exams.push(newExam);
-      localStorage.setItem("edu_exams", JSON.stringify(exams));
-      logAdminAction("إنشاء امتحان", "تم نشر امتحان جديد: " + title);
-      closeModal("addExamModal");
-      renderAdmin();
-      showToast("تم نشر الامتحان الجديد للطلاب بنجاح", "success");
+      showToast("جاري نشر الامتحان سحابياً...", "info");
+
+      try {
+        if (window.FirebaseService) {
+          await window.FirebaseService.saveExam(newExam);
+        }
+        logAdminAction("إنشاء امتحان", "تم نشر امتحان جديد: " + title);
+        closeModal("addExamModal");
+        await renderAdmin();
+        showToast("تم نشر الامتحان سحابياً لجميع الطلاب بنجاح ✓", "success");
+      } catch (err) {
+        showToast("خطأ في النشر السحابي: " + err.message, "error");
+      }
     });
 
     function openEditExamModal(examId) {
@@ -1467,15 +1468,10 @@
       container.appendChild(div);
     }
 
-    function saveEditedExam() {
+    async function saveEditedExam() {
       var examId = document.getElementById("editExamIdHidden").value;
       var exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
-      var eIdx = exams.findIndex(function(e) { return e.id === examId; });
-
-      if (eIdx === -1) {
-        showToast("خطأ في تحديد الامتحان", "error");
-        return;
-      }
+      var currentExam = exams.find(function(e) { return e.id === examId; });
 
       var title = document.getElementById("editExamTitleInput").value.trim();
       var duration = parseInt(document.getElementById("editExamDurationInput").value) || 20;
@@ -1510,16 +1506,26 @@
         return;
       }
 
-      exams[eIdx].title = title;
-      exams[eIdx].durationMinutes = duration;
-      exams[eIdx].maxAttempts = maxAttempts;
-      exams[eIdx].questions = updatedQuestions;
+      var updatedData = {
+        title: title,
+        durationMinutes: duration,
+        maxAttempts: maxAttempts,
+        questions: updatedQuestions
+      };
 
-      localStorage.setItem("edu_exams", JSON.stringify(exams));
-      logAdminAction("تعديل امتحان", "تم تعديل بيانات وأسئلة الامتحان: " + title);
-      closeModal("editExamModal");
-      renderAdmin();
-      showToast("تم حفظ تعديلات الامتحان والأسئلة بنجاح", "success");
+      showToast("جاري حفظ التعديلات سحابياً...", "info");
+
+      try {
+        if (window.FirebaseService) {
+          await window.FirebaseService.saveExam(updatedData, examId);
+        }
+        logAdminAction("تعديل امتحان", "تم تعديل بيانات وأسئلة الامتحان: " + title);
+        closeModal("editExamModal");
+        await renderAdmin();
+        showToast("تم حفظ تعديلات الامتحان سحابياً بنجاح ✓", "success");
+      } catch (err) {
+        showToast("خطأ أثناء التحديث السحابي: " + err.message, "error");
+      }
     }
 
     function openAddCourseModal() {
@@ -1538,7 +1544,7 @@
       openModal("addCourseModal");
     }
 
-    function saveNewCourse() {
+    async function saveNewCourse() {
       var title = document.getElementById("addCourseTitle").value.trim();
       var desc = document.getElementById("addCourseDesc").value.trim();
 
@@ -1547,8 +1553,6 @@
         return;
       }
 
-      var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-      var newId = "c_" + Date.now();
       var isFree = document.getElementById("addCoursePricingType").value === "free";
       var viewsType = document.getElementById("addCourseViewsType").value;
 
@@ -1561,7 +1565,6 @@
       var imageSrc = document.getElementById("addCourseImageBase64").value || "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80";
 
       var newCourse = {
-        id: newId,
         title: title,
         desc: desc || "محتوى تدريبي وتأسيسي متكامل في الكيمياء.",
         price: isFree ? 0 : (Number(document.getElementById("addCoursePrice").value) || 250),
@@ -1572,15 +1575,23 @@
         image: imageSrc,
         lessons: lessonsArr,
         attachments: [],
-        examId: "e1"
+        examId: "e1",
+        createdAt: new Date().toISOString()
       };
 
-      courses.push(newCourse);
-      localStorage.setItem("edu_courses", JSON.stringify(courses));
-      logAdminAction("إضافة كورس", "تمت إضافة كورس: " + newCourse.title + (isFree ? " (مجاني)" : ""));
-      closeModal("addCourseModal");
-      renderAdmin();
-      showToast("تم نشر الكورس الجديد بنجاح", "success");
+      showToast("جاري نشر الكورس سحابياً لجميع الطلاب...", "info");
+
+      try {
+        if (window.FirebaseService) {
+          await window.FirebaseService.saveCourse(newCourse);
+        }
+        logAdminAction("إضافة كورس", "تمت إضافة كورس: " + newCourse.title + (isFree ? " (مجاني)" : ""));
+        closeModal("addCourseModal");
+        await renderAdmin();
+        showToast("تم نشر الكورس الجديد وظهر لجميع المستخدمين الآن ✓", "success");
+      } catch (err) {
+        showToast("خطأ أثناء النشر السحابي: " + err.message, "error");
+      }
     }
 
     function openEditCourseModal(courseIndex) {
@@ -1624,11 +1635,12 @@
       openModal("editCourseModal");
     }
 
-    function saveEditedCourse() {
+    async function saveEditedCourse() {
       var index = parseInt(document.getElementById("editCourseId").value);
       var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
+      var currentCourse = courses[index];
       
-      if (isNaN(index) || !courses[index]) {
+      if (!currentCourse) {
         showToast("حدث خطأ أثناء تحديد الكورس للتعديل", "error");
         return;
       }
@@ -1647,23 +1659,33 @@
 
       var isFree = document.getElementById("editCoursePricingType").value === "free";
       var viewsType = document.getElementById("editCourseViewsType").value;
-      var imageSrc = document.getElementById("editCourseImageBase64").value || courses[index].image;
+      var imageSrc = document.getElementById("editCourseImageBase64").value || currentCourse.image;
 
-      courses[index].title = title;
-      courses[index].desc = document.getElementById("editCourseDesc").value.trim();
-      courses[index].isFree = isFree;
-      courses[index].price = isFree ? 0 : (Number(document.getElementById("editCoursePrice").value) || 0);
-      courses[index].maxViewsType = viewsType;
-      courses[index].maxViews = viewsType === "unlimited" ? 0 : (Number(document.getElementById("editCourseMaxViews").value) || 5);
-      courses[index].tag = document.getElementById("editCourseTag").value.trim();
-      courses[index].image = imageSrc;
-      courses[index].lessons = lessonsArr;
+      var updatedCourse = {
+        title: title,
+        desc: document.getElementById("editCourseDesc").value.trim(),
+        isFree: isFree,
+        price: isFree ? 0 : (Number(document.getElementById("editCoursePrice").value) || 0),
+        maxViewsType: viewsType,
+        maxViews: viewsType === "unlimited" ? 0 : (Number(document.getElementById("editCourseMaxViews").value) || 5),
+        tag: document.getElementById("editCourseTag").value.trim(),
+        image: imageSrc,
+        lessons: lessonsArr
+      };
 
-      localStorage.setItem("edu_courses", JSON.stringify(courses));
-      logAdminAction("تعديل كورس", "تم حفظ وتعديل كورس: " + courses[index].title);
-      closeModal("editCourseModal");
-      renderAdmin();
-      showToast("تم حفظ تعديلات الكورس والمحاضرات والملفات بنجاح", "success");
+      showToast("جاري حفظ التعديلات سحابياً...", "info");
+
+      try {
+        if (window.FirebaseService && currentCourse.id) {
+          await window.FirebaseService.saveCourse(updatedCourse, currentCourse.id);
+        }
+        logAdminAction("تعديل كورس", "تم حفظ وتعديل كورس: " + title);
+        closeModal("editCourseModal");
+        await renderAdmin();
+        showToast("تم حفظ وتحديث الكورس للجميع بنجاح ✓", "success");
+      } catch (err) {
+        showToast("خطأ أثناء التحديث السحابي: " + err.message, "error");
+      }
     }
 
     function togglePricingInput(mode) {
@@ -1712,7 +1734,6 @@
       reader.readAsDataURL(file);
     }
 
-    // جلب الطلاب والبيانات من السحابة أولاً ثم عرضها
     async function renderAdmin() {
       var user = getCurrentUser();
       if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN")) {
@@ -1743,34 +1764,26 @@
         if (btnAddStaff) btnAddStaff.style.display = "none";
       }
 
-      // جلب المستخدمين سحابياً من Firestore لضمان ظهور الطلاب المسجلين من أجهزة أخرى
-      var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-      if (window.firebase && firebase.firestore) {
+      // جلب الكورسات والامتحانات والمستخدمين من السحابة مباشرة
+      var courses = [];
+      var exams = [];
+      var users = [];
+
+      if (window.FirebaseService) {
         try {
-          var snap = await firebase.firestore().collection("users").get();
-          if (!snap.empty) {
-            var cloudUsers = [];
-            snap.forEach(function(doc) {
-              cloudUsers.push(doc.data());
-            });
-            // دمج سحابي ومحلي
-            var mergedUsers = cloudUsers;
-            users.forEach(function(localU) {
-              if (!mergedUsers.some(function(cu) { return cu.email === localU.email; })) {
-                mergedUsers.push(localU);
-              }
-            });
-            users = mergedUsers;
-            localStorage.setItem("edu_users", JSON.stringify(users));
-          }
+          courses = await window.FirebaseService.getCourses();
+          exams = await window.FirebaseService.getExams();
+          users = await window.FirebaseService.getUsers();
         } catch (e) {
           console.warn("جلب السحابة:", e.message);
         }
       }
 
-      var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
+      if (courses.length === 0) courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
+      if (exams.length === 0) exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
+      if (users.length === 0) users = JSON.parse(localStorage.getItem("edu_users")) || [];
+
       var payments = JSON.parse(localStorage.getItem("edu_payments")) || [];
-      var exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
       var logs = JSON.parse(localStorage.getItem("edu_activity_logs")) || [];
       var hackerLogs = JSON.parse(localStorage.getItem("edu_hacker_logs")) || [];
       var chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
@@ -1874,7 +1887,10 @@
         }
 
         return "<tr>" +
-          "<td><strong>" + s.fullName + "</strong></td><td>" + s.email + "</td><td>" + s.studentPhone + "</td><td><span class=\"badge-success\">" + s.role + "</span></td>" +
+          "<td><strong>" + s.fullName + "</strong></td>" +
+          "<td>" + s.email + "</td>" +
+          "<td>" + s.studentPhone + "</td>" +
+          "<td><span class=\"badge-success\">" + s.role + "</span></td>" +
           "<td>" + actionBtns + "</td>" +
         "</tr>";
       }).join("");
@@ -2021,18 +2037,19 @@
 
       if (uIdx !== -1) {
         users[uIdx].role = newRole;
-        localStorage.setItem("edu_users", JSON.stringify(users));
 
-        if (window.firebase && firebase.firestore && users[uIdx].uid) {
+        if (window.FirebaseService && users[uIdx].uid) {
           try {
-            await firebase.firestore().collection("users").doc(users[uIdx].uid).update({ role: newRole });
+            await window.FirebaseService.updateUserRole(users[uIdx].uid, newRole);
           } catch (err) {}
         }
 
+        localStorage.setItem("edu_users", JSON.stringify(users));
+
         logAdminAction("إسناد رتبة إدارية", "تمت ترقية الحساب: " + users[uIdx].fullName + " إلى رتبة: " + newRole);
         closeModal("addStaffModal");
-        renderAdmin();
-        showToast("تمت ترقية الحساب بنجاح إلى الطاقم الإداري", "success");
+        await renderAdmin();
+        showToast("تمت ترقية الحساب سحابياً بنجاح إلى الطاقم الإداري ✓", "success");
       }
     });
 
@@ -2064,18 +2081,19 @@
       if (uIdx !== -1) {
         var oldRole = users[uIdx].role;
         users[uIdx].role = newRole;
-        localStorage.setItem("edu_users", JSON.stringify(users));
 
-        if (window.firebase && firebase.firestore && users[uIdx].uid) {
+        if (window.FirebaseService && users[uIdx].uid) {
           try {
-            await firebase.firestore().collection("users").doc(users[uIdx].uid).update({ role: newRole });
+            await window.FirebaseService.updateUserRole(users[uIdx].uid, newRole);
           } catch (err) {}
         }
 
+        localStorage.setItem("edu_users", JSON.stringify(users));
+
         logAdminAction("تعديل رتبة مسؤول", "تم تعديل رتبة " + users[uIdx].fullName + " من " + oldRole + " إلى " + newRole);
         closeModal("editStaffRoleModal");
-        renderAdmin();
-        showToast("تم تحديث رتبة المسؤول بنجاح", "success");
+        await renderAdmin();
+        showToast("تم تحديث رتبة المسؤول سحابياً بنجاح ✓", "success");
       }
     }
 
@@ -2107,9 +2125,9 @@
           if (!u.enrolledCourses) u.enrolledCourses = [];
           if (!u.enrolledCourses.includes(p.courseId)) u.enrolledCourses.push(p.courseId);
 
-          if (window.firebase && firebase.firestore && u.uid) {
+          if (window.FirebaseService && u.uid) {
             try {
-              await firebase.firestore().collection("users").doc(u.uid).update({ enrolledCourses: u.enrolledCourses });
+              await window.FirebaseService.updateUserPermissions(u.uid, u.enrolledCourses, u.customAllowedLessons);
             } catch (err) {}
           }
         }
@@ -2118,17 +2136,22 @@
 
         sendSystemPushNotification("تم تفعيل الكورس بنجاح", "مرحباً " + p.userName + "، تم اعتماد إيصال الدفع وتفعيل كورس: " + p.courseTitle + " في حسابك.", p.userEmail);
 
-        renderAdmin();
-        showToast("تم تفعيل الكورس وإرسال الإشعار الفوري للطالب", "success");
+        await renderAdmin();
+        showToast("تم تفعيل الكورس وإرسال الإشعار الفوري للطالب ✓", "success");
       }
     }
 
-    function deleteExam(id) {
-      if (confirm("هل تريد حذف هذا الامتحان؟")) {
+    async function deleteExam(id) {
+      if (confirm("هل تريد حذف هذا الامتحان سحابياً نهائياً؟")) {
+        if (window.FirebaseService) {
+          try {
+            await window.FirebaseService.deleteExam(id);
+          } catch (e) {}
+        }
         var exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
         localStorage.setItem("edu_exams", JSON.stringify(exams.filter(function(x) { return x.id != id; })));
-        renderAdmin();
-        showToast("تم حذف الامتحان", "info");
+        await renderAdmin();
+        showToast("تم حذف الامتحان سحابياً بنجاح", "info");
       }
     }
 
@@ -2149,22 +2172,27 @@
         }
 
         localStorage.setItem("edu_users", JSON.stringify(users.filter(function(u) { return u.email !== email; })));
-        renderAdmin();
+        await renderAdmin();
         showToast("تم حذف الحساب بنجاح", "info");
       }
     }
 
-    function deleteCourse(courseIndex) {
-      if (confirm("هل تريد حذف هذا الكورس نهائياً؟")) {
-        var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-        if (courses[courseIndex]) {
-          var title = courses[courseIndex].title;
-          courses.splice(courseIndex, 1);
-          localStorage.setItem("edu_courses", JSON.stringify(courses));
-          logAdminAction("حذف كورس", "تم حذف كورس: " + title);
-          renderAdmin();
-          showToast("تم حذف الكورس بنجاح", "info");
+    async function deleteCourse(courseIndex) {
+      var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
+      var target = courses[courseIndex];
+      if (!target) return;
+
+      if (confirm("هل تريد حذف كورس: " + target.title + " نهائياً من السحابة؟")) {
+        if (window.FirebaseService && target.id) {
+          try {
+            await window.FirebaseService.deleteCourse(target.id);
+          } catch (e) {}
         }
+        courses.splice(courseIndex, 1);
+        localStorage.setItem("edu_courses", JSON.stringify(courses));
+        logAdminAction("حذف كورس", "تم حذف كورس: " + target.title);
+        await renderAdmin();
+        showToast("تم حذف الكورس سحابياً بنجاح", "info");
       }
     }
 

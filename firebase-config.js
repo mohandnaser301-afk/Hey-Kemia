@@ -1,9 +1,8 @@
 // =========================================================
 // محرك ربط Firebase السحابي لمنصة هي كيميا !
-// متوافق بنسبة 100% مع المتصفح والعمل المباشر
+// متوافق بنسبة 100% مع المتصفح والعمليات السحابية المباشرة
 // =========================================================
 
-// تحميل سكريبتات Firebase الأساسية تلقائياً إذا لم تكن موجودة
 (function loadFirebaseSDKs() {
   const scripts = [
     "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js",
@@ -41,7 +40,7 @@ function getFirebase() {
 }
 
 window.FirebaseService = {
-  // 1. تسجيل طالب جديد في Auth و Firestore و LocalStorage معاً
+  // 1. تسجيل طالب جديد في Auth و Firestore
   async registerStudent(userData) {
     const fb = getFirebase();
     let uid = "u_" + Date.now();
@@ -51,7 +50,7 @@ window.FirebaseService = {
         const userCredential = await fb.auth().createUserWithEmailAndPassword(userData.email, userData.password);
         uid = userCredential.user.uid;
       } catch (authErr) {
-        console.warn("تنبيه أمني في Auth، جاري المتابعة السحابية والمحلية:", authErr.message);
+        console.warn("تنبيه في Auth:", authErr.message);
       }
     }
 
@@ -65,22 +64,20 @@ window.FirebaseService = {
       educationType: userData.educationType || "GENERAL",
       schoolName: userData.schoolName || "غير محدد",
       role: "STUDENT",
-      enrolledCourses: ["c1"], // تفعيل الكورس التأسيسي تلقائياً
+      enrolledCourses: ["c1"],
       customAllowedLessons: {},
       courseAccessCount: {},
       createdAt: new Date().toISOString()
     };
 
-    // حفظ في Firestore
     if (fb && fb.firestore) {
       try {
         await fb.firestore().collection("users").doc(uid).set(userDoc);
       } catch (dbErr) {
-        console.warn("تعذر الكتابة في Firestore مباشرة:", dbErr.message);
+        console.warn("تعذر الحفظ في Firestore:", dbErr.message);
       }
     }
 
-    // حفظ فوري في LocalStorage لضمان تشغيل الموقع في كل الظروف
     const users = JSON.parse(localStorage.getItem("edu_users")) || [];
     users.push(userDoc);
     localStorage.setItem("edu_users", JSON.stringify(users));
@@ -103,11 +100,10 @@ window.FirebaseService = {
           foundUser = snap.data();
         }
       } catch (e) {
-        console.warn("فحص محلي بعد السحابة:", e.message);
+        console.warn("فحص محلي:", e.message);
       }
     }
 
-    // فحص المحرك المحلي
     if (!foundUser) {
       const users = JSON.parse(localStorage.getItem("edu_users")) || [];
       foundUser = users.find(u => u.email.toLowerCase() === email.toLowerCase() && (u.password === password || !u.password));
@@ -129,5 +125,118 @@ window.FirebaseService = {
     }
     localStorage.removeItem("current_user");
     window.location.href = "login.html";
+  },
+
+  // 4. إدارة الكورسات سحابياً
+  async getCourses() {
+    const fb = getFirebase();
+    if (fb && fb.firestore) {
+      try {
+        const snap = await fb.firestore().collection("courses").get();
+        if (!snap.empty) {
+          const list = [];
+          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+          localStorage.setItem("edu_courses", JSON.stringify(list));
+          return list;
+        }
+      } catch (e) {
+        console.warn("جلب الكورسات:", e.message);
+      }
+    }
+    return JSON.parse(localStorage.getItem("edu_courses")) || [];
+  },
+
+  async saveCourse(courseData, courseId) {
+    const fb = getFirebase();
+    if (fb && fb.firestore) {
+      if (courseId) {
+        await fb.firestore().collection("courses").doc(courseId).set(courseData, { merge: true });
+        return { id: courseId, ...courseData };
+      } else {
+        const ref = await fb.firestore().collection("courses").add(courseData);
+        return { id: ref.id, ...courseData };
+      }
+    }
+  },
+
+  async deleteCourse(courseId) {
+    const fb = getFirebase();
+    if (fb && fb.firestore && courseId) {
+      await fb.firestore().collection("courses").doc(courseId).delete();
+    }
+  },
+
+  // 5. إدارة الامتحانات سحابياً
+  async getExams() {
+    const fb = getFirebase();
+    if (fb && fb.firestore) {
+      try {
+        const snap = await fb.firestore().collection("exams").get();
+        if (!snap.empty) {
+          const list = [];
+          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+          localStorage.setItem("edu_exams", JSON.stringify(list));
+          return list;
+        }
+      } catch (e) {
+        console.warn("جلب الامتحانات:", e.message);
+      }
+    }
+    return JSON.parse(localStorage.getItem("edu_exams")) || [];
+  },
+
+  async saveExam(examData, examId) {
+    const fb = getFirebase();
+    if (fb && fb.firestore) {
+      if (examId) {
+        await fb.firestore().collection("exams").doc(examId).set(examData, { merge: true });
+      } else {
+        const ref = await fb.firestore().collection("exams").add(examData);
+        examData.id = ref.id;
+      }
+    }
+  },
+
+  async deleteExam(examId) {
+    const fb = getFirebase();
+    if (fb && fb.firestore && examId) {
+      await fb.firestore().collection("exams").doc(examId).delete();
+    }
+  },
+
+  // 6. جلب وإدارة المستخدمين والطلاب سحابياً
+  async getUsers() {
+    const fb = getFirebase();
+    if (fb && fb.firestore) {
+      try {
+        const snap = await fb.firestore().collection("users").get();
+        if (!snap.empty) {
+          const list = [];
+          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+          localStorage.setItem("edu_users", JSON.stringify(list));
+          return list;
+        }
+      } catch (e) {
+        console.warn("جلب المستخدمين:", e.message);
+      }
+    }
+    return JSON.parse(localStorage.getItem("edu_users")) || [];
+  },
+
+  async updateUserRole(uid, newRole) {
+    const fb = getFirebase();
+    if (fb && fb.firestore && uid) {
+      await fb.firestore().collection("users").doc(uid).update({ role: newRole });
+    }
+  },
+
+  async updateUserPermissions(uid, enrolledCourses, customLessons) {
+    const fb = getFirebase();
+    if (fb && fb.firestore && uid) {
+      await fb.firestore().collection("users").doc(uid).update({
+        enrolledCourses: enrolledCourses,
+        customAllowedLessons: customLessons || {}
+      });
+    }
   }
 };
