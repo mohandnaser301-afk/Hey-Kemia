@@ -2,346 +2,182 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>هي كيميا ! - شات الدعم الفني والمتابعة</title>
-  <link rel="stylesheet" href="dashboard.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>شات الدعم الفني والطلاب - هي كيميا !</title>
+  <link rel="stylesheet" href="style.css">
   <style>
-    .chat-room-layout {
-      display: grid;
-      grid-template-columns: 280px 1fr;
-      gap: 18px;
-      height: calc(100vh - 110px);
-    }
-
-    .threads-sidebar {
-      background: var(--bg-card);
-      backdrop-filter: var(--liquid-glass-blur);
-      border: 1px solid var(--border-subtle);
-      border-radius: 14px;
-      padding: 15px;
+    .chat-layout {
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      overflow-y: auto;
+      padding: 85px 16px 20px;
+      max-width: 900px;
+      margin: 0 auto;
     }
-
-    .thread-item {
-      padding: 10px 12px;
-      background: rgba(255, 255, 255, 0.6);
+    .chat-card {
+      background: #ffffff;
       border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      margin-bottom: 8px;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      transition: all 0.2s ease;
-    }
-
-    .thread-item:hover, .thread-item.active {
-      background: rgba(0, 210, 255, 0.12);
-      border-color: var(--cyan-accent);
-      transform: translateX(-2px);
-    }
-
-    .chat-main-card {
-      background: var(--bg-card);
-      backdrop-filter: var(--liquid-glass-blur);
-      border: 1px solid var(--border-subtle);
-      border-radius: 14px;
+      border-radius: 20px;
       display: flex;
       flex-direction: column;
-      height: 100%;
+      height: 78vh;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.06);
       overflow: hidden;
-      box-shadow: var(--liquid-glass-highlight);
     }
-
-    .chat-header-bar {
-      padding: 14px 20px;
-      border-bottom: 1px solid var(--border-subtle);
+    .chat-header {
+      background: var(--royal-indigo-base);
+      color: #fff;
+      padding: 16px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: rgba(255, 255, 255, 0.5);
     }
-
-    /* منطقة الرسائل مع تمرير سلس وتثبيت الإرسال بالأسفل */
-    .messages-scroll-area {
+    .chat-messages-box {
       flex: 1;
-      padding: 18px 20px;
+      padding: 20px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
       gap: 12px;
-      min-height: 0; /* يضمن عدم تمدد الشات وخروج الإدخال */
+      background: #F8FAFC;
     }
-
-    .message-bubble {
-      max-width: 70%;
-      padding: 10px 14px;
-      border-radius: 12px;
+    .chat-bubble {
+      max-width: 75%;
+      padding: 12px 16px;
+      border-radius: 14px;
       font-size: 13.5px;
       line-height: 1.5;
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      word-break: break-word;
+      position: relative;
     }
-
-    .message-bubble.me {
-      align-self: flex-end;
-      background: linear-gradient(135deg, var(--cyan-accent-light) 0%, var(--cyan-accent) 100%);
-      color: var(--royal-indigo-deep);
-      border-bottom-left-radius: 2px;
-      font-weight: 700;
-    }
-
-    .message-bubble.other {
+    .chat-bubble.mine {
       align-self: flex-start;
-      background: #ffffff;
-      color: var(--text-dark);
-      border: 1px solid var(--border-subtle);
+      background: #00D2FF;
+      color: #080A21;
+      font-weight: 700;
       border-bottom-right-radius: 2px;
     }
-
-    .msg-meta-info {
+    .chat-bubble.other {
+      align-self: flex-end;
+      background: #ffffff;
+      color: var(--royal-indigo-base);
+      border: 1px solid #E2E8F0;
+      border-bottom-left-radius: 2px;
+    }
+    .bubble-meta {
       font-size: 10.5px;
-      opacity: 0.75;
+      margin-top: 4px;
       display: flex;
       justify-content: space-between;
       gap: 8px;
+      opacity: 0.8;
     }
-
-    /* منطقة الإدخال الثابتة بالأسفل دون أن تختفي */
-    .chat-input-toolbar {
-      padding: 12px 18px;
-      border-top: 1px solid var(--border-subtle);
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(10px);
+    .chat-input-bar {
+      padding: 14px 16px;
+      background: #ffffff;
+      border-top: 1px solid #E2E8F0;
       display: flex;
       gap: 10px;
-      align-items: center;
-      flex-shrink: 0;
-    }
-
-    .chat-input-toolbar input {
-      flex: 1;
-      padding: 11px 14px;
-      background: #fff;
-    }
-
-    @media (max-width: 800px) {
-      .chat-room-layout { grid-template-columns: 1fr; height: calc(100vh - 140px); }
-      .threads-sidebar { max-height: 140px; }
     }
   </style>
 </head>
 <body>
 
-  <div class="dashboard-wrapper">
-    <aside class="sidebar">
-      <div class="sidebar-brand"><h2>هي كيميا<span>!</span></h2></div>
-      <div class="user-profile-summary">
-        <div class="avatar" id="userAvatar">💬</div>
-        <div class="user-info">
-          <h4 id="userFullName" style="color:#fff; font-size:13.5px;">طالب المنصة</h4>
-          <span class="badge" id="userRoleBadge" style="color: var(--cyan-accent); font-size:11px;">شات الدعم</span>
-        </div>
-      </div>
-      <nav class="sidebar-nav">
-        <a id="adminBackLink" href="admin.html" class="nav-item" style="display:none;">لوحة الإدارة</a>
-        <a id="studentBackLink" href="dashboard.html" class="nav-item" style="display:none;">لوحة الطالب</a>
-        <a href="index.html" class="nav-item">عرض الموقع</a>
-        <a href="javascript:void(0)" onclick="logout()" class="nav-item logout">تسجيل الخروج</a>
-      </nav>
-    </aside>
-
-    <main class="main-content">
-      <div class="chat-room-layout">
-        
-        <!-- قائمة المحادثات (للإدارة والمسؤولين) -->
-        <aside class="threads-sidebar" id="threadsSidebar">
-          <h3 style="font-size:14.5px; font-weight:800; color:var(--royal-indigo-base); margin-bottom:12px;">محادثات الطلاب</h3>
-          <div id="threadsListContainer" style="display:flex; flex-direction:column; gap:6px;"></div>
-        </aside>
-
-        <!-- نافذة الشات والمراسلة الفورية -->
-        <section class="chat-main-card">
-          <header class="chat-header-bar">
-            <div>
-              <h3 id="chatPartnerName" style="color:var(--royal-indigo-base); font-size:16px; font-weight:900;">الدعم الفني المباشر</h3>
-              <span id="chatPartnerStatus" style="font-size:11.5px; color:#10b981; font-weight:700;">● متصل ومتاح للمساعدة</span>
-            </div>
-            <button id="btnDeleteCurrentChat" class="btn btn-action-danger" onclick="deleteCurrentActiveChat()" style="display:none; font-size:12px;">حذف المحادثة 🗑️</button>
-          </header>
-
-          <div class="messages-scroll-area" id="messagesContainer"></div>
-
-          <form class="chat-input-toolbar" id="chatSendMessageForm">
-            <input type="text" id="chatMessageInput" placeholder="اكتب استفسارك أو سؤالك هنا..." autocomplete="off" required>
-            <button type="submit" class="btn btn-cyan" style="padding:10px 22px;">إرسال</button>
-          </form>
-        </section>
-
-      </div>
-    </main>
+  <div class="navbar-capsule-wrapper">
+    <nav class="navbar-capsule">
+      <a href="index.html" class="capsule-brand">
+        <div class="capsule-logo">HK</div>
+        <span class="brand-text">هي كيميا<span>!</span></span>
+      </a>
+      <div class="capsule-auth" id="navAuthBox"></div>
+    </nav>
   </div>
 
+  <div class="chat-layout">
+    <div class="chat-card">
+      <div class="chat-header">
+        <div>
+          <h2 style="font-size: 16px; font-weight: 900;">💬 شات الدعم الفني والرد على الاستفسارات</h2>
+          <span style="font-size: 12px; color: #00D2FF;" id="chatStatusText">متصل بالسحابة الآن</span>
+        </div>
+        <a href="dashboard.html" class="nav-btn-link" style="color:#fff; background:rgba(255,255,255,0.12);">الرجوع للوحة التحكم</a>
+      </div>
+
+      <div class="chat-messages-box" id="chatMessagesContainer">
+        <div style="text-align:center; color:var(--text-muted); font-size:13px; margin:auto;">جاري جلب الرسائل السحابية...</div>
+      </div>
+
+      <form class="chat-input-bar" id="chatSendMessageForm">
+        <input type="text" id="chatMessageInput" placeholder="اكتب استفسارك أو رسالتك هنا..." required autocomplete="off">
+        <button type="submit" class="btn btn-primary" style="padding: 10px 22px;">إرسال 🚀</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="firebase-config.js"></script>
   <script src="app.js"></script>
   <script>
-    var user = getCurrentUser();
-    if (!user) window.location.href = "login.html";
+    var currentUser = null;
 
-    var isStaff = (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "SUPPORT");
-    var activeThreadEmail = isStaff ? "" : user.email;
+    function renderMessages(messages) {
+      var container = document.getElementById("chatMessagesContainer");
+      if (!container) return;
 
-    document.getElementById("userFullName").innerText = user.fullName;
-    document.getElementById("userRoleBadge").innerText = isStaff ? ("فريق الدعم (" + user.role + ")") : "طالب";
-    
-    if (isStaff) {
-      document.getElementById("adminBackLink").style.display = "flex";
-      document.getElementById("threadsSidebar").style.display = "flex";
-      document.getElementById("btnDeleteCurrentChat").style.display = "inline-flex";
-    } else {
-      document.getElementById("studentBackLink").style.display = "flex";
-      document.getElementById("threadsSidebar").style.display = "none";
-      document.getElementById("chatPartnerName").innerText = "أ/ محمد السعيد وفريق الدعم";
-    }
-
-    function renderThreads() {
-      if (!isStaff) return;
-
-      var chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
-      var threads = {};
-      
-      chats.forEach(function(msg) {
-        var email = msg.senderRole === "STUDENT" ? msg.senderEmail : msg.receiverEmail;
-        var name = msg.senderRole === "STUDENT" ? msg.senderName : msg.receiverName;
-        if (!threads[email]) {
-          threads[email] = { email: email, name: name, lastMsg: msg.text, time: msg.time, count: 0 };
-        }
-        threads[email].lastMsg = msg.text;
-        threads[email].time = msg.time;
-        threads[email].count++;
-      });
-
-      var threadKeys = Object.keys(threads);
-      var container = document.getElementById("threadsListContainer");
-
-      if (threadKeys.length === 0) {
-        container.innerHTML = '<p style="font-size:12px; color:var(--text-muted); padding:10px;">لا توجد رسائل واردة بعد.</p>';
+      if (!messages || messages.length === 0) {
+        container.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:13.5px; margin:auto;">مرحباً بك! لا توجد رسائل سابقة. يمكنك كتابة استفسارك وسيقوم فريق الدعم بالرد عليك فوراً.</div>';
         return;
       }
 
-      if (!activeThreadEmail && threadKeys.length > 0) {
-        activeThreadEmail = threadKeys[0];
-      }
+      container.innerHTML = messages.map(function(m) {
+        var isMine = currentUser && (m.senderEmail === currentUser.email.toLowerCase());
+        var timeStr = m.createdAt ? new Date(m.createdAt).toLocaleTimeString("ar-EG", { hour: '2-digit', minute: '2-digit' }) : "";
+        var roleTag = m.senderRole === "ADMIN" || m.senderRole === "SUPER_ADMIN" ? "👑 الإدارة" : (m.senderRole === "SUPPORT" ? "🛡️ الدعم" : "👨‍🎓 طالب");
 
-      container.innerHTML = threadKeys.map(function(email) {
-        var t = threads[email];
-        var isActive = email === activeThreadEmail;
-        return '<div class="thread-item ' + (isActive ? 'active' : '') + '" onclick="selectThread(\'' + email + '\', \'' + t.name.replace(/'/g, "\\'") + '\')">' +
-          '<div><strong style="font-size:13px; color:var(--royal-indigo-base); display:block;">' + t.name + '</strong><span style="font-size:11.5px; color:var(--text-muted);">' + t.lastMsg.substring(0, 22) + '...</span></div>' +
-          '<small style="font-size:10px; color:var(--text-muted);">' + t.time + '</small>' +
+        return '<div class="chat-bubble ' + (isMine ? 'mine' : 'other') + '">' +
+          '<div>' + sanitizeText(m.text) + '</div>' +
+          '<div class="bubble-meta">' +
+            '<span>' + sanitizeText(m.senderName) + ' (' + roleTag + ')</span>' +
+            '<span>' + timeStr + '</span>' +
+          '</div>' +
         '</div>';
-      }).join('');
-    }
+      }).join("");
 
-    function selectThread(studentEmail, studentName) {
-      activeThreadEmail = studentEmail;
-      document.getElementById("chatPartnerName").innerText = "محادثة: " + studentName;
-      renderThreads();
-      renderMessages();
-    }
-
-    function renderMessages() {
-      var chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
-      var container = document.getElementById("messagesContainer");
-
-      var currentMessages = chats.filter(function(m) {
-        if (isStaff) {
-          return m.senderEmail === activeThreadEmail || m.receiverEmail === activeThreadEmail;
-        } else {
-          return m.senderEmail === user.email || m.receiverEmail === user.email;
-        }
-      });
-
-      if (currentMessages.length === 0) {
-        container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:30px; font-size:13px;">لا توجد رسائل سابقة. ابدأ المحادثة الآن وسيتم الرد عليك فوراً.</div>';
-        return;
-      }
-
-      container.innerHTML = currentMessages.map(function(m) {
-        var isMe = m.senderEmail === user.email;
-        return '<div class="message-bubble ' + (isMe ? 'me' : 'other') + '">' +
-          '<span>' + m.text + '</span>' +
-          '<div class="msg-meta-info"><span>' + m.senderName + '</span><span>' + m.time + '</span></div>' +
-        '</div>';
-      }).join('');
-
-      // التمرير التلقائي لأسفل الرسائل
       container.scrollTop = container.scrollHeight;
     }
 
-    document.getElementById("chatSendMessageForm").addEventListener("submit", function(e) {
-      e.preventDefault();
-      var input = document.getElementById("chatMessageInput");
-      var text = input.value.trim();
-      if (!text) return;
-
-      var chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
-      var now = new Date();
-      var timeStr = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-
-      var receiverEmail = isStaff ? activeThreadEmail : "support@platform.com";
-      var receiverName = isStaff ? "طالب" : "أ/ محمد السعيد (الدعم)";
-
-      chats.push({
-        id: Date.now(),
-        senderName: user.fullName,
-        senderEmail: user.email,
-        senderRole: user.role,
-        receiverEmail: receiverEmail,
-        receiverName: receiverName,
-        text: text,
-        time: timeStr
-      });
-
-      localStorage.setItem("edu_live_chats", JSON.stringify(chats));
-      input.value = "";
-      renderThreads();
-      renderMessages();
-    });
-
-    // حذف المحادثة المحددة بالكامل
-    function deleteCurrentActiveChat() {
-      if (!activeThreadEmail) {
-        showToast("يرجى اختيار محادثة لحذفها", "error");
+    document.addEventListener("DOMContentLoaded", function() {
+      currentUser = getCurrentUser();
+      if (!currentUser) {
+        window.location.href = "login.html?redirect=support.html";
         return;
       }
 
-      if (confirm("هل أنت متأكد من حذف هذه المحادثة بالكامل؟")) {
-        var chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
-        var updated = chats.filter(function(m) {
-          return m.senderEmail !== activeThreadEmail && m.receiverEmail !== activeThreadEmail;
-        });
+      var interval = setInterval(function() {
+        if (window.FirebaseService && window.firebase && firebase.firestore) {
+          clearInterval(interval);
+          window.FirebaseService.subscribeSupportMessages(function(messages) {
+            renderMessages(messages);
+          });
+        }
+      }, 250);
 
-        localStorage.setItem("edu_live_chats", JSON.stringify(updated));
-        logAdminAction("حذف محادثة", "تم حذف محادثة الطالب: " + activeThreadEmail);
-        showToast("تم حذف المحادثة بنجاح", "info");
-        activeThreadEmail = "";
-        renderThreads();
-        renderMessages();
-      }
-    }
+      document.getElementById("chatSendMessageForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        var input = document.getElementById("chatMessageInput");
+        var text = input.value.trim();
+        if (!text) return;
 
-    document.addEventListener("DOMContentLoaded", function() {
-      renderThreads();
-      renderMessages();
-      // تحديث المحادثة دورياً كل 4 ثوانٍ
-      setInterval(function() {
-        renderThreads();
-        renderMessages();
-      }, 4000);
+        input.value = "";
+        try {
+          await window.FirebaseService.sendSupportMessage({
+            text: text,
+            senderEmail: currentUser.email.toLowerCase(),
+            senderName: currentUser.fullName,
+            senderRole: currentUser.role || "STUDENT"
+          });
+        } catch (err) {
+          showToast("تعذر إرسال الرسالة: " + err.message, "error");
+        }
+      });
     });
   </script>
 </body>

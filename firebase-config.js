@@ -88,6 +88,7 @@ function compressImageBase64(base64Str, maxWidth, maxHeight, quality) {
 window.compressImageBase64 = compressImageBase64;
 
 window.FirebaseService = {
+  // 1. تسجيل طالب جديد مع تصفير أي ارتباطات سابقة
   async registerStudent(userData) {
     const fb = getFirebase();
     let uid = "u_" + Date.now();
@@ -104,7 +105,7 @@ window.FirebaseService = {
     const userDoc = {
       uid: uid,
       fullName: userData.fullName,
-      email: userData.email.toLowerCase(),
+      email: userData.email.toLowerCase().trim(),
       studentPhone: userData.studentPhone,
       parentPhone: userData.parentPhone || "غير مسجل",
       governorate: userData.governorate,
@@ -141,9 +142,10 @@ window.FirebaseService = {
     }
 
     if (!foundUser && fb && fb.firestore) {
-      const qSnap = await fb.firestore().collection("users").where("email", "==", email.toLowerCase()).get();
+      const qSnap = await fb.firestore().collection("users").where("email", "==", email.toLowerCase().trim()).get();
       if (!qSnap.empty) {
         foundUser = qSnap.docs[0].data();
+        foundUser.uid = qSnap.docs[0].id;
       }
     }
 
@@ -164,7 +166,7 @@ window.FirebaseService = {
     window.location.href = "login.html";
   },
 
-  // 1. المستخدمين
+  // 2. إدارة المستخدمين السحابية
   subscribeUsers(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -180,7 +182,7 @@ window.FirebaseService = {
   async updateUserRoleByEmail(email, newRole) {
     const fb = getFirebase();
     if (fb && fb.firestore && email) {
-      const qSnap = await fb.firestore().collection("users").where("email", "==", email.toLowerCase()).get();
+      const qSnap = await fb.firestore().collection("users").where("email", "==", email.toLowerCase().trim()).get();
       const promises = [];
       qSnap.forEach(doc => {
         promises.push(doc.ref.update({ role: newRole }));
@@ -192,7 +194,7 @@ window.FirebaseService = {
   async updateUserEnrollmentsByEmail(email, enrolledCourses, customLessons) {
     const fb = getFirebase();
     if (fb && fb.firestore && email) {
-      const qSnap = await fb.firestore().collection("users").where("email", "==", email.toLowerCase()).get();
+      const qSnap = await fb.firestore().collection("users").where("email", "==", email.toLowerCase().trim()).get();
       const promises = [];
       qSnap.forEach(doc => {
         const updateData = { enrolledCourses: enrolledCourses };
@@ -206,7 +208,8 @@ window.FirebaseService = {
   async deleteUserByEmail(email) {
     const fb = getFirebase();
     if (fb && fb.firestore && email) {
-      const qSnap = await fb.firestore().collection("users").where("email", "==", email.toLowerCase()).get();
+      const cleanEmail = email.toLowerCase().trim();
+      const qSnap = await fb.firestore().collection("users").where("email", "==", cleanEmail).get();
       const promises = [];
       qSnap.forEach(doc => {
         promises.push(doc.ref.delete());
@@ -215,7 +218,7 @@ window.FirebaseService = {
     }
   },
 
-  // 2. الكورسات
+  // 3. إدارة الكورسات
   subscribeCourses(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -257,7 +260,7 @@ window.FirebaseService = {
     }
   },
 
-  // 3. الامتحانات
+  // 4. الامتحانات
   subscribeExams(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -289,7 +292,7 @@ window.FirebaseService = {
     }
   },
 
-  // 4. المدفوعات
+  // 5. المدفوعات والاشتراكات السحابية
   subscribePayments(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -322,11 +325,11 @@ window.FirebaseService = {
     }
   },
 
-  // 5. الإشعارات السحابية
+  // 6. الإشعارات السحابية
   subscribeNotifications(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
-      return fb.firestore().collection("notifications").orderBy("createdAt", "desc").limit(20).onSnapshot(snap => {
+      return fb.firestore().collection("notifications").orderBy("createdAt", "desc").limit(25).onSnapshot(snap => {
         const list = [];
         snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
         if (callback) callback(list);
@@ -340,11 +343,31 @@ window.FirebaseService = {
       await fb.firestore().collection("notifications").add({
         title: title,
         body: body,
-        targetEmail: targetEmail || "ALL",
+        targetEmail: (targetEmail || "ALL").toLowerCase().trim(),
         targetUrl: targetUrl || "dashboard.html",
-        senderEmail: (senderEmail || "").toLowerCase(),
+        senderEmail: (senderEmail || "").toLowerCase().trim(),
         createdAt: new Date().toISOString()
       });
+    }
+  },
+
+  // 7. شات الدعم الفني السحابي اللحظي
+  subscribeSupportMessages(callback) {
+    const fb = getFirebase();
+    if (fb && fb.firestore) {
+      return fb.firestore().collection("support_messages").orderBy("createdAt", "asc").limit(100).onSnapshot(snap => {
+        const list = [];
+        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        if (callback) callback(list);
+      });
+    }
+  },
+
+  async sendSupportMessage(msgData) {
+    const fb = getFirebase();
+    if (fb && fb.firestore) {
+      msgData.createdAt = new Date().toISOString();
+      await fb.firestore().collection("support_messages").add(msgData);
     }
   }
 };
