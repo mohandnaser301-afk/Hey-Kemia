@@ -239,7 +239,7 @@
       <div class="sidebar-brand"><h2>هي كيميا<span>!</span></h2></div>
       
       <div class="user-profile-summary">
-        <div class="avatar" id="adminAvatarRole">👑</div>
+        <div class="avatar" id="adminAvatarRole">HK</div>
         <div class="user-info">
           <h4 id="adminUserName" style="color:#fff; font-size:13.5px;">أ/ محمد السعيد</h4>
           <span class="badge" id="adminRoleDisplay" style="color: var(--cyan-accent); font-size:11px;">المشرف العام</span>
@@ -248,7 +248,7 @@
 
       <button type="button" class="mobile-sidebar-toggle-btn" id="mobileSidebarToggleBtn">
         <span style="display:flex; align-items:center; gap:8px;">
-          <span>☰</span>
+          <span>قائمة الإدارة</span>
           <span id="mobileMenuCurrentLabel">الرسوم البيانية والإحصائيات</span>
         </span>
         <span id="mobileMenuArrowIcon">▼</span>
@@ -306,28 +306,24 @@
 
         <section class="stats-grid">
           <div class="stat-card">
-            <span class="stat-icon">💰</span>
             <div>
               <h3 id="totalRevenue" style="font-size:20px; font-weight:900;">0 ج.م</h3>
               <p style="font-size:12px; color:var(--text-muted);">إجمالي التحصيلات</p>
             </div>
           </div>
           <div class="stat-card">
-            <span class="stat-icon">👥</span>
             <div>
               <h3 id="totalStudentsCount" style="font-size:20px; font-weight:900;">0</h3>
               <p style="font-size:12px; color:var(--text-muted);">الطلاب المسجلين</p>
             </div>
           </div>
           <div class="stat-card">
-            <span class="stat-icon">📚</span>
             <div>
               <h3 id="totalCoursesCount" style="font-size:20px; font-weight:900;">0</h3>
               <p style="font-size:12px; color:var(--text-muted);">الكورسات المنشورة</p>
             </div>
           </div>
           <div class="stat-card" id="cardBreachesStat" style="display:none;">
-            <span class="stat-icon">🛑</span>
             <div>
               <h3 id="totalBreachesCount" style="font-size:20px; font-weight:900; color:#ef4444;">0</h3>
               <p style="font-size:12px; color:var(--text-muted);">محاولات تم صدها</p>
@@ -1727,7 +1723,7 @@
 
       var isSuperAdmin = user.role === "SUPER_ADMIN";
       document.getElementById("adminRoleDisplay").innerText = isSuperAdmin ? "المشرف العام" : "مشرف إدارة";
-      document.getElementById("adminAvatarRole").innerText = isSuperAdmin ? "👑" : "🛡️";
+      document.getElementById("adminAvatarRole").innerText = "HK";
 
       var hackerNavItem = document.getElementById("navHackerLogsItem");
       var pushNavItem = document.getElementById("navPushNotificationsItem");
@@ -2069,7 +2065,6 @@
       if (!confirmed) return;
 
       var payments = JSON.parse(localStorage.getItem("edu_payments")) || [];
-      var users = JSON.parse(localStorage.getItem("edu_users")) || [];
       var p = payments.find(function(x) { return x.id === id; });
       if (p) {
         p.status = "APPROVED";
@@ -2078,6 +2073,7 @@
           await window.FirebaseService.updatePaymentStatus(id, "APPROVED");
         }
 
+        var users = JSON.parse(localStorage.getItem("edu_users")) || [];
         var u = users.find(function(x) { return x.email.toLowerCase() === p.userEmail.toLowerCase(); });
         var targetEnrolled = (u && u.enrolledCourses) ? u.enrolledCourses : [];
         if (!targetEnrolled.includes(p.courseId)) {
@@ -2116,11 +2112,11 @@
         return;
       }
 
-      var confirmed = await customConfirm("هل تريد حذف هذا الحساب نهائياً؟ سيتم مسحه من قاعدة البيانات وطرده فوراً من أي جهاز.", "حذف الحساب نهائياً");
+      var confirmed = await customConfirm("هل تريد حذف هذا الحساب نهائياً؟ سيتم مسح كافة البيانات والجلسات وطرده فوراً.", "حذف شامل للحساب");
       if (confirmed) {
         if (window.FirebaseService) {
           try {
-            await window.FirebaseService.deleteUserByEmail(email);
+            await window.FirebaseService.deleteUserCascade(email);
           } catch (e) {
             console.warn("حذف سحابي:", e.message);
           }
@@ -2128,7 +2124,7 @@
 
         var users = JSON.parse(localStorage.getItem("edu_users")) || [];
         localStorage.setItem("edu_users", JSON.stringify(users.filter(function(u) { return u.email !== email; })));
-        showToast("تم مسح الحساب من قاعدة البيانات بنجاح وسيتم طرده فوراً ✓", "success");
+        showToast("تم مسح الحساب وبياناته سحابياً بنجاح وسيتم طرده فوراً ✓", "success");
       }
     }
 
@@ -2320,6 +2316,7 @@
           window.FirebaseService.subscribeExams(function() { renderAdmin(); });
           window.FirebaseService.subscribeUsers(function() { renderAdmin(); });
           window.FirebaseService.subscribePayments(function() { renderAdmin(); });
+          window.FirebaseService.subscribeSubmissions(function() { renderAdmin(); });
         }
       }, 250);
 

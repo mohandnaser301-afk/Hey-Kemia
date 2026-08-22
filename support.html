@@ -3,106 +3,93 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>مركز الدعم الفني والاستفسارات - هي كيميا !</title>
+  <title>الدعم الفني والأسئلة - هي كيميا !</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    .support-page-wrapper {
+    .support-container-fluid {
       min-height: 100vh;
-      padding: 85px 16px 30px;
+      padding: 85px 16px 20px;
       max-width: 1100px;
       margin: 0 auto;
     }
-    .support-grid-layout {
+    .support-thread-layout {
       display: grid;
-      grid-template-columns: 320px 1fr;
-      gap: 20px;
+      grid-template-columns: 300px 1fr;
+      gap: 16px;
       height: 78vh;
-    }
-    .support-sidebar-card {
       background: #ffffff;
       border: 1px solid var(--border-subtle);
-      border-radius: 20px;
-      padding: 20px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+    .threads-sidebar {
+      background: #F8FAFC;
+      border-left: 1px solid #E2E8F0;
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.04);
     }
-    .quick-faq-btn {
-      width: 100%;
-      text-align: right;
-      padding: 10px 12px;
-      background: #F8FAFC;
-      border: 1px solid #E2E8F0;
-      border-radius: 10px;
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--royal-indigo-base);
+    .thread-item {
+      padding: 12px 14px;
+      border-bottom: 1px solid #E2E8F0;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: background 0.2s ease;
     }
-    .quick-faq-btn:hover {
-      background: rgba(0,210,255,0.12);
-      border-color: var(--cyan-accent);
+    .thread-item:hover, .thread-item.active {
+      background: #EDF2F7;
     }
-    .chat-card {
-      background: #ffffff;
-      border: 1px solid var(--border-subtle);
-      border-radius: 20px;
+    .thread-item.active {
+      border-right: 3px solid var(--cyan-accent);
+    }
+    .chat-view-pane {
       display: flex;
       flex-direction: column;
       height: 100%;
-      box-shadow: 0 15px 40px rgba(0,0,0,0.06);
-      overflow: hidden;
     }
-    .chat-header {
+    .chat-view-header {
       background: var(--royal-indigo-base);
       color: #fff;
-      padding: 16px 20px;
+      padding: 14px 18px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    .chat-messages-box {
+    .chat-messages-area {
       flex: 1;
-      padding: 20px;
+      padding: 16px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      background: #F8FAFC;
+      gap: 10px;
+      background: #FAFBFD;
     }
-    .chat-bubble {
-      max-width: 80%;
-      padding: 12px 16px;
-      border-radius: 14px;
+    .msg-bubble {
+      max-width: 75%;
+      padding: 10px 14px;
+      border-radius: 12px;
       font-size: 13px;
       line-height: 1.5;
-      position: relative;
     }
-    .chat-bubble.mine {
+    .msg-bubble.mine {
       align-self: flex-start;
-      background: #00D2FF;
-      color: #080A21;
-      font-weight: 700;
+      background: var(--royal-indigo-base);
+      color: #ffffff;
       border-bottom-right-radius: 2px;
     }
-    .chat-bubble.other {
+    .msg-bubble.other {
       align-self: flex-end;
-      background: #ffffff;
-      color: var(--royal-indigo-base);
-      border: 1px solid #E2E8F0;
+      background: #E2E8F0;
+      color: #0F172A;
       border-bottom-left-radius: 2px;
     }
-    .bubble-meta {
+    .msg-time {
       font-size: 10px;
-      margin-top: 4px;
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      opacity: 0.85;
+      opacity: 0.75;
+      margin-top: 3px;
+      display: block;
+      text-align: left;
     }
-    .chat-input-bar {
+    .chat-input-row {
       padding: 12px 16px;
       background: #ffffff;
       border-top: 1px solid #E2E8F0;
@@ -110,8 +97,9 @@
       gap: 10px;
     }
     @media (max-width: 860px) {
-      .support-grid-layout { grid-template-columns: 1fr; height: auto; }
-      .chat-card { height: 65vh; }
+      .support-thread-layout { grid-template-columns: 1fr; height: 75vh; }
+      .threads-sidebar { display: none; }
+      .threads-sidebar.show-mobile-threads { display: flex; }
     }
   </style>
 </head>
@@ -127,48 +115,34 @@
     </nav>
   </div>
 
-  <div class="support-page-wrapper">
-    <div class="support-grid-layout">
+  <div class="support-container-fluid">
+    <div class="support-thread-layout">
       
-      <!-- القائمة الجانبية الذكية -->
-      <aside class="support-sidebar-card">
-        <div style="border-bottom:1px solid #EEF2F6; padding-bottom:12px;">
-          <h3 style="font-size:15px; font-weight:900; color:var(--royal-indigo-base); margin-bottom:4px;">مركز الدعم الذكي 🧪</h3>
-          <p style="font-size:12px; color:var(--text-muted);">فريق الأستاذ محمد السعيد معك لحظة بلحظة</p>
+      <!-- قائمة محادثات الطلاب (للأدمن والدعم فقط) -->
+      <aside class="threads-sidebar" id="adminThreadsSidebar" style="display:none;">
+        <div style="padding:14px; border-bottom:1px solid #E2E8F0; background:#fff;">
+          <h3 style="font-size:14px; font-weight:800; color:var(--royal-indigo-base);">محادثات الطلاب</h3>
         </div>
-
-        <div>
-          <label style="font-size:11.5px; font-weight:800; color:#64748B; margin-bottom:6px; display:block;">تصنيف الاستفسار:</label>
-          <select id="supportCategorySelect" style="font-size:12.5px; padding:8px 12px;">
-            <option value="GENERAL">استفسار عام</option>
-            <option value="PAYMENT">تفعيل كورس / إيصال دفع</option>
-            <option value="EXAM">استفسار بخصوص امتحان</option>
-            <option value="TECH">مشكلة تقنية / تشغيل فيديو</option>
-          </select>
-        </div>
-
-        <div style="margin-top:auto; padding-top:12px; border-top:1px solid #EEF2F6;">
-          <a href="https://wa.me/201012345678" target="_blank" class="btn btn-cyan" style="width:100%; text-decoration:none; font-size:12px; text-align:center;">💬 محادثة واتساب السريعة</a>
-        </div>
+        <div id="threadsListContainer" style="overflow-y:auto; flex:1;"></div>
       </aside>
 
-      <!-- شات الدعم المباشر -->
-      <main class="chat-card">
-        <div class="chat-header">
+      <!-- منطقة الشات والمراسلة -->
+      <main class="chat-view-pane">
+        <div class="chat-view-header">
           <div>
-            <h2 style="font-size: 15px; font-weight: 900;">💬 المحادثة المباشرة مع الدعم الفني</h2>
-            <span style="font-size: 11.5px; color: #00D2FF;">متصل بالسحابة اللحظية ✓</span>
+            <h2 style="font-size:15px; font-weight:800;" id="chatTargetNameDisplay">الدعم الفني</h2>
+            <span style="font-size:11.5px; color:#00D2FF;" id="chatTargetSubDisplay">فريق الأستاذ محمد السعيد</span>
           </div>
-          <a href="dashboard.html" class="nav-btn-link" style="color:#fff; background:rgba(255,255,255,0.12);">لوحة التحكم</a>
+          <a href="dashboard.html" class="nav-btn-link" style="color:#fff; background:rgba(255,255,255,0.12);">الرجوع</a>
         </div>
 
-        <div class="chat-messages-box" id="chatMessagesContainer">
-          <div style="text-align:center; color:var(--text-muted); font-size:13px; margin:auto;">جاري جلب الرسائل السحابية...</div>
+        <div class="chat-messages-area" id="supportChatMessagesArea">
+          <div style="text-align:center; color:var(--text-muted); font-size:13px; margin:auto;">جاري تحميل المحادثة...</div>
         </div>
 
-        <form class="chat-input-bar" id="chatSendMessageForm">
-          <input type="text" id="chatMessageInput" placeholder="اكتب استفسارك أو سؤالك هنا..." required autocomplete="off">
-          <button type="submit" class="btn btn-primary" style="padding: 10px 22px;">إرسال 🚀</button>
+        <form class="chat-input-row" id="sendSupportMsgForm">
+          <input type="text" id="supportTextInput" placeholder="اكتب رسالتك أو استفسارك هنا..." required autocomplete="off">
+          <button type="submit" class="btn btn-primary" style="padding: 9px 20px;">إرسال</button>
         </form>
       </main>
 
@@ -179,27 +153,39 @@
   <script src="app.js"></script>
   <script>
     var currentUser = null;
+    var activeThreadEmail = null;
+    var activeThreadName = null;
 
-    function renderMessages(messages) {
-      var container = document.getElementById("chatMessagesContainer");
+    function selectThread(studentEmail, studentName) {
+      activeThreadEmail = studentEmail.toLowerCase().trim();
+      activeThreadName = studentName;
+      document.getElementById("chatTargetNameDisplay").innerText = studentName;
+      document.getElementById("chatTargetSubDisplay").innerText = studentEmail;
+
+      document.querySelectorAll(".thread-item").forEach(el => {
+        el.classList.toggle("active", el.getAttribute("data-email") === activeThreadEmail);
+      });
+
+      if (window.FirebaseService) {
+        window.FirebaseService.subscribeStudentSupport(activeThreadEmail, renderThreadMessages);
+      }
+    }
+
+    function renderThreadMessages(messages) {
+      var container = document.getElementById("supportChatMessagesArea");
       if (!container) return;
 
       if (!messages || messages.length === 0) {
-        container.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:13px; margin:auto;">مرحباً بك! لا توجد رسائل سابقة. تفضل بكتابة استفسارك وسنرد عليك فوراً.</div>';
+        container.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:13px; margin:auto;">لا توجد رسائل سابقة في هذه المحادثة.</div>';
         return;
       }
 
-      container.innerHTML = messages.map(function(m) {
-        var isMine = currentUser && (m.senderEmail.toLowerCase() === currentUser.email.toLowerCase());
+      container.innerHTML = messages.map(m => {
+        var isMine = currentUser && (m.senderEmail.toLowerCase().trim() === currentUser.email.toLowerCase().trim());
         var timeStr = m.createdAt ? new Date(m.createdAt).toLocaleTimeString("ar-EG", { hour: '2-digit', minute: '2-digit' }) : "";
-        var roleTag = m.senderRole === "ADMIN" || m.senderRole === "SUPER_ADMIN" ? "👑 الإدارة" : (m.senderRole === "SUPPORT" ? "🛡️ الدعم" : "👨‍🎓 طالب");
-
-        return '<div class="chat-bubble ' + (isMine ? 'mine' : 'other') + '">' +
+        return '<div class="msg-bubble ' + (isMine ? 'mine' : 'other') + '">' +
           '<div>' + sanitizeText(m.text) + '</div>' +
-          '<div class="bubble-meta">' +
-            '<span>' + sanitizeText(m.senderName) + ' (' + roleTag + ')</span>' +
-            '<span>' + timeStr + '</span>' +
-          '</div>' +
+          '<span class="msg-time">' + timeStr + '</span>' +
         '</div>';
       }).join("");
 
@@ -213,27 +199,66 @@
         return;
       }
 
-      var interval = setInterval(function() {
-        if (window.FirebaseService && window.firebase && firebase.firestore) {
-          clearInterval(interval);
-          window.FirebaseService.subscribeSupportMessages(function(messages) {
-            renderMessages(messages);
-          });
-        }
-      }, 250);
+      var isStaff = currentUser.role === "SUPER_ADMIN" || currentUser.role === "ADMIN" || currentUser.role === "SUPPORT";
 
-      document.getElementById("chatSendMessageForm").addEventListener("submit", async function(e) {
+      if (isStaff) {
+        var sidebar = document.getElementById("adminThreadsSidebar");
+        if (sidebar) sidebar.style.display = "flex";
+
+        var interval = setInterval(function() {
+          if (window.FirebaseService && window.firebase && firebase.firestore) {
+            clearInterval(interval);
+            window.FirebaseService.subscribeAllSupportThreads(threads => {
+              var container = document.getElementById("threadsListContainer");
+              if (!container) return;
+
+              if (threads.length === 0) {
+                container.innerHTML = '<div style="padding:15px; font-size:12px; color:#64748B; text-align:center;">لا توجد محادثات طلاب بعد.</div>';
+                return;
+              }
+
+              container.innerHTML = threads.map(t => {
+                var isSelected = activeThreadEmail === t.studentEmail;
+                return '<div class="thread-item ' + (isSelected ? 'active' : '') + '" data-email="' + t.studentEmail + '" onclick="selectThread(\'' + t.studentEmail + '\', \'' + t.studentName.replace(/'/g, "\\'") + '\')">' +
+                  '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">' +
+                    '<strong style="font-size:13px; color:var(--royal-indigo-base);">' + t.studentName + '</strong>' +
+                    (t.unreadCount > 0 ? '<span style="background:#ef4444; color:#fff; font-size:10px; font-weight:800; padding:1px 6px; border-radius:10px;">' + t.unreadCount + '</span>' : '') +
+                  '</div>' +
+                  '<p style="font-size:11.5px; color:#64748B; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin:0;">' + (t.lastMessage || "") + '</p>' +
+                '</div>';
+              }).join("");
+
+              if (!activeThreadEmail && threads[0]) {
+                selectThread(threads[0].studentEmail, threads[0].studentName);
+              }
+            });
+          }
+        }, 250);
+
+      } else {
+        activeThreadEmail = currentUser.email.toLowerCase().trim();
+        activeThreadName = currentUser.fullName;
+
+        var intervalStudent = setInterval(function() {
+          if (window.FirebaseService && window.firebase && firebase.firestore) {
+            clearInterval(intervalStudent);
+            window.FirebaseService.subscribeStudentSupport(activeThreadEmail, renderThreadMessages);
+          }
+        }, 250);
+      }
+
+      document.getElementById("sendSupportMsgForm").addEventListener("submit", async function(e) {
         e.preventDefault();
-        var input = document.getElementById("chatMessageInput");
+        var input = document.getElementById("supportTextInput");
         var text = input.value.trim();
-        var cat = document.getElementById("supportCategorySelect").value;
-        if (!text) return;
+        if (!text || !activeThreadEmail) return;
 
         input.value = "";
         try {
           await window.FirebaseService.sendSupportMessage({
+            studentEmail: activeThreadEmail,
+            studentName: activeThreadName || activeThreadEmail,
             text: text,
-            category: cat,
             senderEmail: currentUser.email.toLowerCase().trim(),
             senderName: currentUser.fullName,
             senderRole: currentUser.role || "STUDENT"

@@ -88,7 +88,7 @@ function compressImageBase64(base64Str, maxWidth, maxHeight, quality) {
 window.compressImageBase64 = compressImageBase64;
 
 window.FirebaseService = {
-  // 1. تسجيل طالب جديد
+  // المصادقة والحسابات
   async registerStudent(userData) {
     const fb = getFirebase();
     let uid = "u_" + Date.now();
@@ -168,7 +168,7 @@ window.FirebaseService = {
     window.location.href = "login.html";
   },
 
-  // 2. إدارة المستخدمين السحابية مع الحذف الشامل (Cascade Deletion)
+  // إدارة المستخدمين
   subscribeUsers(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -213,19 +213,15 @@ window.FirebaseService = {
       const cleanEmail = email.toLowerCase().trim();
       const batch = fb.firestore().batch();
 
-      // 1. حذف وثيقة المستخدم
       const userSnap = await fb.firestore().collection("users").where("email", "==", cleanEmail).get();
       userSnap.forEach(doc => batch.delete(doc.ref));
 
-      // 2. حذف طلبات الدفع الخاصة بالطالب
       const paySnap = await fb.firestore().collection("payments").where("userEmail", "==", cleanEmail).get();
       paySnap.forEach(doc => batch.delete(doc.ref));
 
-      // 3. حذف رسائل الدعم
-      const msgSnap = await fb.firestore().collection("support_messages").where("senderEmail", "==", cleanEmail).get();
+      const msgSnap = await fb.firestore().collection("support_messages").where("studentEmail", "==", cleanEmail).get();
       msgSnap.forEach(doc => batch.delete(doc.ref));
 
-      // 4. حذف تسليمات الامتحانات
       const subSnap = await fb.firestore().collection("submissions").where("userEmail", "==", cleanEmail).get();
       subSnap.forEach(doc => batch.delete(doc.ref));
 
@@ -233,7 +229,7 @@ window.FirebaseService = {
     }
   },
 
-  // 3. إدارة الكورسات
+  // إدارة الكورسات
   subscribeCourses(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -275,7 +271,7 @@ window.FirebaseService = {
     }
   },
 
-  // 4. إدارة الامتحانات
+  // إدارة الامتحانات والتسليمات
   subscribeExams(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -307,7 +303,27 @@ window.FirebaseService = {
     }
   },
 
-  // 5. إدارة المدفوعات والاشتراكات
+  subscribeSubmissions(callback) {
+    const fb = getFirebase();
+    if (fb && fb.firestore) {
+      return fb.firestore().collection("submissions").orderBy("createdAt", "desc").onSnapshot(snap => {
+        const list = [];
+        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        localStorage.setItem("edu_submissions", JSON.stringify(list));
+        if (callback) callback(list);
+      });
+    }
+  },
+
+  async saveSubmission(submissionData) {
+    const fb = getFirebase();
+    if (fb && fb.firestore) {
+      submissionData.createdAt = new Date().toISOString();
+      await fb.firestore().collection("submissions").add(submissionData);
+    }
+  },
+
+  // إدارة المدفوعات والاشتراكات
   subscribePayments(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -340,7 +356,7 @@ window.FirebaseService = {
     }
   },
 
-  // 6. إدارة الإشعارات السحابية
+  // الإشعارات السحابية
   subscribeNotifications(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -366,14 +382,55 @@ window.FirebaseService = {
     }
   },
 
-  // 7. إدارة شات الدعم الفني الذكي 10x
-  subscribeSupportMessages(callback) {
+  // نظام الشات المستقل لكل طالب (Threaded Support System)
+  subscribeStudentSupport(studentEmail, callback) {
+    const fb = getFirebase();
+    if (fb && fb.firestore && studentEmail) {
+      return fb.firestore().collection("support_messages")
+        .where("studentEmail", "==", studentEmail.toLowerCase().trim())
+        .onSnapshot(snap => {
+          const list = [];
+          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+          list.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+          if (callback) callback(list);
+        });
+    }
+  },
+
+  subscribeAllSupportThreads(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
-      return fb.firestore().collection("support_messages").orderBy("createdAt", "asc").limit(150).onSnapshot(snap => {
-        const list = [];
-        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-        if (callback) callback(list);
+      return fb.firestore().collection("support_messages").onSnapshot(snap => {
+        const messages = [];
+        snap.forEach(doc => messages.push({ id: doc.id, ...doc.data() }));
+        
+        // تجميع الرسائل في محادثات منفصلة حسب الطالب
+        const threadsMap = {};
+        messages.forEach(m => {
+          const sEmail = (m.studentEmail || m.senderEmail || "").toLowerCase().trim();
+          if (!threadsMap[sEmail]) {
+            threadsMap[sEmail] = {
+              studentEmail: sEmail,
+              studentName: m.studentName || m.senderName || sEmail,
+              studentPhone: m.studentPhone || "غير مسجل",
+              lastMessage: m.text,
+              lastMessageTime: m.createdAt,
+              unreadCount: 0,
+              messages: []
+            };
+          }
+          threadsMap[sEmail].messages.push(m);
+          if (new Date(m.createdAt) > new Date(threadsMap[sEmail].lastMessageTime)) {
+            threadsMap[sEmail].lastMessage = m.text;
+            threadsMap[sEmail].lastMessageTime = m.createdAt;
+          }
+          if (m.senderRole === "STUDENT" && !m.seenByAdmin) {
+            threadsMap[sEmail].unreadCount++;
+          }
+        });
+
+        const threadsList = Object.values(threadsMap).sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
+        if (callback) callback(threadsList);
       });
     }
   },
@@ -382,6 +439,9 @@ window.FirebaseService = {
     const fb = getFirebase();
     if (fb && fb.firestore) {
       msgData.createdAt = new Date().toISOString();
+      msgData.studentEmail = msgData.studentEmail.toLowerCase().trim();
+      msgData.seenByAdmin = msgData.senderRole !== "STUDENT";
+      msgData.seenByStudent = msgData.senderRole === "STUDENT";
       await fb.firestore().collection("support_messages").add(msgData);
     }
   }
