@@ -1,6 +1,6 @@
 // =========================================================
 // المحرك البرمجي وحصن الأمان لمنصة هي كيميا !
-// مزامنة فورية كاملة + تنبيه إلزامي لتفعيل الإشعارات + لودر
+// مزامنة فورية كاملة + استماع للإشعارات السحابية + مشغل الفيديو
 // =========================================================
 
 function sanitizeText(str) {
@@ -48,7 +48,7 @@ function customConfirm(message, title, confirmText, cancelText) {
 }
 window.customConfirm = customConfirm;
 
-// 2. فحص وتنبيه تفعيل الإشعارات
+// 2. فحص وتنبيه تفعيل الإشعارات على الموبايل
 function checkAndPromptNotifications() {
   if (localStorage.getItem("hk_notif_prompt_handled") === "true") return;
   if (!("Notification" in window)) return;
@@ -106,9 +106,10 @@ function registerDeviceServiceWorker() {
 }
 
 async function sendSystemPushNotification(title, body, targetEmail, targetUrl) {
+  var user = getCurrentUser() || {};
   if (window.FirebaseService) {
     try {
-      await window.FirebaseService.pushNotificationToCloud(title, body, targetEmail, targetUrl);
+      await window.FirebaseService.pushNotificationToCloud(title, body, targetEmail, targetUrl, user.email);
     } catch(e) {}
   }
 }
@@ -122,6 +123,12 @@ function triggerDeviceNativeNotification(title, body, targetUrl) {
       title: title,
       body: body,
       url: targetUrl || "dashboard.html"
+    });
+  } else if (swRegistration && swRegistration.showNotification) {
+    swRegistration.showNotification(title, {
+      body: body,
+      icon: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=192&q=80",
+      data: { url: targetUrl || "dashboard.html" }
     });
   } else {
     try {
@@ -177,7 +184,7 @@ function forceLogoutUser() {
   }, 500);
 }
 
-// 4. استماع لحظي للإشعارات السحابية القادمة من الإدارة
+// 4. استماع لحظي للإشعارات السحابية وبثها على أجهزة الطلاب فقط دون الأدمن المرسل
 function initRealtimeNotificationsReceiver() {
   var lastKnownNotifId = localStorage.getItem("hk_last_received_notif_id") || "";
   var isFirstLoad = true;
@@ -199,6 +206,11 @@ function initRealtimeNotificationsReceiver() {
         if (latest && latest.id !== lastKnownNotifId) {
           lastKnownNotifId = latest.id;
           localStorage.setItem("hk_last_received_notif_id", latest.id);
+
+          // عدم إرسال إشعار للمرسل (الأدمن) نفسه
+          if (user && latest.senderEmail && user.email.toLowerCase() === latest.senderEmail) {
+            return;
+          }
 
           if (!user && latest.targetEmail !== "ALL") return;
           if (user && (latest.targetEmail === "ALL" || latest.targetEmail === user.email)) {

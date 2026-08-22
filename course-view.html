@@ -2,435 +2,179 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>هي كيميا ! - مشاهدة المحاضرات</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>مشاهدة المحاضرة - هي كيميا !</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    body {
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
-      user-select: none;
-    }
-
-    /* إبعاد النافبار عن مشغل الفيديو */
-    .course-view-navbar-wrapper {
-      position: relative;
-      margin: 15px auto 25px auto;
-      display: flex;
-      justify-content: center;
-      padding: 0 16px;
-      z-index: 100;
-    }
-
-    .course-player-layout {
+    .course-view-layout {
       display: grid;
       grid-template-columns: 1fr 340px;
-      gap: 25px;
-      max-width: 1220px;
-      margin: 0 auto 30px auto;
-      padding: 0 16px;
+      gap: 20px;
+      padding: 95px 16px 40px;
+      max-width: 1240px;
+      margin: 0 auto;
     }
-    
-    .video-secure-container {
-      position: relative;
+    .video-player-box {
       background: #000;
-      border-radius: 14px;
+      border-radius: 16px;
       overflow: hidden;
-      aspect-ratio: 16/9;
-      box-shadow: 0 10px 30px rgba(12,7,84,0.12);
-      border: 1px solid var(--border-subtle);
-      width: 100%;
+      position: relative;
+      padding-top: 56.25%;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.25);
     }
-    
-    .video-secure-container iframe {
+    .video-player-box iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       border: none;
     }
-
-    /* العلامة المائية الذكية والشبحية */
-    .smart-ghost-watermark {
-      position: absolute;
-      pointer-events: none;
-      user-select: none;
-      z-index: 999;
-      background: rgba(14, 19, 56, 0.35);
-      color: rgba(255, 255, 255, 0.45);
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      backdrop-filter: blur(1.5px);
-      transition: all 1.8s cubic-bezier(0.16, 1, 0.3, 1);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      direction: ltr;
-    }
-
-    .screen-recording-shield {
-      display: none;
-      position: absolute;
-      inset: 0;
-      background: #080A21;
-      color: #fff;
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      padding: 20px;
-    }
-
-    .playlist-card {
-      background: var(--bg-card);
-      backdrop-filter: var(--liquid-glass-blur);
-      border-radius: 14px;
+    .lessons-sidebar-card {
+      background: #ffffff;
+      border-radius: 16px;
       border: 1px solid var(--border-subtle);
-      padding: 20px;
-      box-shadow: var(--liquid-glass-highlight);
+      padding: 18px;
       height: fit-content;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.04);
     }
-
-    .playlist-item {
-      padding: 12px;
-      background: rgba(255, 255, 255, 0.6);
-      border-radius: 8px;
-      margin-bottom: 10px;
+    .lesson-playlist-item {
+      padding: 12px 14px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
       cursor: pointer;
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
       transition: all 0.2s ease;
-      border: 1px solid transparent;
     }
-
-    .playlist-item:hover {
-      background: rgba(255, 255, 255, 0.9);
-      transform: translateX(-2px);
+    .lesson-playlist-item.active {
+      background: rgba(0,210,255,0.12);
+      border-color: var(--cyan-accent);
     }
-
-    .playlist-item.active {
-      border: 1.5px solid var(--cyan-accent);
-      background: rgba(0, 210, 255, 0.1);
-    }
-
-    .playlist-item.locked {
-      opacity: 0.6;
-      cursor: not-allowed;
-      background: #f1f3f9;
-    }
-
-    .playlist-item.locked:hover {
-      transform: none;
-      background: #f1f3f9;
-    }
-
-    .views-badge {
-      background: rgba(0, 210, 255, 0.12);
-      border: 1px solid var(--cyan-accent);
-      color: var(--cyan-accent);
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: bold;
-      white-space: nowrap;
-    }
-
-    .blocked-screen {
-      display: none;
-      text-align: center;
-      padding: 50px 20px;
-      background: #fff;
-      border: 1px solid #EF4444;
-      border-radius: 18px;
-      max-width: 600px;
-      margin: 40px auto;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-    }
-
-    .lesson-pdf-box {
-      margin-top: 15px;
-      background: #ffffff;
-      border: 1px solid var(--border-subtle);
-      border-radius: 12px;
-      padding: 16px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-    }
-
     .pdf-download-btn {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      background: #f1f5f9;
-      color: var(--royal-indigo-base);
-      border: 1px solid #cbd5e1;
-      padding: 8px 14px;
+      gap: 6px;
+      padding: 6px 12px;
+      background: #F1F5F9;
       border-radius: 8px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--royal-indigo-base);
       text-decoration: none;
-      font-size: 13px;
-      font-weight: 700;
-      margin: 4px;
-      transition: all 0.2s ease;
+      margin-top: 6px;
     }
-
-    .pdf-download-btn:hover {
-      background: var(--cyan-accent-soft);
-      border-color: var(--cyan-accent);
-      color: #0284c7;
-      transform: translateY(-2px);
-    }
-    
     @media (max-width: 900px) {
-      .course-player-layout {
-        grid-template-columns: 1fr;
-        padding: 0 12px;
-      }
-      .course-view-navbar-wrapper {
-        margin: 10px auto 18px auto;
-      }
-      .views-badge {
-        font-size: 11px;
-        padding: 4px 10px;
-      }
-      .playlist-card {
-        margin-top: 10px;
-        padding: 16px;
-      }
+      .course-view-layout { grid-template-columns: 1fr; }
     }
   </style>
 </head>
-<body oncontextmenu="return false;">
+<body>
 
-  <!-- النافبار في مكان مستقل أعلى الصفحة دون تداخل مع الفيديو -->
-  <div class="course-view-navbar-wrapper">
-    <nav class="navbar-capsule" style="position: relative;">
+  <div class="navbar-capsule-wrapper">
+    <nav class="navbar-capsule">
       <a href="index.html" class="capsule-brand">
         <div class="capsule-logo">HK</div>
         <span class="brand-text">هي كيميا<span>!</span></span>
       </a>
-      <div style="display:flex; align-items:center; gap:10px;">
-        <span class="views-badge" id="viewsDisplay">المشاهدة: --</span>
-        <a href="dashboard.html" class="nav-btn-link">لوحة التحكم</a>
+      <div class="capsule-auth">
+        <a href="dashboard.html" class="nav-btn-primary">لوحة التحكم</a>
       </div>
     </nav>
   </div>
 
-  <div class="container">
-    <div class="blocked-screen" id="blockedScreen">
-      <div style="font-size: 45px; margin-bottom: 15px;">🛑</div>
-      <h2 style="color: #EF4444; margin-bottom: 10px;">عذراً، لقد استنفدت عدد مرات الدخول المسموحة</h2>
-      <p style="color: var(--text-muted); margin-bottom: 25px;">لقد بلغت الحد الأقصى لمشاهدة هذا الكورس. يرجى مراجعة أ/ محمد السعيد أو فريق الدعم الفني.</p>
-      <a href="dashboard.html" class="btn btn-primary">العودة للوحة التحكم</a>
+  <div class="course-view-layout">
+    <div>
+      <div class="video-player-box">
+        <iframe id="mainCourseVideoIframe" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+      </div>
+      <div style="background:#fff; border-radius:16px; padding:20px; border:1px solid var(--border-subtle); margin-top:16px;">
+        <h2 id="currentLessonTitleDisplay" style="font-size:18px; font-weight:900; color:var(--royal-indigo-base); margin-bottom:8px;">عنوان المحاضرة</h2>
+        <p id="courseMainTitleSub" style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">اسم الكورس</p>
+        <div id="lessonPdfsContainer"></div>
+      </div>
+    </div>
+
+    <div class="lessons-sidebar-card">
+      <h3 style="font-size:15px; font-weight:900; color:var(--royal-indigo-base); margin-bottom:14px;">محاضرات الكورس:</h3>
+      <div id="lessonsPlaylistContainer"></div>
     </div>
   </div>
 
-  <div class="course-player-layout" id="playerLayout">
-    <main>
-      <div class="video-secure-container" id="videoWrapper">
-        <iframe id="mainPlayer" src="" allowfullscreen></iframe>
-        
-        <!-- العلامة المائية الشبحية الذكية المتغيرة -->
-        <div class="smart-ghost-watermark" id="smartWatermark">
-          <span id="wmUserName">طالب المنصة</span>
-          <span id="wmUserPhone">01xxxxxxxxx</span>
-        </div>
-
-        <div class="screen-recording-shield" id="recordingShield">
-          <div>
-            <h3 style="color:#00D2FF; margin-bottom:6px;">تم إيقاف العرض مؤقتاً للحماية</h3>
-            <p style="font-size:13px; color:#cbd5e1;">يرجى الرجوع للنافذة النشطة لمتابعة المشاهدة.</p>
-          </div>
-        </div>
-      </div>
-
-      <div style="margin-top: 18px;">
-        <h2 id="currentLessonTitle" style="color:var(--royal-indigo-base); font-size:20px; font-weight:900;">جاري تحميل المحاضرة...</h2>
-        <p id="courseDesc" style="color:var(--text-muted); margin-top:6px; font-size:13.5px; line-height:1.6;"></p>
-        
-        <!-- مساحة ملفات PDF التابعة للمحاضرة الحالية -->
-        <div class="lesson-pdf-box" id="lessonPdfSection" style="display:none;">
-          <h4 style="font-size:14px; font-weight:800; color:var(--royal-indigo-base); margin-bottom:8px;">📄 ملحقات ومذكرات المحاضرة (PDF):</h4>
-          <div id="lessonPdfList" style="display:flex; flex-wrap:wrap;"></div>
-        </div>
-      </div>
-    </main>
-
-    <aside class="playlist-card">
-      <h3 style="color:var(--royal-indigo-base); margin-bottom:15px; font-size:15px; font-weight:800;">فهرس المحاضرات</h3>
-      <div id="lessonsList"></div>
-      <div style="margin-top: 20px; border-top: 1px solid var(--border-subtle); padding-top: 15px;">
-        <a id="examLink" href="#" class="btn btn-primary" style="width: 100%; display: block; text-align: center;">دخول امتحان الكورس 📝</a>
-      </div>
-    </aside>
-  </div>
-
+  <script src="firebase-config.js"></script>
   <script src="app.js"></script>
   <script>
-    var user = getCurrentUser();
-    if (!user) window.location.href = "login.html";
+    var currentCourse = null;
+    var currentLessonIdx = 0;
 
-    var urlParams = new URLSearchParams(window.location.search);
-    var courseId = urlParams.get("id") || "c1";
-    var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-    var course = courses.find(function(c) { return c.id == courseId; });
+    function playLesson(idx) {
+      if (!currentCourse || !currentCourse.lessons || !currentCourse.lessons[idx]) return;
+      currentLessonIdx = idx;
+      var lesson = currentCourse.lessons[idx];
 
-    if (!course) { 
-      showToast("الكورس غير متاح حالياً", "error");
-      setTimeout(function() { window.location.href = "dashboard.html"; }, 1000);
-    }
+      // تحويل الرابط لصيغة Embed صالحة للتشغيل الفوري
+      var validEmbedUrl = formatYouTubeEmbedUrl(lesson.videoUrl);
+      document.getElementById("mainCourseVideoIframe").src = validEmbedUrl;
+      document.getElementById("currentLessonTitleDisplay").innerText = lesson.title;
 
-    document.getElementById("wmUserName").innerText = user.fullName;
-    document.getElementById("wmUserPhone").innerText = (user.studentPhone || user.email) + " • " + courseId;
-
-    function moveSmartWatermark() {
-      var wm = document.getElementById("smartWatermark");
-      var wrapper = document.getElementById("videoWrapper");
-      if (!wm || !wrapper) return;
-
-      var maxX = wrapper.clientWidth - wm.clientWidth - 20;
-      var maxY = wrapper.clientHeight - wm.clientHeight - 20;
-
-      var randX = Math.max(10, Math.floor(Math.random() * maxX));
-      var randY = Math.max(10, Math.floor(Math.random() * maxY));
-
-      wm.style.left = randX + "px";
-      wm.style.top = randY + "px";
-      wm.style.opacity = (Math.random() * 0.35 + 0.25).toFixed(2);
-    }
-    setInterval(moveSmartWatermark, 4500);
-    setTimeout(moveSmartWatermark, 600);
-
-    var isWindowFocused = true;
-    window.addEventListener("blur", function() {
-      isWindowFocused = false;
-      document.getElementById("recordingShield").style.display = "flex";
-    });
-    window.addEventListener("focus", function() {
-      isWindowFocused = true;
-      document.getElementById("recordingShield").style.display = "none";
-    });
-
-    window.addEventListener("keydown", function(e) {
-      if (
-        e.key === "F12" || 
-        (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
-        (e.ctrlKey && (e.key === "u" || e.key === "U" || e.key === "s" || e.key === "S" || e.key === "p" || e.key === "P")) ||
-        e.key === "PrintScreen"
-      ) {
-        e.preventDefault();
-        showToast("محتوى المحاضرة محمي بحقوق النشر", "error");
-        return false;
-      }
-    });
-
-    // التحقق من مرات الدخول المسموحة
-    var isUnlimited = course.maxViewsType === "unlimited" || !course.maxViews || Number(course.maxViews) === 0;
-    var maxAllowed = Number(course.maxViews) || 0;
-    var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-    var uIdx = users.findIndex(function(u) { return u.email === user.email; });
-
-    if (uIdx !== -1) {
-      if (!users[uIdx].courseAccessCount) users[uIdx].courseAccessCount = {};
-      var currentViews = (users[uIdx].courseAccessCount[courseId] || 0) + 1;
-      users[uIdx].courseAccessCount[courseId] = currentViews;
-      localStorage.setItem("edu_users", JSON.stringify(users));
-
-      if (!isUnlimited && currentViews > maxAllowed) {
-        document.getElementById("playerLayout").style.display = "none";
-        document.getElementById("blockedScreen").style.display = "block";
+      var pdfsContainer = document.getElementById("lessonPdfsContainer");
+      if (lesson.pdfs && lesson.pdfs.length > 0) {
+        pdfsContainer.innerHTML = '<strong style="font-size:12.5px; color:#475569;">المذكرات وملفات الـ PDF المرفقة:</strong><div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;">' +
+          lesson.pdfs.map(p => '<a href="' + p.url + '" target="_blank" class="pdf-download-btn">📄 ' + p.name + '</a>').join("") +
+          '</div>';
       } else {
-        document.getElementById("viewsDisplay").innerText = isUnlimited 
-          ? "المشاهدة: مفتوحة" 
-          : "الدخول (" + currentViews + " من " + maxAllowed + ") | متبقي: " + Math.max(0, maxAllowed - currentViews);
+        pdfsContainer.innerHTML = "";
       }
+
+      document.querySelectorAll(".lesson-playlist-item").forEach((el, i) => {
+        el.classList.toggle("active", i === idx);
+      });
     }
 
-    function recordWatchTime() {
-      if (!isWindowFocused) return;
-      
-      var tracking = JSON.parse(localStorage.getItem("edu_course_watch_logs")) || {};
-      if (!tracking[courseId]) tracking[courseId] = {};
-      if (!tracking[courseId][user.email]) {
-        tracking[courseId][user.email] = {
-          studentName: user.fullName,
-          studentPhone: user.studentPhone || user.email,
-          totalSeconds: 0,
-          lastActive: new Date().toLocaleString('ar-EG'),
-          sessionsCount: 1
-        };
+    document.addEventListener("DOMContentLoaded", function() {
+      var user = getCurrentUser();
+      if (!user) {
+        window.location.href = "login.html";
+        return;
       }
 
-      tracking[courseId][user.email].totalSeconds += 5;
-      tracking[courseId][user.email].lastActive = new Date().toLocaleString('ar-EG');
-      localStorage.setItem("edu_course_watch_logs", JSON.stringify(tracking));
-    }
-    setInterval(recordWatchTime, 5000);
+      var urlParams = new URLSearchParams(window.location.search);
+      var courseId = urlParams.get("id");
+      var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
+      currentCourse = courses.find(c => c.id == courseId);
 
-    document.getElementById("courseDesc").innerText = course.desc;
-    document.getElementById("examLink").href = "exam.html?examId=" + (course.examId || 'e1');
-
-    var lessons = course.lessons || [];
-    var isStaff = user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "SUPPORT";
-    var customAllowed = (user.customAllowedLessons && user.customAllowedLessons[courseId]) || [];
-    var hasFullCourse = user.enrolledCourses && user.enrolledCourses.includes(courseId);
-
-    var firstPlayableLesson = null;
-
-    document.getElementById("lessonsList").innerHTML = lessons.map(function(l, idx) {
-      var isAllowed = isStaff || (hasFullCourse && customAllowed.length === 0) || customAllowed.includes(l.id);
-
-      if (isAllowed && !firstPlayableLesson) {
-        firstPlayableLesson = l;
+      if (!currentCourse) {
+        showToast("لم يتم العثور على الكورس", "error");
+        setTimeout(() => window.location.href = "dashboard.html", 1000);
+        return;
       }
 
-      if (isAllowed) {
-        return '<div class="playlist-item ' + (firstPlayableLesson && firstPlayableLesson.id === l.id ? 'active' : '') + '" onclick="playLesson(' + idx + ', this)">' +
-          '<div><h4 style="font-size:13px; color:var(--royal-indigo-base); font-weight:800;">' + (idx + 1) + '. ' + l.title + '</h4><span style="font-size:11px; color:var(--text-muted);">' + l.duration + '</span></div>' +
-          '<span style="color:#10b981; font-size:13px;">▶</span>' +
-        '</div>';
+      document.getElementById("courseMainTitleSub").innerText = currentCourse.title;
+
+      var container = document.getElementById("lessonsPlaylistContainer");
+      var lessons = currentCourse.lessons || [];
+
+      if (lessons.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-muted); font-size:13px;">لا توجد محاضرات منشورة بعد.</p>';
       } else {
-        return '<div class="playlist-item locked" onclick="showToast(\'هذه المحاضرة غير مفعلة بحسابك، تواصل مع الإدارة لتفعيلها\', \'error\')">' +
-          '<div><h4 style="font-size:13px; color:#94a3b8; font-weight:700;">' + (idx + 1) + '. ' + l.title + '</h4><span style="font-size:11px; color:#94a3b8;">' + l.duration + '</span></div>' +
-          '<span style="color:#ef4444; font-size:13px;">🔒</span>' +
-        '</div>';
+        container.innerHTML = lessons.map((l, i) => 
+          '<div class="lesson-playlist-item" onclick="playLesson(' + i + ')">' +
+            '<div>' +
+              '<h4 style="font-size:13px; font-weight:800; color:var(--royal-indigo-base); margin-bottom:2px;">' + (i + 1) + '. ' + l.title + '</h4>' +
+              '<span style="font-size:11px; color:var(--text-muted);">⏱️ ' + (l.duration || "45 دقيقة") + '</span>' +
+            '</div>' +
+            '<span>▶</span>' +
+          '</div>'
+        ).join("");
+
+        playLesson(0);
       }
-    }).join('');
-
-    function updateLessonPdfSection(lesson) {
-      var pdfBox = document.getElementById("lessonPdfSection");
-      var pdfList = document.getElementById("lessonPdfList");
-      var pdfs = lesson.pdfs || [];
-
-      if (pdfs.length > 0) {
-        pdfList.innerHTML = pdfs.map(function(p, i) {
-          return '<a href="' + p.url + '" target="_blank" download class="pdf-download-btn">📥 ' + (p.name || ('مذكرة ' + (i+1) + ' (PDF)')) + '</a>';
-        }).join('');
-        pdfBox.style.display = "block";
-      } else {
-        pdfBox.style.display = "none";
-        pdfList.innerHTML = "";
-      }
-    }
-
-    if (firstPlayableLesson) {
-      document.getElementById("mainPlayer").src = firstPlayableLesson.videoUrl;
-      document.getElementById("currentLessonTitle").innerText = firstPlayableLesson.title;
-      updateLessonPdfSection(firstPlayableLesson);
-    } else {
-      document.getElementById("currentLessonTitle").innerText = "لا توجد محاضرات مفعلة بحسابك في هذا الكورس حالياً";
-    }
-
-    function playLesson(idx, el) {
-      var l = lessons[idx];
-      if (!l) return;
-      document.getElementById("mainPlayer").src = l.videoUrl;
-      document.getElementById("currentLessonTitle").innerText = l.title;
-      document.querySelectorAll(".playlist-item").forEach(function(item) { item.classList.remove("active"); });
-      el.classList.add("active");
-      updateLessonPdfSection(l);
-    }
+    });
   </script>
 </body>
 </html>

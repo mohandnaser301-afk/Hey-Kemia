@@ -34,6 +34,26 @@ function getFirebase() {
   return firebase;
 }
 
+// دالة تحويل أي رابط يوتيوب إلى رابط Embed صالح للتشغيل الفوري
+function formatYouTubeEmbedUrl(url) {
+  if (!url) return "";
+  url = url.trim();
+  if (url.includes("embed/")) return url;
+
+  let videoId = "";
+  if (url.includes("youtu.be/")) {
+    videoId = url.split("youtu.be/")[1].split("?")[0].split("&")[0];
+  } else if (url.includes("youtube.com/watch")) {
+    const urlParams = new URLSearchParams(url.split("?")[1] || "");
+    videoId = urlParams.get("v") || "";
+  } else if (url.includes("youtube.com/shorts/")) {
+    videoId = url.split("youtube.com/shorts/")[1].split("?")[0].split("&")[0];
+  }
+
+  return videoId ? `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1` : url;
+}
+window.formatYouTubeEmbedUrl = formatYouTubeEmbedUrl;
+
 function compressImageBase64(base64Str, maxWidth, maxHeight, quality) {
   maxWidth = maxWidth || 450;
   maxHeight = maxHeight || 260;
@@ -69,7 +89,6 @@ function compressImageBase64(base64Str, maxWidth, maxHeight, quality) {
 window.compressImageBase64 = compressImageBase64;
 
 window.FirebaseService = {
-  // المستخدمين
   async registerStudent(userData) {
     const fb = getFirebase();
     let uid = "u_" + Date.now();
@@ -180,7 +199,6 @@ window.FirebaseService = {
     }
   },
 
-  // الكورسات
   subscribeCourses(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -199,6 +217,15 @@ window.FirebaseService = {
       if (courseData.image && courseData.image.startsWith("data:image")) {
         courseData.image = await compressImageBase64(courseData.image, 450, 260, 0.45);
       }
+
+      // تصحيح وتحويل كافة روابط محاضرات الكورس لصيغة Embed صالحة
+      if (courseData.lessons && Array.isArray(courseData.lessons)) {
+        courseData.lessons = courseData.lessons.map(l => ({
+          ...l,
+          videoUrl: formatYouTubeEmbedUrl(l.videoUrl)
+        }));
+      }
+
       if (courseId) {
         await fb.firestore().collection("courses").doc(courseId).set(courseData, { merge: true });
         return { id: courseId, ...courseData };
@@ -216,7 +243,6 @@ window.FirebaseService = {
     }
   },
 
-  // الامتحانات
   subscribeExams(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -248,7 +274,6 @@ window.FirebaseService = {
     }
   },
 
-  // المدفوعات
   subscribePayments(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -281,7 +306,7 @@ window.FirebaseService = {
     }
   },
 
-  // الإشعارات المباشرة السحابية
+  // إرسال الإشعارات السحابية
   subscribeNotifications(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -293,7 +318,7 @@ window.FirebaseService = {
     }
   },
 
-  async pushNotificationToCloud(title, body, targetEmail, targetUrl) {
+  async pushNotificationToCloud(title, body, targetEmail, targetUrl, senderEmail) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
       await fb.firestore().collection("notifications").add({
@@ -301,6 +326,7 @@ window.FirebaseService = {
         body: body,
         targetEmail: targetEmail || "ALL",
         targetUrl: targetUrl || "dashboard.html",
+        senderEmail: (senderEmail || "").toLowerCase(),
         createdAt: new Date().toISOString()
       });
     }
