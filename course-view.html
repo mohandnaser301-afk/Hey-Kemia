@@ -6,29 +6,55 @@
   <title>مشاهدة المحاضرة - هي كيميا !</title>
   <link rel="stylesheet" href="style.css">
   <style>
+    /* منع النسخ وتحديد النصوص */
+    body {
+      user-select: none;
+      -webkit-user-select: none;
+    }
     .course-view-layout {
       display: grid;
       grid-template-columns: 1fr 340px;
       gap: 20px;
-      padding: 95px 16px 40px;
+      padding: 85px 16px 40px;
       max-width: 1240px;
       margin: 0 auto;
     }
-    .video-player-box {
+    .video-secure-container {
       background: #000;
       border-radius: 16px;
       overflow: hidden;
       position: relative;
       padding-top: 56.25%;
-      box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.3);
     }
-    .video-player-box iframe {
+    .video-secure-container iframe {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       border: none;
+      pointer-events: auto;
+    }
+    /* علامة مائية متحركة لمنع تصوير الشاشة */
+    .secure-watermark {
+      position: absolute;
+      color: rgba(255, 255, 255, 0.28);
+      font-size: 13px;
+      font-weight: 800;
+      pointer-events: none;
+      z-index: 10;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.25);
+      animation: floatWatermark 18s linear infinite alternate;
+    }
+    @keyframes floatWatermark {
+      0% { top: 10%; left: 10%; }
+      25% { top: 75%; left: 20%; }
+      50% { top: 20%; left: 70%; }
+      75% { top: 80%; left: 65%; }
+      100% { top: 15%; left: 15%; }
     }
     .lessons-sidebar-card {
       background: #ffffff;
@@ -38,7 +64,6 @@
       height: fit-content;
       max-height: 80vh;
       overflow-y: auto;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.04);
     }
     .lesson-playlist-item {
       padding: 12px 14px;
@@ -67,14 +92,13 @@
       font-weight: 800;
       color: var(--royal-indigo-base);
       text-decoration: none;
-      margin-top: 6px;
     }
     @media (max-width: 900px) {
-      .course-view-layout { grid-template-columns: 1fr; }
+      .course-view-layout { grid-template-columns: 1fr; padding-top: 75px; }
     }
   </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
 
   <div class="navbar-capsule-wrapper">
     <nav class="navbar-capsule">
@@ -83,25 +107,30 @@
         <span class="brand-text">هي كيميا<span>!</span></span>
       </a>
       <div class="capsule-auth">
-        <a href="dashboard.html" class="nav-btn-primary">لوحة التحكم</a>
+        <a href="dashboard.html" class="nav-btn-primary">لوحة الطالب</a>
       </div>
     </nav>
   </div>
 
   <div class="course-view-layout">
     <div>
-      <div class="video-player-box">
-        <iframe id="mainCourseVideoIframe" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+      <div class="video-secure-container" id="videoContainerWrapper">
+        <div class="secure-watermark" id="videoDynamicWatermark">HE-KEMIA SECURE</div>
+        <iframe id="mainCourseVideoIframe" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
       </div>
+
       <div style="background:#fff; border-radius:16px; padding:20px; border:1px solid var(--border-subtle); margin-top:16px;">
-        <h2 id="currentLessonTitleDisplay" style="font-size:18px; font-weight:900; color:var(--royal-indigo-base); margin-bottom:8px;">عنوان المحاضرة</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <h2 id="currentLessonTitleDisplay" style="font-size:18px; font-weight:900; color:var(--royal-indigo-base); margin:0;">عنوان المحاضرة</h2>
+          <span style="background:rgba(16,185,129,0.12); color:#059669; font-weight:800; font-size:11.5px; padding:3px 10px; border-radius:12px;">مشاهدة مصرحة ✓</span>
+        </div>
         <p id="courseMainTitleSub" style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">اسم الكورس</p>
-        <div id="lessonPdfsContainer"></div>
+        <div id="lessonPdfsContainer" style="margin-top:12px; border-top:1px solid #EEF2F6; padding-top:12px;"></div>
       </div>
     </div>
 
     <div class="lessons-sidebar-card">
-      <h3 style="font-size:15px; font-weight:900; color:var(--royal-indigo-base); margin-bottom:14px;">محاضرات الكورس:</h3>
+      <h3 style="font-size:15px; font-weight:900; color:var(--royal-indigo-base); margin-bottom:14px;">محاضرات الكورس</h3>
       <div id="lessonsPlaylistContainer"></div>
     </div>
   </div>
@@ -111,29 +140,53 @@
   <script>
     var currentCourse = null;
     var currentLessonIdx = 0;
+    var watchTimerInterval = null;
+
+    // حماية إضافية ضد DevTools
+    document.addEventListener("keydown", function(e) {
+      if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67))) {
+        e.preventDefault();
+        return false;
+      }
+    });
 
     function playLesson(idx) {
       if (!currentCourse || !currentCourse.lessons || !currentCourse.lessons[idx]) return;
       currentLessonIdx = idx;
       var lesson = currentCourse.lessons[idx];
 
-      // تحويل الرابط لصيغة Embed صالحة للتشغيل الفوري
       var validEmbedUrl = formatYouTubeEmbedUrl(lesson.videoUrl);
       document.getElementById("mainCourseVideoIframe").src = validEmbedUrl;
       document.getElementById("currentLessonTitleDisplay").innerText = lesson.title;
 
       var pdfsContainer = document.getElementById("lessonPdfsContainer");
       if (lesson.pdfs && lesson.pdfs.length > 0) {
-        pdfsContainer.innerHTML = '<strong style="font-size:12.5px; color:#475569;">المذكرات وملفات الـ PDF المرفقة:</strong><div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;">' +
+        pdfsContainer.innerHTML = '<strong style="font-size:12.5px; color:#475569; display:block; margin-bottom:6px;">المذكرات والملفات المرفقة:</strong><div style="display:flex; gap:8px; flex-wrap:wrap;">' +
           lesson.pdfs.map(p => '<a href="' + p.url + '" target="_blank" class="pdf-download-btn">📄 ' + p.name + '</a>').join("") +
           '</div>';
       } else {
-        pdfsContainer.innerHTML = "";
+        pdfsContainer.innerHTML = '<span style="font-size:12px; color:var(--text-muted);">لا توجد ملفات مرفقة مع هذه المحاضرة.</span>';
       }
 
       document.querySelectorAll(".lesson-playlist-item").forEach((el, i) => {
         el.classList.toggle("active", i === idx);
       });
+    }
+
+    function startTrackingWatchTime(userEmail, courseId) {
+      if (watchTimerInterval) clearInterval(watchTimerInterval);
+      var cleanEmail = userEmail.toLowerCase().trim();
+
+      watchTimerInterval = setInterval(function() {
+        var tracking = JSON.parse(localStorage.getItem("edu_course_watch_logs")) || {};
+        if (!tracking[courseId]) tracking[courseId] = {};
+        if (!tracking[courseId][cleanEmail]) {
+          tracking[courseId][cleanEmail] = { totalSeconds: 0, lastActive: new Date().toLocaleTimeString("ar-EG") };
+        }
+        tracking[courseId][cleanEmail].totalSeconds += 5;
+        tracking[courseId][cleanEmail].lastActive = new Date().toLocaleTimeString("ar-EG");
+        localStorage.setItem("edu_course_watch_logs", JSON.stringify(tracking));
+      }, 5000);
     }
 
     document.addEventListener("DOMContentLoaded", function() {
@@ -143,6 +196,10 @@
         return;
       }
 
+      // وضع بيانات الطالب في العلامة المائية
+      var wm = document.getElementById("videoDynamicWatermark");
+      if (wm) wm.innerText = user.fullName + " | " + user.studentPhone;
+
       var urlParams = new URLSearchParams(window.location.search);
       var courseId = urlParams.get("id");
       var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
@@ -151,6 +208,16 @@
       if (!currentCourse) {
         showToast("لم يتم العثور على الكورس", "error");
         setTimeout(() => window.location.href = "dashboard.html", 1000);
+        return;
+      }
+
+      // التحقق الصارم من صلاحية الطالب في الكورس
+      var isStaff = user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "SUPPORT";
+      var isEnrolled = user.enrolledCourses && user.enrolledCourses.includes(courseId);
+
+      if (!isStaff && !isEnrolled) {
+        showToast("غير مصرح لك بمشاهدة هذا الكورس، يرجى الاشتراك أولاً", "error");
+        setTimeout(() => window.location.href = "dashboard.html", 1200);
         return;
       }
 
@@ -173,7 +240,12 @@
         ).join("");
 
         playLesson(0);
+        startTrackingWatchTime(user.email, courseId);
       }
+    });
+
+    window.addEventListener("beforeunload", function() {
+      if (watchTimerInterval) clearInterval(watchTimerInterval);
     });
   </script>
 </body>

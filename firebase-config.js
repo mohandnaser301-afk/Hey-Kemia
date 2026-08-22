@@ -49,7 +49,7 @@ function formatYouTubeEmbedUrl(url) {
     videoId = url.split("youtube.com/shorts/")[1].split("?")[0].split("&")[0];
   }
 
-  return videoId ? `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1` : url;
+  return videoId ? `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&enablejsapi=1` : url;
 }
 window.formatYouTubeEmbedUrl = formatYouTubeEmbedUrl;
 
@@ -88,7 +88,7 @@ function compressImageBase64(base64Str, maxWidth, maxHeight, quality) {
 window.compressImageBase64 = compressImageBase64;
 
 window.FirebaseService = {
-  // المصادقة والحسابات
+  // 1. التسجيل والمصادقة
   async registerStudent(userData) {
     const fb = getFirebase();
     let uid = "u_" + Date.now();
@@ -168,7 +168,7 @@ window.FirebaseService = {
     window.location.href = "login.html";
   },
 
-  // إدارة المستخدمين
+  // 2. إدارة المستخدمين والمزامنة والحذف الشامل
   subscribeUsers(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -184,7 +184,8 @@ window.FirebaseService = {
   async updateUserRoleByEmail(email, newRole) {
     const fb = getFirebase();
     if (fb && fb.firestore && email) {
-      const qSnap = await fb.firestore().collection("users").where("email", "==", email.toLowerCase().trim()).get();
+      const cleanEmail = email.toLowerCase().trim();
+      const qSnap = await fb.firestore().collection("users").where("email", "==", cleanEmail).get();
       const promises = [];
       qSnap.forEach(doc => {
         promises.push(doc.ref.update({ role: newRole }));
@@ -196,7 +197,8 @@ window.FirebaseService = {
   async updateUserEnrollmentsByEmail(email, enrolledCourses, customLessons) {
     const fb = getFirebase();
     if (fb && fb.firestore && email) {
-      const qSnap = await fb.firestore().collection("users").where("email", "==", email.toLowerCase().trim()).get();
+      const cleanEmail = email.toLowerCase().trim();
+      const qSnap = await fb.firestore().collection("users").where("email", "==", cleanEmail).get();
       const promises = [];
       qSnap.forEach(doc => {
         const updateData = { enrolledCourses: enrolledCourses };
@@ -219,17 +221,23 @@ window.FirebaseService = {
       const paySnap = await fb.firestore().collection("payments").where("userEmail", "==", cleanEmail).get();
       paySnap.forEach(doc => batch.delete(doc.ref));
 
-      const msgSnap = await fb.firestore().collection("support_messages").where("studentEmail", "==", cleanEmail).get();
-      msgSnap.forEach(doc => batch.delete(doc.ref));
-
       const subSnap = await fb.firestore().collection("submissions").where("userEmail", "==", cleanEmail).get();
       subSnap.forEach(doc => batch.delete(doc.ref));
 
       await batch.commit();
+
+      // حذف ثريد الدعم الفني
+      try {
+        const chatMsgs = await fb.firestore().collection("support_threads").doc(cleanEmail).collection("messages").get();
+        const chatBatch = fb.firestore().batch();
+        chatMsgs.forEach(d => chatBatch.delete(d.ref));
+        chatBatch.delete(fb.firestore().collection("support_threads").doc(cleanEmail));
+        await chatBatch.commit();
+      } catch (e) {}
     }
   },
 
-  // إدارة الكورسات
+  // 3. إدارة الكورسات
   subscribeCourses(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -271,7 +279,7 @@ window.FirebaseService = {
     }
   },
 
-  // إدارة الامتحانات والتسليمات
+  // 4. إدارة الامتحانات والتسليمات
   subscribeExams(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -319,11 +327,12 @@ window.FirebaseService = {
     const fb = getFirebase();
     if (fb && fb.firestore) {
       submissionData.createdAt = new Date().toISOString();
+      submissionData.userEmail = submissionData.userEmail.toLowerCase().trim();
       await fb.firestore().collection("submissions").add(submissionData);
     }
   },
 
-  // إدارة المدفوعات والاشتراكات
+  // 5. المدفوعات والاعتماد الفوري للكورسات
   subscribePayments(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -342,6 +351,7 @@ window.FirebaseService = {
       if (paymentData.receipt && paymentData.receipt.startsWith("data:image")) {
         paymentData.receipt = await compressImageBase64(paymentData.receipt, 400, 400, 0.4);
       }
+      paymentData.userEmail = paymentData.userEmail.toLowerCase().trim();
       paymentData.createdAt = new Date().toISOString();
       paymentData.status = "PENDING";
       const ref = await fb.firestore().collection("payments").add(paymentData);
@@ -356,7 +366,7 @@ window.FirebaseService = {
     }
   },
 
-  // الإشعارات السحابية
+  // 6. الإشعارات السحابية
   subscribeNotifications(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -382,16 +392,16 @@ window.FirebaseService = {
     }
   },
 
-  // نظام الشات المستقل لكل طالب (Threaded Support System)
-  subscribeStudentSupport(studentEmail, callback) {
+  // 7. منظومة الدعم الفني المنفصل لكل طالب
+  subscribeStudentChat(studentEmail, callback) {
     const fb = getFirebase();
     if (fb && fb.firestore && studentEmail) {
-      return fb.firestore().collection("support_messages")
-        .where("studentEmail", "==", studentEmail.toLowerCase().trim())
+      const cleanEmail = studentEmail.toLowerCase().trim();
+      return fb.firestore().collection("support_threads").doc(cleanEmail).collection("messages")
+        .orderBy("createdAt", "asc")
         .onSnapshot(snap => {
           const list = [];
           snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-          list.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
           if (callback) callback(list);
         });
     }
@@ -400,49 +410,49 @@ window.FirebaseService = {
   subscribeAllSupportThreads(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
-      return fb.firestore().collection("support_messages").onSnapshot(snap => {
-        const messages = [];
-        snap.forEach(doc => messages.push({ id: doc.id, ...doc.data() }));
-        
-        // تجميع الرسائل في محادثات منفصلة حسب الطالب
-        const threadsMap = {};
-        messages.forEach(m => {
-          const sEmail = (m.studentEmail || m.senderEmail || "").toLowerCase().trim();
-          if (!threadsMap[sEmail]) {
-            threadsMap[sEmail] = {
-              studentEmail: sEmail,
-              studentName: m.studentName || m.senderName || sEmail,
-              studentPhone: m.studentPhone || "غير مسجل",
-              lastMessage: m.text,
-              lastMessageTime: m.createdAt,
-              unreadCount: 0,
-              messages: []
-            };
-          }
-          threadsMap[sEmail].messages.push(m);
-          if (new Date(m.createdAt) > new Date(threadsMap[sEmail].lastMessageTime)) {
-            threadsMap[sEmail].lastMessage = m.text;
-            threadsMap[sEmail].lastMessageTime = m.createdAt;
-          }
-          if (m.senderRole === "STUDENT" && !m.seenByAdmin) {
-            threadsMap[sEmail].unreadCount++;
-          }
+      return fb.firestore().collection("support_threads")
+        .orderBy("lastMessageTime", "desc")
+        .onSnapshot(snap => {
+          const list = [];
+          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+          if (callback) callback(list);
         });
-
-        const threadsList = Object.values(threadsMap).sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
-        if (callback) callback(threadsList);
-      });
     }
   },
 
   async sendSupportMessage(msgData) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
-      msgData.createdAt = new Date().toISOString();
-      msgData.studentEmail = msgData.studentEmail.toLowerCase().trim();
-      msgData.seenByAdmin = msgData.senderRole !== "STUDENT";
-      msgData.seenByStudent = msgData.senderRole === "STUDENT";
-      await fb.firestore().collection("support_messages").add(msgData);
+      const studentEmail = (msgData.studentEmail || "").toLowerCase().trim();
+      const now = new Date().toISOString();
+
+      const messageDoc = {
+        text: msgData.text,
+        senderEmail: msgData.senderEmail.toLowerCase().trim(),
+        senderName: msgData.senderName,
+        senderRole: msgData.senderRole || "STUDENT",
+        createdAt: now
+      };
+
+      // إضافة الرسالة في Subcollection الخاص بالطالب
+      await fb.firestore().collection("support_threads").doc(studentEmail).collection("messages").add(messageDoc);
+
+      // تحديث وثيقة الثريد الرئيسية
+      const threadUpdate = {
+        studentEmail: studentEmail,
+        studentName: msgData.studentName || studentEmail,
+        lastMessage: msgData.text,
+        lastMessageTime: now,
+        lastSenderRole: msgData.senderRole || "STUDENT"
+      };
+
+      if (msgData.senderRole === "STUDENT") {
+        threadUpdate.unreadCount = firebase.firestore.FieldValue.increment(1);
+      } else {
+        threadUpdate.unreadCount = 0;
+      }
+
+      await fb.firestore().collection("support_threads").doc(studentEmail).set(threadUpdate, { merge: true });
     }
   }
 };

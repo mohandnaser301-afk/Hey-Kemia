@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>الدعم الفني والأسئلة - هي كيميا !</title>
+  <title>مركز الدعم الفني - هي كيميا !</title>
   <link rel="stylesheet" href="style.css">
   <style>
     .support-container-fluid {
@@ -14,7 +14,7 @@
     }
     .support-thread-layout {
       display: grid;
-      grid-template-columns: 300px 1fr;
+      grid-template-columns: 310px 1fr;
       gap: 16px;
       height: 78vh;
       background: #ffffff;
@@ -118,19 +118,19 @@
   <div class="support-container-fluid">
     <div class="support-thread-layout">
       
-      <!-- قائمة محادثات الطلاب (للأدمن والدعم فقط) -->
+      <!-- قائمة المحادثات (للأدمن والدعم فقط) -->
       <aside class="threads-sidebar" id="adminThreadsSidebar" style="display:none;">
         <div style="padding:14px; border-bottom:1px solid #E2E8F0; background:#fff;">
-          <h3 style="font-size:14px; font-weight:800; color:var(--royal-indigo-base);">محادثات الطلاب</h3>
+          <h3 style="font-size:14px; font-weight:800; color:var(--royal-indigo-base); margin:0;">محادثات الطلاب المنفصلة</h3>
         </div>
         <div id="threadsListContainer" style="overflow-y:auto; flex:1;"></div>
       </aside>
 
-      <!-- منطقة الشات والمراسلة -->
+      <!-- شات المحادثة المحددة -->
       <main class="chat-view-pane">
         <div class="chat-view-header">
           <div>
-            <h2 style="font-size:15px; font-weight:800;" id="chatTargetNameDisplay">الدعم الفني</h2>
+            <h2 style="font-size:15px; font-weight:800; margin:0;" id="chatTargetNameDisplay">الدعم الفني والتعليمي</h2>
             <span style="font-size:11.5px; color:#00D2FF;" id="chatTargetSubDisplay">فريق الأستاذ محمد السعيد</span>
           </div>
           <a href="dashboard.html" class="nav-btn-link" style="color:#fff; background:rgba(255,255,255,0.12);">الرجوع</a>
@@ -153,30 +153,30 @@
   <script src="app.js"></script>
   <script>
     var currentUser = null;
-    var activeThreadEmail = null;
-    var activeThreadName = null;
+    var activeStudentEmail = null;
+    var activeStudentName = null;
 
-    function selectThread(studentEmail, studentName) {
-      activeThreadEmail = studentEmail.toLowerCase().trim();
-      activeThreadName = studentName;
+    function selectStudentThread(studentEmail, studentName) {
+      activeStudentEmail = studentEmail.toLowerCase().trim();
+      activeStudentName = studentName;
       document.getElementById("chatTargetNameDisplay").innerText = studentName;
       document.getElementById("chatTargetSubDisplay").innerText = studentEmail;
 
       document.querySelectorAll(".thread-item").forEach(el => {
-        el.classList.toggle("active", el.getAttribute("data-email") === activeThreadEmail);
+        el.classList.toggle("active", el.getAttribute("data-email") === activeStudentEmail);
       });
 
       if (window.FirebaseService) {
-        window.FirebaseService.subscribeStudentSupport(activeThreadEmail, renderThreadMessages);
+        window.FirebaseService.subscribeStudentChat(activeStudentEmail, renderMessages);
       }
     }
 
-    function renderThreadMessages(messages) {
+    function renderMessages(messages) {
       var container = document.getElementById("supportChatMessagesArea");
       if (!container) return;
 
       if (!messages || messages.length === 0) {
-        container.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:13px; margin:auto;">لا توجد رسائل سابقة في هذه المحادثة.</div>';
+        container.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:13px; margin:auto;">لا توجد رسائل سابقة. تفضل بكتابة رسالتك وسنرد فوراً.</div>';
         return;
       }
 
@@ -213,36 +213,36 @@
               if (!container) return;
 
               if (threads.length === 0) {
-                container.innerHTML = '<div style="padding:15px; font-size:12px; color:#64748B; text-align:center;">لا توجد محادثات طلاب بعد.</div>';
+                container.innerHTML = '<div style="padding:15px; font-size:12px; color:#64748B; text-align:center;">لا توجد محادثات طلاب حالياً.</div>';
                 return;
               }
 
               container.innerHTML = threads.map(t => {
-                var isSelected = activeThreadEmail === t.studentEmail;
-                return '<div class="thread-item ' + (isSelected ? 'active' : '') + '" data-email="' + t.studentEmail + '" onclick="selectThread(\'' + t.studentEmail + '\', \'' + t.studentName.replace(/'/g, "\\'") + '\')">' +
+                var isSelected = activeStudentEmail === t.studentEmail;
+                return '<div class="thread-item ' + (isSelected ? 'active' : '') + '" data-email="' + t.studentEmail + '" onclick="selectStudentThread(\'' + t.studentEmail + '\', \'' + (t.studentName || t.studentEmail).replace(/'/g, "\\'") + '\')">' +
                   '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">' +
-                    '<strong style="font-size:13px; color:var(--royal-indigo-base);">' + t.studentName + '</strong>' +
+                    '<strong style="font-size:13px; color:var(--royal-indigo-base);">' + (t.studentName || t.studentEmail) + '</strong>' +
                     (t.unreadCount > 0 ? '<span style="background:#ef4444; color:#fff; font-size:10px; font-weight:800; padding:1px 6px; border-radius:10px;">' + t.unreadCount + '</span>' : '') +
                   '</div>' +
                   '<p style="font-size:11.5px; color:#64748B; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin:0;">' + (t.lastMessage || "") + '</p>' +
                 '</div>';
               }).join("");
 
-              if (!activeThreadEmail && threads[0]) {
-                selectThread(threads[0].studentEmail, threads[0].studentName);
+              if (!activeStudentEmail && threads[0]) {
+                selectStudentThread(threads[0].studentEmail, threads[0].studentName || threads[0].studentEmail);
               }
             });
           }
         }, 250);
 
       } else {
-        activeThreadEmail = currentUser.email.toLowerCase().trim();
-        activeThreadName = currentUser.fullName;
+        activeStudentEmail = currentUser.email.toLowerCase().trim();
+        activeStudentName = currentUser.fullName;
 
         var intervalStudent = setInterval(function() {
           if (window.FirebaseService && window.firebase && firebase.firestore) {
             clearInterval(intervalStudent);
-            window.FirebaseService.subscribeStudentSupport(activeThreadEmail, renderThreadMessages);
+            window.FirebaseService.subscribeStudentChat(activeStudentEmail, renderMessages);
           }
         }, 250);
       }
@@ -251,13 +251,13 @@
         e.preventDefault();
         var input = document.getElementById("supportTextInput");
         var text = input.value.trim();
-        if (!text || !activeThreadEmail) return;
+        if (!text || !activeStudentEmail) return;
 
         input.value = "";
         try {
           await window.FirebaseService.sendSupportMessage({
-            studentEmail: activeThreadEmail,
-            studentName: activeThreadName || activeThreadEmail,
+            studentEmail: activeStudentEmail,
+            studentName: activeStudentName || activeStudentEmail,
             text: text,
             senderEmail: currentUser.email.toLowerCase().trim(),
             senderName: currentUser.fullName,

@@ -3,31 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>هي كيميا ! - لوحة الإدارة الشاملة</title>
+  <title>لوحة الإدارة - هي كيميا !</title>
   <link rel="stylesheet" href="dashboard.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     .tab-content-section { display: none; }
     .tab-content-section.active { display: block; }
-    .modal { display: none; position: fixed; inset: 0; background: rgba(8, 10, 33, 0.82); z-index: 99999; justify-content: center; align-items: center; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: 12px; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(8, 10, 33, 0.82); z-index: 99999; justify-content: center; align-items: center; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 12px; }
     .modal-content { background: #fff; color: #191b26; border: 1px solid var(--border-subtle); padding: 26px; border-radius: 16px; max-width: 840px; width: 92%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
     
     .sidebar-badge-count {
       background: #ef4444;
       color: #ffffff;
-      font-size: 10.5px;
-      font-weight: 900;
+      font-size: 10px;
+      font-weight: 800;
       padding: 2px 7px;
       border-radius: 12px;
       margin-right: auto;
-      box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
-      animation: pulseBadge 1.8s infinite;
-    }
-
-    @keyframes pulseBadge {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-      100% { transform: scale(1); }
     }
 
     .charts-grid {
@@ -285,7 +277,7 @@
           <span>سجل النشاطات</span>
         </a>
         <a href="support.html" class="nav-item" onclick="markSupportAsSeen()">
-          <span>شات الدعم والطلاب</span>
+          <span>شات الدعم المستقل</span>
           <span class="sidebar-badge-count" id="badgeSupportCount" style="display:none;">0</span>
         </a>
         <a href="index.html" class="nav-item"><span>عرض الموقع</span></a>
@@ -381,12 +373,12 @@
         </div>
       </div>
 
-      <!-- 3. إدارة الطلاب -->
+      <!-- 3. إدارة وسجلات الطلاب المتطابقة مع لوحة الطالب -->
       <div id="studentsTab" class="tab-content-section">
         <header class="topbar">
           <div>
             <h1 style="font-size:22px; font-weight:900; color:var(--royal-indigo-base);">سجلات الطلاب المسجلين</h1>
-            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">مزامنة لحظية مباشرة من قاعدة البيانات السحابية</p>
+            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">إحصائيات موحدة ومطابقة بدقة مع لوحة تحكم الطالب</p>
           </div>
         </header>
 
@@ -433,6 +425,9 @@
                 <th>هاتف الطالب</th>
                 <th>المحافظة</th>
                 <th>الكورسات المفعلة</th>
+                <th>الامتحانات المسلمة</th>
+                <th>متوسط الدرجات</th>
+                <th>مدة الحضور</th>
                 <th>الإجراءات والصلاحيات</th>
               </tr>
             </thead>
@@ -472,7 +467,7 @@
         <header class="topbar">
           <div>
             <h1 style="font-size:22px; font-weight:900; color:var(--royal-indigo-base);">طلبات الدفع والتحصيل</h1>
-            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">مراجعة الإيصالات بالصورة والتفعيل الفوري لجميع الأجهزة</p>
+            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">مراجعة الإيصالات بالصورة والتفعيل الفوري والمباشر في حساب الطالب</p>
           </div>
         </header>
         <div class="table-container">
@@ -1061,7 +1056,7 @@
       }
     }
 
-    function updateNotificationBadges(payments, hackerLogs, chats) {
+    function updateNotificationBadges(payments, hackerLogs) {
       var seenTimes = JSON.parse(localStorage.getItem("edu_seen_badges_time")) || {};
 
       var lastSeenPayTime = seenTimes.payments || 0;
@@ -1085,17 +1080,6 @@
       if (badgeHck) {
         badgeHck.innerText = newHackers;
         badgeHck.style.display = newHackers > 0 ? "inline-block" : "none";
-      }
-
-      var lastSeenSupTime = seenTimes.support || 0;
-      var newStudentMessages = chats.filter(function(c) {
-        return c.senderRole === "STUDENT" && ((c.id > lastSeenSupTime) || !lastSeenSupTime);
-      }).length;
-
-      var badgeSup = document.getElementById("badgeSupportCount");
-      if (badgeSup) {
-        badgeSup.innerText = newStudentMessages;
-        badgeSup.style.display = newStudentMessages > 0 ? "inline-block" : "none";
       }
     }
 
@@ -1748,11 +1732,10 @@
       var payments = JSON.parse(localStorage.getItem("edu_payments")) || [];
       var logs = JSON.parse(localStorage.getItem("edu_activity_logs")) || [];
       var hackerLogs = JSON.parse(localStorage.getItem("edu_hacker_logs")) || [];
-      var chats = JSON.parse(localStorage.getItem("edu_live_chats")) || [];
 
       allStudentsCache = users.filter(function(u) { return u.role === "STUDENT"; });
 
-      updateNotificationBadges(payments, hackerLogs, chats);
+      updateNotificationBadges(payments, hackerLogs);
 
       var revenue = payments.filter(function(p) { return p.status === "APPROVED"; }).reduce(function(sum, p) { return sum + (Number(p.amount) || 0); }, 0);
       document.getElementById("totalRevenue").innerText = revenue + " ج.م";
@@ -1869,21 +1852,25 @@
       var tbody = document.getElementById("studentsTableBody");
       if (!tbody) return;
       if (studentsList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد نتائج مطابقة.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد نتائج مطابقة.</td></tr>';
         return;
       }
 
       tbody.innerHTML = studentsList.map(function(s) {
+        var m = window.calculateStudentMetrics ? window.calculateStudentMetrics(s.email) : { enrolledCount: (s.enrolledCourses || []).length, completedExams: 0, avgScore: 0, totalHours: 0 };
         return "<tr>" +
           "<td><strong>" + s.fullName + "</strong></td>" +
           "<td>" + s.email + "</td>" +
           "<td>" + s.studentPhone + "</td>" +
           "<td>" + (s.governorate || "غير محدد") + "</td>" +
-          "<td>" + (s.enrolledCourses || []).length + " كورسات</td>" +
+          "<td>" + m.enrolledCount + " كورسات</td>" +
+          "<td>" + m.completedExams + " امتحانات</td>" +
+          "<td><strong>" + m.avgScore + "%</strong></td>" +
+          "<td>" + m.totalHours + " ساعة</td>" +
           "<td>" +
-            '<button type="button" class="btn-action btn-action-success" onclick="openStudentCoursePermissionsModal(\'' + s.email + '\', \'' + s.fullName.replace(/'/g, "\\'") + '\')" style="margin-left:4px;">إدارة الكورسات والمحاضرات</button>' +
-            '<button type="button" class="btn-action btn-action-primary" onclick="viewStudentDetails(\'' + s.email + '\')" style="margin-left:4px;">عرض الملف</button>' +
-            '<button type="button" class="btn-action btn-action-danger" onclick="deleteUser(\'' + s.email + '\')">حذف</button>' +
+            '<button type="button" class="btn-action btn-action-success" onclick="openStudentCoursePermissionsModal(\'' + s.email + '\', \'' + s.fullName.replace(/'/g, "\\'") + '\')" style="margin-left:4px;">إدارة الكورسات</button>' +
+            '<button type="button" class="btn-action btn-action-primary" onclick="viewStudentDetails(\'' + s.email + '\')" style="margin-left:4px;">الملف</button>' +
+            '<button type="button" class="btn-action btn-action-danger" onclick="deleteUser(\'' + s.email + '\')">حذف شامل</button>' +
           "</td>" +
         "</tr>";
       }).join("");
@@ -2075,7 +2062,7 @@
 
         var users = JSON.parse(localStorage.getItem("edu_users")) || [];
         var u = users.find(function(x) { return x.email.toLowerCase() === p.userEmail.toLowerCase(); });
-        var targetEnrolled = (u && u.enrolledCourses) ? u.enrolledCourses : [];
+        var targetEnrolled = (u && u.enrolledCourses) ? [...u.enrolledCourses] : [];
         if (!targetEnrolled.includes(p.courseId)) {
           targetEnrolled.push(p.courseId);
         }

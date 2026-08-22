@@ -1,5 +1,5 @@
 // =========================================================
-// المحرك البرمجي وحصن الأمان لمنصة هي كيميا !
+// المنظومة البرمجية الموحدة لمنصة هي كيميا !
 // =========================================================
 
 function sanitizeText(str) {
@@ -9,7 +9,7 @@ function sanitizeText(str) {
   return temp.innerHTML;
 }
 
-// 1. نافذة تأكيد مخصصة (Custom Modal)
+// نافذة تأكيد مخصصة (Custom Modal)
 function customConfirm(message, title, confirmText, cancelText) {
   title = title || "تأكيد الإجراء";
   confirmText = confirmText || "تأكيد";
@@ -47,69 +47,104 @@ function customConfirm(message, title, confirmText, cancelText) {
 }
 window.customConfirm = customConfirm;
 
-// 2. فحص وتنبيه تفعيل الإشعارات
-function checkAndPromptNotifications() {
-  if (localStorage.getItem("hk_notif_prompt_handled") === "true") return;
-  if (!("Notification" in window)) return;
-  if (Notification.permission === "granted" || Notification.permission === "denied") {
-    localStorage.setItem("hk_notif_prompt_handled", "true");
-    return;
+// المحرك الحسابي الموحد لإحصائيات الطالب
+function calculateStudentMetrics(userEmail) {
+  if (!userEmail) return { enrolledCount: 0, completedExams: 0, avgScore: 0, totalHours: 0, enrolledList: [] };
+  var cleanEmail = userEmail.toLowerCase().trim();
+
+  var users = JSON.parse(localStorage.getItem("edu_users")) || [];
+  var targetUser = users.find(u => u.email && u.email.toLowerCase().trim() === cleanEmail);
+
+  var allCourses = JSON.parse(localStorage.getItem("edu_courses")) || [];
+  var enrolledIds = (targetUser && targetUser.enrolledCourses) ? targetUser.enrolledCourses : [];
+  var enrolledCoursesList = allCourses.filter(c => enrolledIds.includes(c.id));
+
+  var submissions = JSON.parse(localStorage.getItem("edu_submissions")) || [];
+  var userSubs = submissions.filter(s => s.userEmail && s.userEmail.toLowerCase().trim() === cleanEmail);
+
+  var avgScore = 0;
+  if (userSubs.length > 0) {
+    var totalPct = userSubs.reduce((acc, cur) => acc + (Number(cur.percentage) || 0), 0);
+    avgScore = Math.round(totalPct / userSubs.length);
   }
 
-  var existing = document.getElementById("hkMandatoryNotifModal");
-  if (existing) return;
+  var tracking = JSON.parse(localStorage.getItem("edu_course_watch_logs")) || {};
+  var totalSec = 0;
+  Object.keys(tracking).forEach(cId => {
+    if (tracking[cId][cleanEmail]) {
+      totalSec += tracking[cId][cleanEmail].totalSeconds || 0;
+    }
+  });
 
-  var modal = document.createElement("div");
-  modal.id = "hkMandatoryNotifModal";
-  modal.style.cssText = "position:fixed; inset:0; background:rgba(8,10,33,0.85); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; z-index:999998; padding:16px;";
-  modal.innerHTML = 
-    '<div style="background:#ffffff; color:#191b26; border-radius:20px; padding:28px 24px; max-width:440px; width:100%; box-shadow:0 25px 50px rgba(0,0,0,0.4); text-align:center; border:2px solid #00D2FF;">' +
-      '<div style="width:56px; height:56px; background:rgba(0,210,255,0.14); color:#0284C7; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 14px; font-size:26px;">🔔</div>' +
-      '<h3 style="font-size:18px; font-weight:900; color:#0E1338; margin-bottom:8px;">تفعيل إشعارات المنصة</h3>' +
-      '<p style="font-size:13.5px; color:#64748B; margin-bottom:20px; line-height:1.6;">' +
-        'لضمان استلام مواعيد المحاضرات الجديدة، نتائج الامتحانات، واعتمادات الدفع فوراً على هاتفك، يُرجى تفعيل الإشعارات.' +
-      '</p>' +
-      '<div style="display:flex; gap:10px;">' +
-        '<button id="hkAllowNotifBtn" style="flex:2; padding:12px; background:linear-gradient(135deg, #00D2FF, #0284C7); color:#fff; border:none; border-radius:12px; font-weight:900; font-size:14px; cursor:pointer;">تفعيل الإشعارات الآن 🔔</button>' +
-        '<button id="hkDismissNotifBtn" style="flex:1; padding:12px; background:#F1F5F9; color:#64748B; border:1px solid #CBD5E1; border-radius:12px; font-weight:800; font-size:13px; cursor:pointer;">لاحقاً</button>' +
-      '</div>' +
-    '</div>';
-
-  document.body.appendChild(modal);
-
-  document.getElementById("hkAllowNotifBtn").onclick = function() {
-    modal.remove();
-    localStorage.setItem("hk_notif_prompt_handled", "true");
-    Notification.requestPermission().then(function(permission) {
-      if (permission === "granted") {
-        showToast("تم تفعيل إشعارات المنصة بنجاح على جهازك", "success");
-        updateNavbarAndAuthGuards();
-      }
-    });
-  };
-
-  document.getElementById("hkDismissNotifBtn").onclick = function() {
-    modal.remove();
-    localStorage.setItem("hk_notif_prompt_handled", "true");
+  return {
+    enrolledCount: enrolledCoursesList.length,
+    enrolledList: enrolledCoursesList,
+    completedExams: userSubs.length,
+    submissionsList: userSubs,
+    avgScore: avgScore,
+    totalHours: Math.round(totalSec / 3600),
+    totalSeconds: totalSec
   };
 }
-window.checkAndPromptNotifications = checkAndPromptNotifications;
+window.calculateStudentMetrics = calculateStudentMetrics;
 
+// التحقق من الصلاحيات والمراقبة اللحظية
+function monitorCurrentUserStatus() {
+  var user = getCurrentUser();
+  if (!user || !user.email) return;
+
+  var interval = setInterval(function() {
+    if (window.firebase && firebase.firestore) {
+      clearInterval(interval);
+
+      firebase.firestore().collection("users").where("email", "==", user.email.toLowerCase().trim())
+        .onSnapshot(function(snapshot) {
+          if (snapshot.empty) {
+            forceLogoutUser();
+          } else {
+            var liveDoc = snapshot.docs[0].data();
+            liveDoc.uid = snapshot.docs[0].id;
+
+            var roleChanged = liveDoc.role !== user.role;
+            var coursesChanged = JSON.stringify(liveDoc.enrolledCourses || []) !== JSON.stringify(user.enrolledCourses || []);
+
+            if (roleChanged || coursesChanged) {
+              localStorage.setItem("current_user", JSON.stringify(liveDoc));
+              user = liveDoc;
+
+              if (roleChanged) {
+                showToast("تم تحديث رتبتك الإدارية إلى: " + liveDoc.role, "info", "تحديث الصلاحيات");
+                setTimeout(function() { window.location.reload(); }, 600);
+              } else if (coursesChanged) {
+                showToast("تم تحديث وتفعيل الكورسات بحسابك بنجاح", "success", "تفعيل المحتوى");
+                if (typeof renderStudentDashboard === "function") renderStudentDashboard();
+              }
+              updateNavbarAndAuthGuards();
+            }
+          }
+        }, function() {
+          forceLogoutUser();
+        });
+    }
+  }, 200);
+}
+
+function forceLogoutUser() {
+  localStorage.removeItem("current_user");
+  if (window.firebase && firebase.auth) {
+    try { firebase.auth().signOut(); } catch(e) {}
+  }
+  showToast("تم إنهاء الجلسة أو حذف الحساب من قِبل الإدارة.", "error", "تنبيه");
+  setTimeout(function() { window.location.replace("login.html"); }, 400);
+}
+
+// الإشعارات السحابية
 var swRegistration = null;
 function registerDeviceServiceWorker() {
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js")
-      .then(function(reg) { swRegistration = reg; })
-      .catch(function(err) { console.log("SW Error:", err); });
-  }
-}
-
-async function sendSystemPushNotification(title, body, targetEmail, targetUrl) {
-  var user = getCurrentUser() || {};
-  if (window.FirebaseService) {
-    try {
-      await window.FirebaseService.pushNotificationToCloud(title, body, targetEmail, targetUrl, user.email);
-    } catch(e) {}
+      .then(reg => { swRegistration = reg; })
+      .catch(err => console.log("SW Reg:", err));
   }
 }
 
@@ -122,12 +157,6 @@ function triggerDeviceNativeNotification(title, body, targetUrl) {
       title: title,
       body: body,
       url: targetUrl || "dashboard.html"
-    });
-  } else if (swRegistration && swRegistration.showNotification) {
-    swRegistration.showNotification(title, {
-      body: body,
-      icon: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=192&q=80",
-      data: { url: targetUrl || "dashboard.html" }
     });
   } else {
     try {
@@ -143,71 +172,6 @@ function triggerDeviceNativeNotification(title, body, targetUrl) {
   }
 }
 
-// 3. المراقبة اللحظية الشاملة للحساب (تحديث الرتبة، تفعيل الكورسات، أو الطرد الفوري إذا حُذف)
-function monitorCurrentUserStatus() {
-  var user = getCurrentUser();
-  if (!user || !user.email) return;
-
-  var interval = setInterval(function() {
-    if (window.firebase && firebase.firestore) {
-      clearInterval(interval);
-
-      // الاستماع للوثيقة المباشرة بالبريد الإلكتروني لضمان التطابق التام مع أي تعديل أو حذف
-      firebase.firestore().collection("users").where("email", "==", user.email.toLowerCase()).onSnapshot(function(snapshot) {
-        if (snapshot.empty) {
-          // الحساب غير موجود في السحابة = تم حذفه
-          forceLogoutUser();
-        } else {
-          var liveDoc = snapshot.docs[0].data();
-          liveDoc.uid = snapshot.docs[0].id;
-
-          var roleChanged = liveDoc.role !== user.role;
-          var coursesChanged = JSON.stringify(liveDoc.enrolledCourses || []) !== JSON.stringify(user.enrolledCourses || []);
-          var customLessonsChanged = JSON.stringify(liveDoc.customAllowedLessons || {}) !== JSON.stringify(user.customAllowedLessons || {});
-
-          if (roleChanged || coursesChanged || customLessonsChanged) {
-            localStorage.setItem("current_user", JSON.stringify(liveDoc));
-            user = liveDoc;
-
-            if (roleChanged) {
-              showToast("تم تحديث رتبتك الإدارية إلى: " + liveDoc.role, "info", "تحديث الصلاحيات");
-              setTimeout(function() {
-                if (liveDoc.role === "SUPER_ADMIN" || liveDoc.role === "ADMIN") {
-                  window.location.replace("admin.html");
-                } else if (liveDoc.role === "SUPPORT") {
-                  window.location.replace("support.html");
-                } else {
-                  window.location.replace("dashboard.html");
-                }
-              }, 800);
-            } else if (coursesChanged || customLessonsChanged) {
-              showToast("تم تحديث الكورسات والمحاضرات المفعلة في حسابك بنجاح ✓", "success", "تفعيل المحتوى");
-              if (typeof renderStudentDashboard === "function") {
-                renderStudentDashboard();
-              }
-            }
-            updateNavbarAndAuthGuards();
-          }
-        }
-      }, function() {
-        forceLogoutUser();
-      });
-    }
-  }, 200);
-}
-
-function forceLogoutUser() {
-  localStorage.removeItem("current_user");
-  if (window.firebase && firebase.auth) {
-    try { firebase.auth().signOut(); } catch(e) {}
-  }
-  showToast("تم حذف هذا الحساب من قِبل الإدارة.", "error", "تنبيه أمني");
-  setTimeout(function() {
-    window.location.replace("login.html");
-  }, 400);
-}
-
-// 4. استماع لحظي للإشعارات السحابية
 function initRealtimeNotificationsReceiver() {
   var lastKnownNotifId = localStorage.getItem("hk_last_received_notif_id") || "";
   var isFirstLoad = true;
@@ -230,9 +194,7 @@ function initRealtimeNotificationsReceiver() {
           lastKnownNotifId = latest.id;
           localStorage.setItem("hk_last_received_notif_id", latest.id);
 
-          if (user && latest.senderEmail && user.email.toLowerCase() === latest.senderEmail) {
-            return;
-          }
+          if (user && latest.senderEmail && user.email.toLowerCase() === latest.senderEmail) return;
 
           if (!user && latest.targetEmail !== "ALL") return;
           if (user && (latest.targetEmail === "ALL" || latest.targetEmail === user.email.toLowerCase())) {
@@ -340,9 +302,7 @@ function updateNavbarAndAuthGuards() {
       } else if (user.role === "SUPPORT") {
         authBox.innerHTML = '<a href="support.html" class="nav-btn-primary">شات الدعم</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
       } else {
-        var isNotifActive = ("Notification" in window) && Notification.permission === "granted";
-        var notifBtn = isNotifActive ? "" : '<button onclick="checkAndPromptNotifications()" class="notif-bell-btn" title="تفعيل الإشعارات">🔔</button>';
-        authBox.innerHTML = notifBtn + '<a href="dashboard.html" class="nav-btn-primary">لوحة الطالب (' + sanitizeText(user.fullName.split(" ")[0]) + ')</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
+        authBox.innerHTML = '<a href="dashboard.html" class="nav-btn-primary">لوحة الطالب (' + sanitizeText(user.fullName.split(" ")[0]) + ')</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
       }
     } else {
       authBox.innerHTML = '<a href="login.html" class="nav-btn-link">تسجيل الدخول</a><a href="register.html" class="nav-btn-primary">حساب جديد</a>';
@@ -354,21 +314,19 @@ async function handleEnrollClick(courseId) {
   var user = getCurrentUser();
   if (!user) {
     showToast("يرجى تسجيل الدخول أولاً للاشتراك في الكورس", "info");
-    setTimeout(function() {
-      window.location.href = "login.html?redirect=" + encodeURIComponent(window.location.href);
-    }, 1200);
+    setTimeout(function() { window.location.href = "login.html?redirect=" + encodeURIComponent(window.location.href); }, 1200);
     return;
   }
 
   if (user.role !== "STUDENT") {
     showToast("الحسابات الإدارية تستعرض المحتوى مباشرة", "info");
-    setTimeout(function() { window.location.href = "course-view.html?id=" + courseId; }, 800);
+    setTimeout(function() { window.location.href = "course-view.html?id=" + courseId; }, 600);
     return;
   }
 
   if (user.enrolledCourses && user.enrolledCourses.includes(courseId)) {
     showToast("أنت مشترك بالفعل في هذا الكورس", "success");
-    setTimeout(function() { window.location.href = "course-view.html?id=" + courseId; }, 800);
+    setTimeout(function() { window.location.href = "course-view.html?id=" + courseId; }, 600);
     return;
   }
 
@@ -388,9 +346,8 @@ async function handleEnrollClick(courseId) {
 
     user.enrolledCourses = newEnrolled;
     localStorage.setItem("current_user", JSON.stringify(user));
-
     showToast("تم تفعيل الكورس في حسابك بنجاح", "success");
-    setTimeout(function() { window.location.href = "course-view.html?id=" + courseId; }, 1000);
+    setTimeout(function() { window.location.href = "course-view.html?id=" + courseId; }, 800);
     return;
   }
 
@@ -413,7 +370,7 @@ window.handleHeroEnroll = function() {
 window.handleEnrollClick = handleEnrollClick;
 window.logout = logout;
 
-// 5. شاشة اللودينج الكيميائية
+// شاشة اللودينج الكيميائية
 function injectChemicalPreloader() {
   if (document.getElementById("chemicalPreloader")) return;
   var preloader = document.createElement("div");
@@ -440,7 +397,7 @@ function injectChemicalPreloader() {
   document.body.prepend(preloader);
 
   var startTime = Date.now();
-  var duration = 1400;
+  var duration = 1200;
   var barFill = document.getElementById("loaderBarFill");
   var counterNum = document.getElementById("loaderCounterNum");
 
@@ -456,12 +413,11 @@ function injectChemicalPreloader() {
       setTimeout(function() {
         preloader.classList.add("hide-preloader");
         setTimeout(function() { preloader.remove(); }, 350);
-      }, 60);
+      }, 50);
     }
   }, 25);
 }
 
-// 6. استماع لحظي عام للكورسات والامتحانات
 function initGlobalRealtimeSync() {
   var interval = setInterval(function() {
     if (window.FirebaseService && window.firebase && firebase.firestore) {
@@ -472,6 +428,8 @@ function initGlobalRealtimeSync() {
       window.FirebaseService.subscribeExams(function(exams) {
         if (typeof renderGeneralExams === "function") renderGeneralExams(exams);
       });
+      window.FirebaseService.subscribeUsers();
+      window.FirebaseService.subscribeSubmissions();
     }
   }, 250);
 }
@@ -483,11 +441,4 @@ document.addEventListener("DOMContentLoaded", function() {
   monitorCurrentUserStatus();
   initGlobalRealtimeSync();
   initRealtimeNotificationsReceiver();
-
-  var currentUser = getCurrentUser();
-  if (currentUser && currentUser.role === "STUDENT") {
-    if (localStorage.getItem("hk_notif_prompt_handled") !== "true") {
-      setTimeout(checkAndPromptNotifications, 1200);
-    }
-  }
 });
