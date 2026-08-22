@@ -475,7 +475,7 @@
         <header class="topbar">
           <div>
             <h1 style="font-size:22px; font-weight:900; color:var(--royal-indigo-base);">طلبات الدفع والتحصيل</h1>
-            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">مراجعة الإيصالات بالصورة والتفعيل الفوري والمباشر في حساب الطالب</p>
+            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">مراجعة الإيصالات والاعتماد أو الرفض مع التفعيل الفوري</p>
           </div>
         </header>
         <div class="table-container">
@@ -638,7 +638,7 @@
         <button type="button" onclick="closeModal('editStaffRoleModal')" style="background:none; border:none; font-size:16px; cursor:pointer;">✕</button>
       </div>
       <div>
-        <input type="hidden" id="editStaffTargetEmail">
+        <input type="hidden" id="editStaffTargetUid">
         <p style="margin-bottom:12px; font-size:13.5px; color:var(--text-muted);">تعديل رتبة: <strong id="editStaffTargetName" style="color:var(--royal-indigo-base);"></strong></p>
         <div class="form-group">
           <label>الرتبة الجديدة:</label>
@@ -667,7 +667,7 @@
         <button type="button" onclick="closeModal('studentCoursePermissionsModal')" style="background:none; border:none; font-size:18px; cursor:pointer;">✕</button>
       </div>
 
-      <input type="hidden" id="permStudentEmailHidden">
+      <input type="hidden" id="permStudentUidHidden">
       <div id="permissionsCoursesListContainer" style="max-height:55vh; overflow-y:auto; padding-left:4px;"></div>
 
       <div style="display:flex; gap:10px; margin-top:18px; border-top:1px solid var(--border-subtle); padding-top:14px;">
@@ -1004,12 +1004,12 @@
     var examsChartInstance = null;
 
     function openModal(id) { 
-      var m = document.getElementById(id);
+      var m = document.getElementById(id); 
       if (m) m.style.display = "flex"; 
     }
     
     function closeModal(id) { 
-      var m = document.getElementById(id);
+      var m = document.getElementById(id); 
       if (m) m.style.display = "none"; 
     }
 
@@ -1167,12 +1167,12 @@
       return lessons;
     }
 
-    function openStudentCoursePermissionsModal(email, name) {
-      document.getElementById("permStudentEmailHidden").value = email;
+    function openStudentCoursePermissionsModal(uid, name) {
+      document.getElementById("permStudentUidHidden").value = uid;
       document.getElementById("permStudentNameDisplay").innerText = name;
 
       var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-      var student = users.find(function(u) { return u.email === email; });
+      var student = users.find(function(u) { return u.uid === uid; });
       if (!student) {
         showToast("لم يتم العثور على بيانات الطالب", "error");
         return;
@@ -1223,9 +1223,9 @@
     }
 
     async function saveStudentCoursePermissions() {
-      var studentEmail = document.getElementById("permStudentEmailHidden").value;
+      var studentUid = document.getElementById("permStudentUidHidden").value;
       var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-      var uIdx = users.findIndex(function(u) { return u.email === studentEmail; });
+      var uIdx = users.findIndex(function(u) { return u.uid === studentUid; });
 
       if (uIdx !== -1) {
         var newEnrolled = [];
@@ -1255,7 +1255,7 @@
 
         if (window.FirebaseService) {
           try {
-            await window.FirebaseService.updateUserEnrollmentsByEmail(studentEmail, newEnrolled, newCustomLessons);
+            await window.FirebaseService.updateUserEnrollmentsByUid(studentUid, newEnrolled, newCustomLessons);
           } catch (e) {
             console.warn("تحديث السحابة:", e.message);
           }
@@ -1264,7 +1264,7 @@
         localStorage.setItem("edu_users", JSON.stringify(users));
 
         var currentLoggedIn = getCurrentUser();
-        if (currentLoggedIn && currentLoggedIn.email.toLowerCase() === studentEmail.toLowerCase()) {
+        if (currentLoggedIn && currentLoggedIn.uid === studentUid) {
           currentLoggedIn.enrolledCourses = newEnrolled;
           currentLoggedIn.customAllowedLessons = newCustomLessons;
           localStorage.setItem("current_user", JSON.stringify(currentLoggedIn));
@@ -1704,7 +1704,7 @@
       reader.readAsDataURL(file);
     }
 
-    // الاعتماد الفوري المباشر للدفع مع تفعيل الكورس للطالب
+    // الاعتماد الفوري المباشر للدفع وتفعيل الكورس في Firestore
     async function approvePayment(id) {
       var confirmed = await customConfirm("هل تؤكد قبول وتفعيل هذا الطلب وإرسال إشعار فوري للطالب؟", "اعتماد الدفع");
       if (!confirmed) return;
@@ -1712,28 +1712,44 @@
       var payments = JSON.parse(localStorage.getItem("edu_payments")) || [];
       var p = payments.find(function(x) { return x.id === id; });
       if (p) {
-        p.status = "APPROVED";
+        showToast("جاري تفعيل الكورس للطالب...", "info");
 
         if (window.FirebaseService) {
           await window.FirebaseService.updatePaymentStatus(id, "APPROVED");
         }
 
         var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-        var cleanEmail = p.userEmail.toLowerCase().trim();
-        var u = users.find(function(x) { return x.email && x.email.toLowerCase().trim() === cleanEmail; });
-        var targetEnrolled = (u && u.enrolledCourses) ? [...u.enrolledCourses] : [];
-        if (!targetEnrolled.includes(p.courseId)) {
-          targetEnrolled.push(p.courseId);
+        var targetUser = users.find(function(x) { 
+          return (p.userId && x.uid === p.userId) || (p.userEmail && x.email && x.email.toLowerCase() === p.userEmail.toLowerCase()); 
+        });
+
+        if (targetUser && targetUser.uid) {
+          var targetEnrolled = targetUser.enrolledCourses ? [...targetUser.enrolledCourses] : [];
+          if (!targetEnrolled.includes(p.courseId)) {
+            targetEnrolled.push(p.courseId);
+          }
+
+          if (window.FirebaseService) {
+            try {
+              await window.FirebaseService.updateUserEnrollmentsByUid(targetUser.uid, targetEnrolled);
+              await window.FirebaseService.pushNotificationToCloud("تم تفعيل الكورس بنجاح", "مرحباً " + p.userName + "، تم اعتماد إيصال الدفع وتفعيل كورس: " + p.courseTitle + " في حسابك.", targetUser.uid);
+            } catch (err) {}
+          }
         }
 
-        if (window.FirebaseService) {
-          try {
-            await window.FirebaseService.updateUserEnrollmentsByEmail(cleanEmail, targetEnrolled);
-          } catch (err) {}
-        }
-
-        await sendSystemPushNotification("تم تفعيل الكورس بنجاح", "مرحباً " + p.userName + "، تم اعتماد إيصال الدفع وتفعيل كورس: " + p.courseTitle + " في حسابك.", cleanEmail);
         showToast("تم تفعيل الكورس في حساب الطالب سحابياً وإرسال الإشعار الفوري ✓", "success");
+      }
+    }
+
+    // رفض طلب الدفع
+    async function rejectPayment(id) {
+      var confirmed = await customConfirm("هل تريد رفض طلب الدفع هذا؟", "رفض الطلب");
+      if (!confirmed) return;
+
+      if (window.FirebaseService) {
+        showToast("جاري رفض الطلب...", "info");
+        await window.FirebaseService.updatePaymentStatus(id, "REJECTED");
+        showToast("تم رفض الطلب بنجاح", "info");
       }
     }
 
@@ -1751,7 +1767,7 @@
       }
     }
 
-    async function deleteUser(email) {
+    async function deleteUserByUidAction(uid) {
       var currentUser = getCurrentUser();
       if (!currentUser || currentUser.role !== "SUPER_ADMIN") {
         showToast("حذف الحسابات مقتصر على المشرف العام فقط", "error");
@@ -1762,14 +1778,14 @@
       if (confirmed) {
         if (window.FirebaseService) {
           try {
-            await window.FirebaseService.deleteUserCascade(email);
+            await window.FirebaseService.deleteUserCascadeByUid(uid);
           } catch (e) {
             console.warn("حذف سحابي:", e.message);
           }
         }
 
         var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-        localStorage.setItem("edu_users", JSON.stringify(users.filter(function(u) { return u.email !== email; })));
+        localStorage.setItem("edu_users", JSON.stringify(users.filter(function(u) { return u.uid !== uid; })));
         showToast("تم مسح الحساب وبياناته سحابياً بنجاح وسيتم طرده فوراً ✓", "success");
       }
     }
@@ -1809,7 +1825,7 @@
       var enrolledUsers = allStudentsCache.filter(function(u) { return u.enrolledCourses && u.enrolledCourses.includes(courseId); });
 
       currentWatchStatsList = enrolledUsers.map(function(u) {
-        var log = courseLogs[u.email] || { totalSeconds: 0, lastActive: "لم يبدأ بعد" };
+        var log = courseLogs[u.uid] || courseLogs[u.email] || { totalSeconds: 0, lastActive: "لم يبدأ بعد" };
         var accessCount = (u.courseAccessCount && u.courseAccessCount[courseId]) || 0;
         return {
           fullName: u.fullName,
@@ -1959,7 +1975,7 @@
         select.innerHTML = '<option value="">لا يوجد مستخدمون مسجلون متاحون للترقية</option>';
       } else {
         select.innerHTML = eligibleUsers.map(function(u) {
-          return '<option value="' + u.email + '">' + u.fullName + ' (' + u.email + ' - ' + (u.studentPhone || "") + ')</option>';
+          return '<option value="' + u.uid + '">' + u.fullName + ' (' + u.email + ' - ' + (u.studentPhone || "") + ')</option>';
         }).join("");
       }
 
@@ -1974,10 +1990,10 @@
         return;
       }
 
-      var targetEmail = document.getElementById("staffRegisteredUserSelect").value;
+      var targetUid = document.getElementById("staffRegisteredUserSelect").value;
       var newRole = document.getElementById("staffRoleAssignSelect").value;
 
-      if (!targetEmail) {
+      if (!targetUid) {
         showToast("يرجى اختيار حساب مسجل", "error");
         return;
       }
@@ -1986,9 +2002,9 @@
 
       try {
         if (window.FirebaseService) {
-          await window.FirebaseService.updateUserRoleByEmail(targetEmail, newRole);
+          await window.FirebaseService.updateUserRoleByUid(targetUid, newRole);
         }
-        logAdminAction("إسناد رتبة إدارية", "تمت ترقية الحساب: " + targetEmail + " إلى رتبة: " + newRole);
+        logAdminAction("إسناد رتبة إدارية", "تمت ترقية الحساب برقم UID: " + targetUid + " إلى رتبة: " + newRole);
         closeModal("addStaffModal");
         showToast("تمت ترقية الحساب سحابياً وتفعيل صلاحياته فوراً ✓", "success");
       } catch (err) {
@@ -1996,13 +2012,13 @@
       }
     });
 
-    function openEditStaffRoleModal(email, name, currentRole) {
+    function openEditStaffRoleModal(uid, name, currentRole) {
       var user = getCurrentUser();
       if (!user || user.role !== "SUPER_ADMIN") {
         showToast("تعديل الرتب مقتصر على المشرف العام فقط", "error");
         return;
       }
-      document.getElementById("editStaffTargetEmail").value = email;
+      document.getElementById("editStaffTargetUid").value = uid;
       document.getElementById("editStaffTargetName").innerText = name;
       document.getElementById("editStaffNewRoleSelect").value = currentRole;
       openModal("editStaffRoleModal");
@@ -2015,16 +2031,16 @@
         return;
       }
 
-      var targetEmail = document.getElementById("editStaffTargetEmail").value;
+      var targetUid = document.getElementById("editStaffTargetUid").value;
       var newRole = document.getElementById("editStaffNewRoleSelect").value;
 
       showToast("جاري حفظ التعديل وتحديث صلاحيات المسؤول فورياً...", "info");
 
       try {
         if (window.FirebaseService) {
-          await window.FirebaseService.updateUserRoleByEmail(targetEmail, newRole);
+          await window.FirebaseService.updateUserRoleByUid(targetUid, newRole);
         }
-        logAdminAction("تعديل رتبة مسؤول", "تم تعديل رتبة " + targetEmail + " إلى " + newRole);
+        logAdminAction("تعديل رتبة مسؤول", "تم تعديل رتبة الحساب " + targetUid + " إلى " + newRole);
         closeModal("editStaffRoleModal");
         showToast("تم تحديث رتبة وصلاحيات المسؤول سحابياً وفورياً ✓", "success");
       } catch (err) {
@@ -2101,7 +2117,7 @@
       var pushTarget = document.getElementById("pushTargetSelect");
       if (pushTarget) {
         pushTarget.innerHTML = '<option value="ALL">جميع الطلاب المسجلين بالمنصة</option>' +
-          allStudentsCache.map(function(s) { return '<option value="' + s.email + '">' + s.fullName + ' (' + s.email + ')</option>'; }).join("");
+          allStudentsCache.map(function(s) { return '<option value="' + s.uid + '">' + s.fullName + ' (' + s.email + ')</option>'; }).join("");
       }
 
       var coursesBody = document.getElementById("coursesTableBody");
@@ -2143,10 +2159,20 @@
       }).join("");
 
       document.getElementById("paymentsTableBody").innerHTML = payments.map(function(p) {
+        var actionBtns = "";
+        if (p.status === "PENDING") {
+          actionBtns = '<button class="btn-action btn-action-success" onclick="approvePayment(\'' + p.id + '\')">قبول وتفعيل</button>' +
+                       '<button class="btn-action btn-action-danger" onclick="rejectPayment(\'' + p.id + '\')">رفض الطلب</button>';
+        } else if (p.status === "APPROVED") {
+          actionBtns = '<span style="color:#10b981; font-weight:bold;">مفعل ✓</span>';
+        } else {
+          actionBtns = '<span style="color:#ef4444; font-weight:bold;">مرفوض ✕</span>';
+        }
+
         return "<tr>" +
           "<td>" + p.userName + "</td><td>" + p.studentPhone + "</td><td>" + p.courseTitle + "</td><td>" + p.amount + " ج.م</td>" +
           '<td><button type="button" class="btn-action btn-action-primary" onclick="viewReceiptImage(\'' + p.receipt + '\')">معاينة الإيصال</button></td>' +
-          "<td>" + (p.status === "PENDING" ? '<button class="btn-action btn-action-success" onclick="approvePayment(' + p.id + ')">قبول وتفعيل وإشعار</button>' : '<span style="color:#10b981; font-weight:bold;">مفعل</span>') + "</td>" +
+          "<td>" + actionBtns + "</td>" +
         "</tr>";
       }).reverse().join("");
 
@@ -2162,7 +2188,7 @@
               '<td><strong style="color:#ef4444;">' + h.attackType + "</strong></td>" +
               "<td>" + h.userName + '<br><small style="color:var(--text-muted);">' + h.userEmail + "</small></td>" +
               '<td style="font-size:12px; max-width:240px; white-space:normal;">' + h.details + "</td>" +
-              '<td><button class="btn-action btn-action-danger" onclick="deleteUser(\'' + h.userEmail + '\')">حظر الحساب</button></td>' +
+              '<td><button class="btn-action btn-action-danger" onclick="deleteUserByUidAction(\'' + h.userUid + '\')">حظر الحساب</button></td>' +
             "</tr>";
           }).join("");
         }
@@ -2174,8 +2200,8 @@
 
         if (isSuperAdmin) {
           if (!isTargetSuper) {
-            actionBtns = '<button class="btn-action btn-action-primary" onclick="openEditStaffRoleModal(\'' + s.email + '\', \'' + s.fullName.replace(/'/g, "\\'") + '\', \'' + s.role + '\')" style="margin-left:4px;">تعديل الرتبة</button>' +
-                         '<button class="btn-action btn-action-danger" onclick="deleteUser(\'' + s.email + '\')">إلغاء الحساب</button>';
+            actionBtns = '<button class="btn-action btn-action-primary" onclick="openEditStaffRoleModal(\'' + s.uid + '\', \'' + s.fullName.replace(/'/g, "\\'") + '\', \'' + s.role + '\')" style="margin-left:4px;">تعديل الرتبة</button>' +
+                         '<button class="btn-action btn-action-danger" onclick="deleteUserByUidAction(\'' + s.uid + '\')">إلغاء الحساب</button>';
           } else {
             actionBtns = '<span style="color:var(--cyan-accent); font-weight:bold; font-size:12px;">المشرف العام</span>';
           }
@@ -2209,7 +2235,7 @@
       }
 
       tbody.innerHTML = studentsList.map(function(s) {
-        var m = window.calculateStudentMetrics ? window.calculateStudentMetrics(s.email) : { enrolledCount: (s.enrolledCourses || []).length, completedExams: 0, avgScore: 0, totalHours: 0 };
+        var m = window.calculateStudentMetrics ? window.calculateStudentMetrics(s.uid) : { enrolledCount: (s.enrolledCourses || []).length, completedExams: 0, avgScore: 0, totalHours: 0 };
         return "<tr>" +
           "<td><strong>" + s.fullName + "</strong></td>" +
           "<td>" + s.email + "</td>" +
@@ -2220,9 +2246,9 @@
           "<td><strong>" + m.avgScore + "%</strong></td>" +
           "<td>" + m.totalHours + " ساعة</td>" +
           "<td>" +
-            '<button type="button" class="btn-action btn-action-success" onclick="openStudentCoursePermissionsModal(\'' + s.email + '\', \'' + s.fullName.replace(/'/g, "\\'") + '\')" style="margin-left:4px;">إدارة الكورسات</button>' +
-            '<button type="button" class="btn-action btn-action-primary" onclick="viewStudentDetails(\'' + s.email + '\')" style="margin-left:4px;">الملف</button>' +
-            '<button type="button" class="btn-action btn-action-danger" onclick="deleteUser(\'' + s.email + '\')">حذف شامل</button>' +
+            '<button type="button" class="btn-action btn-action-success" onclick="openStudentCoursePermissionsModal(\'' + s.uid + '\', \'' + s.fullName.replace(/'/g, "\\'") + '\')" style="margin-left:4px;">إدارة الكورسات</button>' +
+            '<button type="button" class="btn-action btn-action-primary" onclick="viewStudentDetails(\'' + s.uid + '\')" style="margin-left:4px;">الملف</button>' +
+            '<button type="button" class="btn-action btn-action-danger" onclick="deleteUserByUidAction(\'' + s.uid + '\')">حذف شامل</button>' +
           "</td>" +
         "</tr>";
       }).join("");
@@ -2243,13 +2269,13 @@
       renderStudentsTable(filtered);
     }
 
-    function viewStudentDetails(email) {
-      var student = allStudentsCache.find(function(s) { return s.email === email; });
+    function viewStudentDetails(uid) {
+      var student = allStudentsCache.find(function(s) { return s.uid === uid; });
       if (!student) return;
 
       var allCourses = JSON.parse(localStorage.getItem("edu_courses")) || [];
       var submissions = JSON.parse(localStorage.getItem("edu_submissions")) || [];
-      var studentSubs = submissions.filter(function(sub) { return sub.userEmail === email; });
+      var studentSubs = submissions.filter(function(sub) { return sub.userId === uid || sub.userEmail === student.email; });
 
       var enrolledCourseTitles = allCourses
         .filter(function(c) { return student.enrolledCourses && student.enrolledCourses.includes(c.id); })

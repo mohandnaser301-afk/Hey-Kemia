@@ -6,7 +6,6 @@
   <title>مشاهدة المحاضرة - هي كيميا !</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    /* منع النسخ وتحديد النصوص */
     body {
       user-select: none;
       -webkit-user-select: none;
@@ -36,7 +35,6 @@
       border: none;
       pointer-events: auto;
     }
-    /* علامة مائية متحركة لمنع تصوير الشاشة */
     .secure-watermark {
       position: absolute;
       color: rgba(255, 255, 255, 0.28);
@@ -142,7 +140,6 @@
     var currentLessonIdx = 0;
     var watchTimerInterval = null;
 
-    // حماية إضافية ضد DevTools
     document.addEventListener("keydown", function(e) {
       if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67))) {
         e.preventDefault();
@@ -173,18 +170,17 @@
       });
     }
 
-    function startTrackingWatchTime(userEmail, courseId) {
+    function startTrackingWatchTime(userUid, courseId) {
       if (watchTimerInterval) clearInterval(watchTimerInterval);
-      var cleanEmail = userEmail.toLowerCase().trim();
 
       watchTimerInterval = setInterval(function() {
         var tracking = JSON.parse(localStorage.getItem("edu_course_watch_logs")) || {};
         if (!tracking[courseId]) tracking[courseId] = {};
-        if (!tracking[courseId][cleanEmail]) {
-          tracking[courseId][cleanEmail] = { totalSeconds: 0, lastActive: new Date().toLocaleTimeString("ar-EG") };
+        if (!tracking[courseId][userUid]) {
+          tracking[courseId][userUid] = { totalSeconds: 0, lastActive: new Date().toLocaleTimeString("ar-EG") };
         }
-        tracking[courseId][cleanEmail].totalSeconds += 5;
-        tracking[courseId][cleanEmail].lastActive = new Date().toLocaleTimeString("ar-EG");
+        tracking[courseId][userUid].totalSeconds += 5;
+        tracking[courseId][userUid].lastActive = new Date().toLocaleTimeString("ar-EG");
         localStorage.setItem("edu_course_watch_logs", JSON.stringify(tracking));
       }, 5000);
     }
@@ -196,7 +192,6 @@
         return;
       }
 
-      // وضع بيانات الطالب في العلامة المائية
       var wm = document.getElementById("videoDynamicWatermark");
       if (wm) wm.innerText = user.fullName + " | " + user.studentPhone;
 
@@ -211,7 +206,6 @@
         return;
       }
 
-      // التحقق الصارم من صلاحية الطالب في الكورس
       var isStaff = user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "SUPPORT";
       var isEnrolled = user.enrolledCourses && user.enrolledCourses.includes(courseId);
 
@@ -240,7 +234,7 @@
         ).join("");
 
         playLesson(0);
-        startTrackingWatchTime(user.email, courseId);
+        startTrackingWatchTime(user.uid, courseId);
       }
     });
 

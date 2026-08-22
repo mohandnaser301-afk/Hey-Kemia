@@ -98,7 +98,6 @@ window.FirebaseService = {
       try {
         const userCredential = await fb.auth().createUserWithEmailAndPassword(cleanEmail, userData.password);
         uid = userCredential.user.uid;
-        // إرسال رسالة تفعيل البريد الإلكتروني تلقائياً
         await userCredential.user.sendEmailVerification();
       } catch (authErr) {
         if (authErr.code === 'auth/email-already-in-use') {
@@ -148,7 +147,6 @@ window.FirebaseService = {
           foundUser.uid = uid;
         }
 
-        // تحديث حالة تأكيد البريد إذا كان طالباً
         if (foundUser && foundUser.role === "STUDENT") {
           if (!fbUser.emailVerified) {
             localStorage.setItem("unverified_email", cleanEmail);
@@ -201,7 +199,7 @@ window.FirebaseService = {
     window.location.href = "login.html";
   },
 
-  // 2. إدارة المستخدمين والمزامنة والحذف الشامل
+  // 2. إدارة المستخدمين والمزامنة والحذف الشامل المبني على UID
   subscribeUsers(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -214,56 +212,47 @@ window.FirebaseService = {
     }
   },
 
-  async updateUserRoleByEmail(email, newRole) {
+  async updateUserRoleByUid(uid, newRole) {
     const fb = getFirebase();
-    if (fb && fb.firestore && email) {
-      const cleanEmail = email.toLowerCase().trim();
-      const qSnap = await fb.firestore().collection("users").where("email", "==", cleanEmail).get();
-      const promises = [];
-      qSnap.forEach(doc => {
-        promises.push(doc.ref.update({ role: newRole }));
-      });
-      await Promise.all(promises);
+    if (fb && fb.firestore && uid) {
+      await fb.firestore().collection("users").doc(uid).update({ role: newRole });
     }
   },
 
-  async updateUserEnrollmentsByEmail(email, enrolledCourses, customLessons) {
+  async updateUserEnrollmentsByUid(uid, enrolledCourses, customLessons) {
     const fb = getFirebase();
-    if (fb && fb.firestore && email) {
-      const cleanEmail = email.toLowerCase().trim();
-      const qSnap = await fb.firestore().collection("users").where("email", "==", cleanEmail).get();
-      const promises = [];
-      qSnap.forEach(doc => {
-        const updateData = { enrolledCourses: enrolledCourses };
-        if (customLessons) updateData.customAllowedLessons = customLessons;
-        promises.push(doc.ref.update(updateData));
-      });
-      await Promise.all(promises);
+    if (fb && fb.firestore && uid) {
+      const updateData = { enrolledCourses: enrolledCourses };
+      if (customLessons) updateData.customAllowedLessons = customLessons;
+      await fb.firestore().collection("users").doc(uid).update(updateData);
     }
   },
 
-  async deleteUserCascade(email) {
+  async deleteUserCascadeByUid(uid) {
     const fb = getFirebase();
-    if (fb && fb.firestore && email) {
-      const cleanEmail = email.toLowerCase().trim();
+    if (fb && fb.firestore && uid) {
       const batch = fb.firestore().batch();
 
-      const userSnap = await fb.firestore().collection("users").where("email", "==", cleanEmail).get();
-      userSnap.forEach(doc => batch.delete(doc.ref));
+      // 1. حذف وثيقة المستخدم
+      const userRef = fb.firestore().collection("users").doc(uid);
+      batch.delete(userRef);
 
-      const paySnap = await fb.firestore().collection("payments").where("userEmail", "==", cleanEmail).get();
+      // 2. حذف طلبات الدفع الخاصة بالـ UID
+      const paySnap = await fb.firestore().collection("payments").where("userId", "==", uid).get();
       paySnap.forEach(doc => batch.delete(doc.ref));
 
-      const subSnap = await fb.firestore().collection("submissions").where("userEmail", "==", cleanEmail).get();
+      // 3. حذف تسليمات الامتحانات الخاصة بالـ UID
+      const subSnap = await fb.firestore().collection("submissions").where("userId", "==", uid).get();
       subSnap.forEach(doc => batch.delete(doc.ref));
 
       await batch.commit();
 
+      // 4. حذف ثريد الدعم الفني ورسائله
       try {
-        const chatMsgs = await fb.firestore().collection("support_threads").doc(cleanEmail).collection("messages").get();
+        const chatMsgs = await fb.firestore().collection("support_threads").doc(uid).collection("messages").get();
         const chatBatch = fb.firestore().batch();
         chatMsgs.forEach(d => chatBatch.delete(d.ref));
-        chatBatch.delete(fb.firestore().collection("support_threads").doc(cleanEmail));
+        chatBatch.delete(fb.firestore().collection("support_threads").doc(uid));
         await chatBatch.commit();
       } catch (e) {}
     }
@@ -359,12 +348,11 @@ window.FirebaseService = {
     const fb = getFirebase();
     if (fb && fb.firestore) {
       submissionData.createdAt = new Date().toISOString();
-      submissionData.userEmail = submissionData.userEmail.toLowerCase().trim();
       await fb.firestore().collection("submissions").add(submissionData);
     }
   },
 
-  // 5. المدفوعات والاعتماد الفوري
+  // 5. المدفوعات والاعتماد الفوري للكورسات
   subscribePayments(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -383,7 +371,6 @@ window.FirebaseService = {
       if (paymentData.receipt && paymentData.receipt.startsWith("data:image")) {
         paymentData.receipt = await compressImageBase64(paymentData.receipt, 400, 400, 0.4);
       }
-      paymentData.userEmail = paymentData.userEmail.toLowerCase().trim();
       paymentData.createdAt = new Date().toISOString();
       paymentData.status = "PENDING";
       const ref = await fb.firestore().collection("payments").add(paymentData);
@@ -410,13 +397,13 @@ window.FirebaseService = {
     }
   },
 
-  async pushNotificationToCloud(title, body, targetEmail, targetUrl, senderEmail) {
+  async pushNotificationToCloud(title, body, targetUserId, targetUrl, senderEmail) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
       await fb.firestore().collection("notifications").add({
         title: title,
         body: body,
-        targetEmail: (targetEmail || "ALL").toLowerCase().trim(),
+        targetUserId: targetUserId || "ALL",
         targetUrl: targetUrl || "dashboard.html",
         senderEmail: (senderEmail || "").toLowerCase().trim(),
         createdAt: new Date().toISOString()
@@ -424,12 +411,11 @@ window.FirebaseService = {
     }
   },
 
-  // 7. منظومة الدعم الفني المنفصلة
-  subscribeStudentChat(studentEmail, callback) {
+  // 7. منظومة الدعم الفني المنفصل لكل طالب
+  subscribeStudentChat(studentUid, callback) {
     const fb = getFirebase();
-    if (fb && fb.firestore && studentEmail) {
-      const cleanEmail = studentEmail.toLowerCase().trim();
-      return fb.firestore().collection("support_threads").doc(cleanEmail).collection("messages")
+    if (fb && fb.firestore && studentUid) {
+      return fb.firestore().collection("support_threads").doc(studentUid).collection("messages")
         .orderBy("createdAt", "asc")
         .onSnapshot(snap => {
           const list = [];
@@ -446,7 +432,7 @@ window.FirebaseService = {
         .orderBy("lastMessageTime", "desc")
         .onSnapshot(snap => {
           const list = [];
-          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+          snap.forEach(doc => list.push({ uid: doc.id, ...doc.data() }));
           if (callback) callback(list);
         });
     }
@@ -455,22 +441,23 @@ window.FirebaseService = {
   async sendSupportMessage(msgData) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
-      const studentEmail = (msgData.studentEmail || "").toLowerCase().trim();
+      const studentUid = msgData.studentUid;
       const now = new Date().toISOString();
 
       const messageDoc = {
         text: msgData.text,
-        senderEmail: msgData.senderEmail.toLowerCase().trim(),
+        senderUid: msgData.senderUid,
         senderName: msgData.senderName,
         senderRole: msgData.senderRole || "STUDENT",
         createdAt: now
       };
 
-      await fb.firestore().collection("support_threads").doc(studentEmail).collection("messages").add(messageDoc);
+      await fb.firestore().collection("support_threads").doc(studentUid).collection("messages").add(messageDoc);
 
       const threadUpdate = {
-        studentEmail: studentEmail,
-        studentName: msgData.studentName || studentEmail,
+        studentUid: studentUid,
+        studentName: msgData.studentName || "طالب",
+        studentPhone: msgData.studentPhone || "",
         lastMessage: msgData.text,
         lastMessageTime: now,
         lastSenderRole: msgData.senderRole || "STUDENT"
@@ -482,7 +469,7 @@ window.FirebaseService = {
         threadUpdate.unreadCount = 0;
       }
 
-      await fb.firestore().collection("support_threads").doc(studentEmail).set(threadUpdate, { merge: true });
+      await fb.firestore().collection("support_threads").doc(studentUid).set(threadUpdate, { merge: true });
     }
   }
 };

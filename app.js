@@ -9,7 +9,6 @@ function sanitizeText(str) {
   return temp.innerHTML;
 }
 
-// نافذة تأكيد مخصصة (Custom Modal)
 function customConfirm(message, title, confirmText, cancelText) {
   title = title || "تأكيد الإجراء";
   confirmText = confirmText || "تأكيد";
@@ -47,20 +46,19 @@ function customConfirm(message, title, confirmText, cancelText) {
 }
 window.customConfirm = customConfirm;
 
-// المحرك الحسابي الموحد لإحصائيات الطالب
-function calculateStudentMetrics(userEmail) {
-  if (!userEmail) return { enrolledCount: 0, completedExams: 0, avgScore: 0, totalHours: 0, enrolledList: [] };
-  var cleanEmail = userEmail.toLowerCase().trim();
+// المحرك الحسابي الموحد لإحصائيات الطالب بناءً على UID
+function calculateStudentMetrics(userUid) {
+  if (!userUid) return { enrolledCount: 0, completedExams: 0, avgScore: 0, totalHours: 0, enrolledList: [] };
 
   var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-  var targetUser = users.find(u => u.email && u.email.toLowerCase().trim() === cleanEmail);
+  var targetUser = users.find(u => u.uid === userUid);
 
   var allCourses = JSON.parse(localStorage.getItem("edu_courses")) || [];
   var enrolledIds = (targetUser && targetUser.enrolledCourses) ? targetUser.enrolledCourses : [];
   var enrolledCoursesList = allCourses.filter(c => enrolledIds.includes(c.id));
 
   var submissions = JSON.parse(localStorage.getItem("edu_submissions")) || [];
-  var userSubs = submissions.filter(s => s.userEmail && s.userEmail.toLowerCase().trim() === cleanEmail);
+  var userSubs = submissions.filter(s => s.userId === userUid || (targetUser && s.userEmail && s.userEmail.toLowerCase() === targetUser.email.toLowerCase()));
 
   var avgScore = 0;
   if (userSubs.length > 0) {
@@ -71,8 +69,10 @@ function calculateStudentMetrics(userEmail) {
   var tracking = JSON.parse(localStorage.getItem("edu_course_watch_logs")) || {};
   var totalSec = 0;
   Object.keys(tracking).forEach(cId => {
-    if (tracking[cId][cleanEmail]) {
-      totalSec += tracking[cId][cleanEmail].totalSeconds || 0;
+    if (tracking[cId][userUid]) {
+      totalSec += tracking[cId][userUid].totalSeconds || 0;
+    } else if (targetUser && tracking[cId][targetUser.email]) {
+      totalSec += tracking[cId][targetUser.email].totalSeconds || 0;
     }
   });
 
@@ -88,22 +88,22 @@ function calculateStudentMetrics(userEmail) {
 }
 window.calculateStudentMetrics = calculateStudentMetrics;
 
-// التحقق من الصلاحيات والمراقبة اللحظية
+// المراقبة اللحظية الصارمة لحالة الحساب والطرد الفوري
 function monitorCurrentUserStatus() {
   var user = getCurrentUser();
-  if (!user || !user.email) return;
+  if (!user || !user.uid) return;
 
   var interval = setInterval(function() {
     if (window.firebase && firebase.firestore) {
       clearInterval(interval);
 
-      firebase.firestore().collection("users").where("email", "==", user.email.toLowerCase().trim())
-        .onSnapshot(function(snapshot) {
-          if (snapshot.empty) {
+      firebase.firestore().collection("users").doc(user.uid)
+        .onSnapshot(function(docSnap) {
+          if (!docSnap.exists) {
             forceLogoutUser();
           } else {
-            var liveDoc = snapshot.docs[0].data();
-            liveDoc.uid = snapshot.docs[0].id;
+            var liveDoc = docSnap.data();
+            liveDoc.uid = docSnap.id;
 
             var roleChanged = liveDoc.role !== user.role;
             var coursesChanged = JSON.stringify(liveDoc.enrolledCourses || []) !== JSON.stringify(user.enrolledCourses || []);
@@ -116,7 +116,7 @@ function monitorCurrentUserStatus() {
                 showToast("تم تحديث رتبتك الإدارية إلى: " + liveDoc.role, "info", "تحديث الصلاحيات");
                 setTimeout(function() { window.location.reload(); }, 600);
               } else if (coursesChanged) {
-                showToast("تم تحديث وتفعيل الكورسات بحسابك بنجاح", "success", "تفعيل المحتوى");
+                showToast("تم تفعيل الكورس في حسابك بنجاح", "success", "تفعيل المحتوى");
                 if (typeof renderStudentDashboard === "function") renderStudentDashboard();
               }
               updateNavbarAndAuthGuards();
@@ -134,11 +134,10 @@ function forceLogoutUser() {
   if (window.firebase && firebase.auth) {
     try { firebase.auth().signOut(); } catch(e) {}
   }
-  showToast("تم إنهاء الجلسة أو حذف الحساب من قِبل الإدارة.", "error", "تنبيه");
+  showToast("تم إنهاء الجلسة أو حذف الحساب.", "error", "تنبيه");
   setTimeout(function() { window.location.replace("login.html"); }, 400);
 }
 
-// الإشعارات السحابية
 var swRegistration = null;
 function registerDeviceServiceWorker() {
   if ("serviceWorker" in navigator) {
@@ -194,10 +193,10 @@ function initRealtimeNotificationsReceiver() {
           lastKnownNotifId = latest.id;
           localStorage.setItem("hk_last_received_notif_id", latest.id);
 
-          if (user && latest.senderEmail && user.email.toLowerCase() === latest.senderEmail) return;
+          if (user && latest.senderEmail && user.email && user.email.toLowerCase() === latest.senderEmail) return;
 
-          if (!user && latest.targetEmail !== "ALL") return;
-          if (user && (latest.targetEmail === "ALL" || latest.targetEmail === user.email.toLowerCase())) {
+          if (!user && latest.targetUserId !== "ALL") return;
+          if (user && (latest.targetUserId === "ALL" || latest.targetUserId === user.uid)) {
             triggerDeviceNativeNotification(latest.title, latest.body, latest.targetUrl);
             showToast(latest.body, "info", latest.title);
           }
@@ -340,8 +339,8 @@ async function handleEnrollClick(courseId) {
     var newEnrolled = user.enrolledCourses || [];
     if (!newEnrolled.includes(courseId)) newEnrolled.push(courseId);
 
-    if (window.FirebaseService) {
-      await window.FirebaseService.updateUserEnrollmentsByEmail(user.email, newEnrolled, user.customAllowedLessons);
+    if (window.FirebaseService && user.uid) {
+      await window.FirebaseService.updateUserEnrollmentsByUid(user.uid, newEnrolled, user.customAllowedLessons);
     }
 
     user.enrolledCourses = newEnrolled;

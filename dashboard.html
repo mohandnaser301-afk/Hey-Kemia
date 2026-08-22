@@ -311,41 +311,23 @@
       document.getElementById("profSchool").innerText = user.schoolName || "غير محدد";
       document.getElementById("profEduType").innerText = user.educationType === "AZHAR" ? "أزهري" : "عام";
 
-      var allCourses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-      var enrolledIds = user.enrolledCourses || [];
-      var myCourses = allCourses.filter(c => enrolledIds.includes(c.id));
+      // الاعتماد على المحرك الحسابي الموحد لضمان التطابق مع سجلات الأدمن
+      var metrics = calculateStudentMetrics(user.uid);
 
-      document.getElementById("statEnrolledCoursesCount").innerText = myCourses.length;
+      document.getElementById("statEnrolledCoursesCount").innerText = metrics.enrolledCount;
+      document.getElementById("statCompletedExamsCount").innerText = metrics.completedExams;
+      document.getElementById("statAverageScoreDisplay").innerText = metrics.avgScore + "%";
+      document.getElementById("statTotalWatchTime").innerText = metrics.totalHours + " س";
 
-      var submissions = JSON.parse(localStorage.getItem("edu_submissions")) || [];
-      var mySubs = submissions.filter(s => s.userEmail && s.userEmail.toLowerCase() === user.email.toLowerCase());
-      document.getElementById("statCompletedExamsCount").innerText = mySubs.length;
-
-      var avgScore = 0;
-      if (mySubs.length > 0) {
-        var totalPct = mySubs.reduce((acc, cur) => acc + (Number(cur.percentage) || 0), 0);
-        avgScore = Math.round(totalPct / mySubs.length);
-      }
-      document.getElementById("statAverageScoreDisplay").innerText = avgScore + "%";
-
-      var tracking = JSON.parse(localStorage.getItem("edu_course_watch_logs")) || {};
-      var totalSec = 0;
-      Object.keys(tracking).forEach(cId => {
-        if (tracking[cId][user.email]) {
-          totalSec += tracking[cId][user.email].totalSeconds || 0;
-        }
-      });
-      document.getElementById("statTotalWatchTime").innerText = Math.round(totalSec / 3600) + " س";
-
-      // عرض الكورسات
+      // عرض الكورسات المشترك بها
       var container = document.getElementById("studentEnrolledCoursesGrid");
-      if (myCourses.length === 0) {
+      if (metrics.enrolledList.length === 0) {
         container.innerHTML = '<div style="grid-column:1/-1; background:#fff; padding:30px; text-align:center; border-radius:12px; border:1px solid var(--border-subtle);">' +
           '<p style="color:var(--text-muted); margin-bottom:12px; font-size:13.5px;">لا توجد كورسات مفعلة حالياً في حسابك.</p>' +
           '<a href="index.html#courses" class="btn btn-primary" style="text-decoration:none; font-size:12.5px;">تصفح الكورسات المتاحة</a>' +
         '</div>';
       } else {
-        container.innerHTML = myCourses.map(function(course) {
+        container.innerHTML = metrics.enrolledList.map(function(course) {
           var lessons = course.lessons || [];
           return '<div class="student-course-card">' +
             '<img src="' + (course.image || "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80") + '" class="student-course-img" alt="' + course.title + '">' +
@@ -361,10 +343,10 @@
 
       // عرض الامتحانات
       var examsTbody = document.getElementById("studentExamsHistoryTableBody");
-      if (mySubs.length === 0) {
+      if (metrics.submissionsList.length === 0) {
         examsTbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:20px;">لم يتم تسليم أي امتحانات بعد.</td></tr>';
       } else {
-        examsTbody.innerHTML = mySubs.map(s => {
+        examsTbody.innerHTML = metrics.submissionsList.map(s => {
           var gradeBadge = s.percentage >= 85 
             ? '<span style="color:#059669; font-weight:800;">ممتاز</span>' 
             : (s.percentage >= 60 ? '<span style="color:#0284C7; font-weight:800;">اجتياز</span>' : '<span style="color:#dc2626; font-weight:800;">يحتاج تدريب</span>');

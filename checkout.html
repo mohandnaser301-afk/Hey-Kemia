@@ -6,29 +6,31 @@
   <title>تأكيد الاشتراك والدفع - هي كيميا !</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    .checkout-wrapper {
-      min-height: 100vh;
+    .checkout-page-wrapper {
+      min-height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 95px 16px 40px;
+      padding: 85px 16px 30px;
     }
-    .checkout-card {
+    .checkout-card-modern {
       background: #ffffff;
       border: 1px solid var(--border-subtle);
       border-radius: 20px;
-      padding: 30px 24px;
-      max-width: 520px;
+      padding: 28px 22px;
+      max-width: 500px;
       width: 100%;
-      box-shadow: 0 20px 45px rgba(0,0,0,0.06);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.06);
     }
-    .vodafone-box {
-      background: #FFF5F5;
-      border: 1.5px dashed #EF4444;
+    .payment-instruction-box {
+      background: #F0FDF4;
+      border: 1px solid #BBF7D0;
       border-radius: 12px;
-      padding: 16px;
-      text-align: center;
-      margin: 16px 0 20px;
+      padding: 14px;
+      margin: 16px 0;
+      font-size: 13px;
+      color: #166534;
+      line-height: 1.6;
     }
   </style>
 </head>
@@ -40,48 +42,41 @@
         <div class="capsule-logo">HK</div>
         <span class="brand-text">هي كيميا<span>!</span></span>
       </a>
-      <div class="capsule-auth">
-        <a href="dashboard.html" class="nav-btn-primary">لوحة التحكم</a>
-      </div>
+      <div class="capsule-auth" id="navAuthBox"></div>
     </nav>
   </div>
 
-  <div class="checkout-wrapper">
-    <div class="checkout-card">
-      <h2 style="font-size:20px; font-weight:900; color:var(--royal-indigo-base); margin-bottom:6px;">تأكيد الاشتراك وإرسال الإيصال</h2>
-      <p style="color:var(--text-muted); font-size:13px; margin-bottom:18px;">تحويل رسوم الاشتراك عبر فودافون كاش وتفعيل الكورس فوراً</p>
-
-      <div style="background:#F8FAFC; border:1px solid #E2E8F0; padding:14px; border-radius:12px; margin-bottom:15px;">
-        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-          <span style="font-size:13px; color:var(--text-muted);">الكورس المختار:</span>
-          <strong id="checkoutCourseTitle" style="color:var(--royal-indigo-base);">-</strong>
-        </div>
-        <div style="display:flex; justify-content:space-between;">
-          <span style="font-size:13px; color:var(--text-muted);">المبلغ المطلوب:</span>
-          <strong id="checkoutCoursePrice" style="color:#059669; font-size:16px;">- ج.م</strong>
-        </div>
+  <div class="checkout-page-wrapper">
+    <div class="checkout-card-modern">
+      <div style="text-align: center; margin-bottom: 16px;">
+        <h1 style="font-size: 19px; font-weight: 900; color: var(--royal-indigo-base); margin-bottom: 4px;">تأكيد الاشتراك والتحويل</h1>
+        <p style="color: var(--text-muted); font-size: 12.5px;" id="checkoutCourseTitleDisplay">جاري جلب تفاصيل الكورس...</p>
       </div>
 
-      <div class="vodafone-box">
-        <span style="font-size:12px; color:#EF4444; font-weight:800;">رقم التحويل (فودافون كاش):</span>
-        <h3 style="font-size:20px; font-weight:900; color:#1E293B; letter-spacing:1px; margin:4px 0;">01012345678</h3>
-        <small style="color:#64748B; font-size:11.5px;">* يرجى إرسال المبلغ ثم إرفاق صورة واضحة من رسالة التحويل أدناه.</small>
+      <div class="payment-instruction-box">
+        <strong>طريقة الدفع (فودافون كاش / إنستاباي):</strong><br>
+        1. قم بتحويل مبلغ <strong id="checkoutPriceDisplay" style="color:#059669; font-size:15px;">250 ج.م</strong> إلى الرقم: <strong style="direction:ltr; display:inline-block; font-size:14px;">01012345678</strong><br>
+        2. التقط صورة واضحة لإشعار أو إيصال التحويل.<br>
+        3. ارفع الصورة هنا لتفعيل الكورس فور مراجعته.
       </div>
 
-      <form id="checkoutPaymentForm">
-        <input type="hidden" id="checkoutCourseId">
+      <form id="checkoutSubmitForm">
         <div class="form-group">
-          <label>رقم الهاتف الذي قمت بالتحويل منه:</label>
-          <input type="tel" id="checkoutSenderPhone" placeholder="01xxxxxxxxx" maxlength="11" required oninput="this.value=this.value.replace(/\D/g,'')">
+          <label>اسم الطالب:</label>
+          <input type="text" id="chkStudentName" readonly style="background:#F8FAFC;">
         </div>
 
         <div class="form-group">
-          <label>إرفاق صورة إيصال التحويل:</label>
-          <input type="file" id="checkoutReceiptFile" accept="image/*" required onchange="handleReceiptUpload(event)">
-          <input type="hidden" id="checkoutReceiptBase64">
+          <label>رقم هاتف الطالب (واتساب):</label>
+          <input type="text" id="chkStudentPhone" readonly style="background:#F8FAFC;">
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width:100%; padding:12px; font-size:14px; margin-top:8px;">إرسال طلب التفعيل الآن ←</button>
+        <div class="form-group">
+          <label>صورة إيصال التحويل:</label>
+          <input type="file" id="chkReceiptFile" accept="image/*" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%; padding:12px; margin-top:10px;">إرسال طلب التفعيل للأدمن ✓</button>
       </form>
     </div>
   </div>
@@ -89,81 +84,69 @@
   <script src="firebase-config.js"></script>
   <script src="app.js"></script>
   <script>
-    var currentSelectedCourse = null;
-
-    function handleReceiptUpload(event) {
-      var file = event.target.files[0];
-      if (!file) return;
-      var reader = new FileReader();
-      reader.onload = async function(e) {
-        var base64 = e.target.result;
-        var compressed = window.compressImageBase64 ? await window.compressImageBase64(base64, 400, 400, 0.4) : base64;
-        document.getElementById("checkoutReceiptBase64").value = compressed;
-      };
-      reader.readAsDataURL(file);
-    }
+    var selectedCourse = null;
+    var currentUser = null;
 
     document.addEventListener("DOMContentLoaded", function() {
-      var user = getCurrentUser();
-      if (!user) {
-        window.location.href = "login.html";
+      currentUser = getCurrentUser();
+      if (!currentUser) {
+        window.location.href = "login.html?redirect=" + encodeURIComponent(window.location.href);
         return;
       }
 
       var urlParams = new URLSearchParams(window.location.search);
       var courseId = urlParams.get("course");
       var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-      currentSelectedCourse = courses.find(c => c.id == courseId);
+      selectedCourse = courses.find(c => c.id == courseId);
 
-      if (!currentSelectedCourse) {
-        showToast("لم يتم العثور على الكورس المطلوب", "error");
-        setTimeout(function() { window.location.href = "index.html#courses"; }, 1000);
+      if (!selectedCourse) {
+        showToast("الكورس غير موجود", "error");
+        setTimeout(() => window.location.href = "index.html#courses", 1000);
         return;
       }
 
-      document.getElementById("checkoutCourseId").value = currentSelectedCourse.id;
-      document.getElementById("checkoutCourseTitle").innerText = currentSelectedCourse.title;
-      document.getElementById("checkoutCoursePrice").innerText = currentSelectedCourse.price + " ج.م";
+      document.getElementById("checkoutCourseTitleDisplay").innerText = selectedCourse.title;
+      document.getElementById("checkoutPriceDisplay").innerText = selectedCourse.price + " ج.م";
+      document.getElementById("chkStudentName").value = currentUser.fullName;
+      document.getElementById("chkStudentPhone").value = currentUser.studentPhone;
     });
 
-    document.getElementById("checkoutPaymentForm").addEventListener("submit", async function(e) {
+    document.getElementById("checkoutSubmitForm").addEventListener("submit", async function(e) {
       e.preventDefault();
-      var user = getCurrentUser();
-      var senderPhone = document.getElementById("checkoutSenderPhone").value.trim();
-      var receiptImg = document.getElementById("checkoutReceiptBase64").value;
-
-      if (!senderPhone || senderPhone.length < 11) {
-        showToast("يرجى إدخال رقم الهاتف المحول منه بشكل صحيح (11 رقماً)", "error");
-        return;
+      var fileInput = document.getElementById("chkReceiptFile");
+      if (!fileInput.files || !fileInput.files[0]) {
+        return showToast("يرجى إرفاق صورة الإيصال", "error");
       }
 
-      if (!receiptImg) {
-        showToast("يرجى اختيار صورة واضحة لإيصال التحويل", "error");
-        return;
-      }
+      var file = fileInput.files[0];
+      var reader = new FileReader();
 
-      showToast("جاري إرسال طلب الدفع سحابياً للإدارة...", "info");
+      showToast("جاري إرسال الطلب سحابياً...", "info");
 
-      try {
-        var paymentData = {
-          userEmail: user.email.toLowerCase(),
-          userName: user.fullName,
-          studentPhone: senderPhone,
-          courseId: currentSelectedCourse.id,
-          courseTitle: currentSelectedCourse.title,
-          amount: currentSelectedCourse.price,
-          receipt: receiptImg
-        };
+      reader.onload = async function(event) {
+        try {
+          var compressedReceipt = await compressImageBase64(event.target.result, 400, 400, 0.4);
 
-        if (window.FirebaseService) {
+          var paymentData = {
+            userId: currentUser.uid,
+            userName: currentUser.fullName,
+            userEmail: currentUser.email.toLowerCase().trim(),
+            studentPhone: currentUser.studentPhone,
+            courseId: selectedCourse.id,
+            courseTitle: selectedCourse.title,
+            amount: selectedCourse.price,
+            receipt: compressedReceipt
+          };
+
           await window.FirebaseService.submitPayment(paymentData);
+          showToast("تم إرسال طلب الدفع بنجاح وسيتم تفعيل الكورس فور المراجعة", "success");
+          setTimeout(() => window.location.href = "dashboard.html", 1200);
+        } catch (err) {
+          showToast("فشل إرسال الطلب: " + err.message, "error");
         }
+      };
 
-        showToast("تم إرسال إيصال التحويل بنجاح! سيتم التفعيل فور مراجعته.", "success");
-        setTimeout(function() { window.location.href = "dashboard.html"; }, 1500);
-      } catch (err) {
-        showToast("تعذر إرسال الإيصال: " + err.message, "error");
-      }
+      reader.readAsDataURL(file);
     });
   </script>
 </body>
