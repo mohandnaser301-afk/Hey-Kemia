@@ -1,5 +1,6 @@
 // =========================================================
 // المحرك البرمجي وحصن الأمان لمنصة هي كيميا !
+// مزامنة فورية كاملة + تنبيه إلزامي لتفعيل الإشعارات + لودر
 // =========================================================
 
 function sanitizeText(str) {
@@ -47,7 +48,7 @@ function customConfirm(message, title, confirmText, cancelText) {
 }
 window.customConfirm = customConfirm;
 
-// 2. نظام الإشعارات المتوافق مع الهواتف (Touch-Event Trigger)
+// 2. فحص وتنبيه تفعيل الإشعارات
 function checkAndPromptNotifications() {
   if (localStorage.getItem("hk_notif_prompt_handled") === "true") return;
   if (!("Notification" in window)) return;
@@ -104,11 +105,11 @@ function registerDeviceServiceWorker() {
   }
 }
 
-function sendSystemPushNotification(title, body, targetEmail, targetUrl) {
-  var currentUser = getCurrentUser();
-  if (currentUser && (targetEmail === "ALL" || targetEmail === currentUser.email)) {
-    triggerDeviceNativeNotification(title, body, targetUrl);
-    showToast(body, "info", title);
+async function sendSystemPushNotification(title, body, targetEmail, targetUrl) {
+  if (window.FirebaseService) {
+    try {
+      await window.FirebaseService.pushNotificationToCloud(title, body, targetEmail, targetUrl);
+    } catch(e) {}
   }
 }
 
@@ -136,7 +137,7 @@ function triggerDeviceNativeNotification(title, body, targetUrl) {
   }
 }
 
-// 3. المراقبة اللحظية الصارمة لطرد الحساب المحذوف فوراً ومنعه من الدخول
+// 3. المراقبة اللحظية الصارمة لطرد الحساب المحذوف فوراً
 function monitorCurrentUserStatus() {
   var user = getCurrentUser();
   if (!user || !user.email) return;
@@ -145,7 +146,6 @@ function monitorCurrentUserStatus() {
     if (window.firebase && firebase.firestore) {
       clearInterval(interval);
       
-      // مراقبة المستند بالـ UID وبالـ Email
       var docRef = user.uid ? firebase.firestore().collection("users").doc(user.uid) : null;
       if (docRef) {
         docRef.onSnapshot(function(docSnap) {
@@ -175,6 +175,40 @@ function forceLogoutUser() {
   setTimeout(function() {
     window.location.replace("login.html");
   }, 500);
+}
+
+// 4. استماع لحظي للإشعارات السحابية القادمة من الإدارة
+function initRealtimeNotificationsReceiver() {
+  var lastKnownNotifId = localStorage.getItem("hk_last_received_notif_id") || "";
+  var isFirstLoad = true;
+
+  var interval = setInterval(function() {
+    if (window.FirebaseService && window.firebase && firebase.firestore) {
+      clearInterval(interval);
+      window.FirebaseService.subscribeNotifications(function(notifs) {
+        if (!notifs || notifs.length === 0) return;
+        var user = getCurrentUser();
+
+        if (isFirstLoad) {
+          isFirstLoad = false;
+          if (notifs[0]) localStorage.setItem("hk_last_received_notif_id", notifs[0].id);
+          return;
+        }
+
+        var latest = notifs[0];
+        if (latest && latest.id !== lastKnownNotifId) {
+          lastKnownNotifId = latest.id;
+          localStorage.setItem("hk_last_received_notif_id", latest.id);
+
+          if (!user && latest.targetEmail !== "ALL") return;
+          if (user && (latest.targetEmail === "ALL" || latest.targetEmail === user.email)) {
+            triggerDeviceNativeNotification(latest.title, latest.body, latest.targetUrl);
+            showToast(latest.body, "info", latest.title);
+          }
+        }
+      });
+    }
+  }, 250);
 }
 
 function showToast(message, type, title) {
@@ -352,7 +386,55 @@ window.handleHeroEnroll = function() {
 window.handleEnrollClick = handleEnrollClick;
 window.logout = logout;
 
-// استماع لحظي للكورسات والامتحانات العامة
+// 5. شاشة اللودينج الكيميائية
+function injectChemicalPreloader() {
+  if (document.getElementById("chemicalPreloader")) return;
+  var preloader = document.createElement("div");
+  preloader.id = "chemicalPreloader";
+  preloader.innerHTML = 
+    '<div class="lab-stage-container">' +
+      '<div class="atomic-ring-1"><div class="electron-dot"></div></div>' +
+      '<div class="atomic-ring-2"><div class="electron-dot"></div></div>' +
+      '<div class="test-tube left-tube"><div class="tube-liquid"></div></div>' +
+      '<div class="test-tube right-tube"><div class="tube-liquid"></div></div>' +
+      '<div class="flask-steam"></div>' +
+      '<div class="main-flask-neck"></div>' +
+      '<div class="main-flask-box">' +
+        '<div class="flask-liquid-core"></div>' +
+        '<div class="lab-bubble"></div>' +
+        '<div class="lab-bubble"></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="loader-brand-title">منصة هي كيميا<span>!</span></div>' +
+    '<div class="loader-dynamic-phrase" id="loaderDynamicPhrase">جاري تحميل المنصة...</div>' +
+    '<div class="loader-counter-num" id="loaderCounterNum">0%</div>' +
+    '<div class="loader-bar-outer"><div class="loader-bar-inner" id="loaderBarFill"></div></div>';
+
+  document.body.prepend(preloader);
+
+  var startTime = Date.now();
+  var duration = 1400;
+  var barFill = document.getElementById("loaderBarFill");
+  var counterNum = document.getElementById("loaderCounterNum");
+
+  var timer = setInterval(function() {
+    var elapsed = Date.now() - startTime;
+    var progress = Math.min(100, Math.round((elapsed / duration) * 100));
+
+    if (barFill) barFill.style.width = progress + "%";
+    if (counterNum) counterNum.innerText = progress + "%";
+
+    if (progress >= 100) {
+      clearInterval(timer);
+      setTimeout(function() {
+        preloader.classList.add("hide-preloader");
+        setTimeout(function() { preloader.remove(); }, 350);
+      }, 60);
+    }
+  }, 25);
+}
+
+// 6. استماع لحظي عام للكورسات والامتحانات
 function initGlobalRealtimeSync() {
   var interval = setInterval(function() {
     if (window.FirebaseService && window.firebase && firebase.firestore) {
@@ -368,10 +450,12 @@ function initGlobalRealtimeSync() {
 }
 
 document.addEventListener("DOMContentLoaded", function() {
+  injectChemicalPreloader();
   registerDeviceServiceWorker();
   updateNavbarAndAuthGuards();
   monitorCurrentUserStatus();
   initGlobalRealtimeSync();
+  initRealtimeNotificationsReceiver();
 
   var currentUser = getCurrentUser();
   if (currentUser && currentUser.role === "STUDENT") {

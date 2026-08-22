@@ -69,6 +69,7 @@ function compressImageBase64(base64Str, maxWidth, maxHeight, quality) {
 window.compressImageBase64 = compressImageBase64;
 
 window.FirebaseService = {
+  // المستخدمين
   async registerStudent(userData) {
     const fb = getFirebase();
     let uid = "u_" + Date.now();
@@ -143,7 +144,43 @@ window.FirebaseService = {
     window.location.href = "login.html";
   },
 
-  // 1. الكورسات اللحظية
+  subscribeUsers(callback) {
+    const fb = getFirebase();
+    if (fb && fb.firestore) {
+      return fb.firestore().collection("users").onSnapshot(snap => {
+        const list = [];
+        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        localStorage.setItem("edu_users", JSON.stringify(list));
+        if (callback) callback(list);
+      });
+    }
+  },
+
+  async updateUserRole(uid, newRole) {
+    const fb = getFirebase();
+    if (fb && fb.firestore && uid) {
+      await fb.firestore().collection("users").doc(uid).update({ role: newRole });
+    }
+  },
+
+  async updateUserPermissions(uid, enrolledCourses, customLessons) {
+    const fb = getFirebase();
+    if (fb && fb.firestore && uid) {
+      await fb.firestore().collection("users").doc(uid).update({
+        enrolledCourses: enrolledCourses,
+        customAllowedLessons: customLessons || {}
+      });
+    }
+  },
+
+  async deleteUser(uid) {
+    const fb = getFirebase();
+    if (fb && fb.firestore && uid) {
+      await fb.firestore().collection("users").doc(uid).delete();
+    }
+  },
+
+  // الكورسات
   subscribeCourses(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -162,7 +199,6 @@ window.FirebaseService = {
       if (courseData.image && courseData.image.startsWith("data:image")) {
         courseData.image = await compressImageBase64(courseData.image, 450, 260, 0.45);
       }
-
       if (courseId) {
         await fb.firestore().collection("courses").doc(courseId).set(courseData, { merge: true });
         return { id: courseId, ...courseData };
@@ -180,7 +216,7 @@ window.FirebaseService = {
     }
   },
 
-  // 2. الامتحانات اللحظية
+  // الامتحانات
   subscribeExams(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -212,37 +248,7 @@ window.FirebaseService = {
     }
   },
 
-  // 3. المستخدمين اللحظيين
-  subscribeUsers(callback) {
-    const fb = getFirebase();
-    if (fb && fb.firestore) {
-      return fb.firestore().collection("users").onSnapshot(snap => {
-        const list = [];
-        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-        localStorage.setItem("edu_users", JSON.stringify(list));
-        if (callback) callback(list);
-      });
-    }
-  },
-
-  async updateUserPermissions(uid, enrolledCourses, customLessons) {
-    const fb = getFirebase();
-    if (fb && fb.firestore && uid) {
-      await fb.firestore().collection("users").doc(uid).update({
-        enrolledCourses: enrolledCourses,
-        customAllowedLessons: customLessons || {}
-      });
-    }
-  },
-
-  async deleteUser(uid) {
-    const fb = getFirebase();
-    if (fb && fb.firestore && uid) {
-      await fb.firestore().collection("users").doc(uid).delete();
-    }
-  },
-
-  // 4. طلبات الدفع سحابياً لجميع الأجهزة
+  // المدفوعات
   subscribePayments(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -272,6 +278,31 @@ window.FirebaseService = {
     const fb = getFirebase();
     if (fb && fb.firestore && paymentId) {
       await fb.firestore().collection("payments").doc(paymentId).update({ status: status });
+    }
+  },
+
+  // الإشعارات المباشرة السحابية
+  subscribeNotifications(callback) {
+    const fb = getFirebase();
+    if (fb && fb.firestore) {
+      return fb.firestore().collection("notifications").orderBy("createdAt", "desc").limit(20).onSnapshot(snap => {
+        const list = [];
+        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        if (callback) callback(list);
+      });
+    }
+  },
+
+  async pushNotificationToCloud(title, body, targetEmail, targetUrl) {
+    const fb = getFirebase();
+    if (fb && fb.firestore) {
+      await fb.firestore().collection("notifications").add({
+        title: title,
+        body: body,
+        targetEmail: targetEmail || "ALL",
+        targetUrl: targetUrl || "dashboard.html",
+        createdAt: new Date().toISOString()
+      });
     }
   }
 };

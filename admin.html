@@ -476,7 +476,7 @@
         <header class="topbar">
           <div>
             <h1 style="font-size:22px; font-weight:900; color:var(--royal-indigo-base);">طلبات الدفع والتحصيل</h1>
-            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">مراجعة الإيصالات بالصورة والتفعيل الفوري مع إرسال إشعار فوري للطالب</p>
+            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">مراجعة الإيصالات بالصورة والتفعيل الفوري لجميع الأجهزة</p>
           </div>
         </header>
         <div class="table-container">
@@ -521,7 +521,7 @@
               <label>نص الرسالة والتفاصيل:</label>
               <textarea id="pushBodyInput" rows="3" placeholder="اكتب نص الإشعار هنا..." required></textarea>
             </div>
-            <button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px;">إرسال الإشعار الآن</button>
+            <button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px;">إرسال الإشعار لجميع الأجهزة الآن</button>
           </form>
         </div>
       </div>
@@ -995,7 +995,6 @@
     </div>
   </div>
 
-  <!-- ربط السحابة وملفات التشغيل المتوافقة مع جميع المتصفحات -->
   <script src="firebase-config.js"></script>
   <script src="app.js"></script>
   <script>
@@ -1020,18 +1019,15 @@
       var arrow = document.getElementById("mobileMenuArrowIcon");
       if (nav) {
         var isOpen = nav.classList.toggle("show-mobile-menu");
-        if (arrow) {
-          arrow.style.transform = isOpen ? "rotate(180deg)" : "rotate(0deg)";
-        }
+        if (arrow) arrow.style.transform = isOpen ? "rotate(180deg)" : "rotate(0deg)";
       }
     }
 
     function handleMobileTabSelect(tabId, element, labelName) {
       switchTab(tabId, element);
       var labelElem = document.getElementById("mobileMenuCurrentLabel");
-      if (labelElem && labelName) {
-        labelElem.innerText = labelName;
-      }
+      if (labelElem && labelName) labelElem.innerText = labelName;
+
       if (window.innerWidth <= 900) {
         var nav = document.getElementById("adminSidebarNav");
         var arrow = document.getElementById("mobileMenuArrowIcon");
@@ -1696,7 +1692,6 @@
       }
     }
 
-    // معالجة وضغط صورة الغلاف تلقائياً فور اختيارها
     async function handleImageUpload(event, mode) {
       var file = event.target.files[0];
       if (!file) return;
@@ -1705,7 +1700,7 @@
       reader.onload = async function(e) {
         var base64Data = e.target.result;
         var compressed = window.compressImageBase64 
-          ? await window.compressImageBase64(base64Data, 450, 260, 0.5) 
+          ? await window.compressImageBase64(base64Data, 450, 260, 0.45) 
           : base64Data;
 
         if (mode === "add") {
@@ -1818,9 +1813,9 @@
         return "<tr>" +
           "<td>" + p.userName + "</td><td>" + p.studentPhone + "</td><td>" + p.courseTitle + "</td><td>" + p.amount + " ج.م</td>" +
           '<td><button type="button" class="btn-action btn-action-primary" onclick="viewReceiptImage(\'' + p.receipt + '\')">معاينة الإيصال</button></td>' +
-          "<td>" + (p.status === "PENDING" ? '<button class="btn-action btn-action-success" onclick="approvePayment(' + p.id + ')">قبول وتفعيل وإشعار</button>' : '<span style="color:#10b981; font-weight:bold;">مفعل</span>') + "</td>" +
+          "<td>" + (p.status === "PENDING" ? '<button class="btn-action btn-action-success" onclick="approvePayment(\'' + p.id + '\')">قبول وتفعيل وإشعار</button>' : '<span style="color:#10b981; font-weight:bold;">مفعل</span>') + "</td>" +
         "</tr>";
-      }).reverse().join("");
+      }).join("");
 
       if (isSuperAdmin) {
         var hackersBody = document.getElementById("hackersTableBody");
@@ -2064,7 +2059,7 @@
       }
     }
 
-    document.getElementById("sendPushNotificationForm").addEventListener("submit", function(e) {
+    document.getElementById("sendPushNotificationForm").addEventListener("submit", async function(e) {
       e.preventDefault();
       var target = document.getElementById("pushTargetSelect").value;
       var title = document.getElementById("pushTitleInput").value.trim();
@@ -2072,11 +2067,12 @@
 
       if (!title || !body) return;
 
-      sendSystemPushNotification(title, body, target);
+      showToast("جاري إرسال الإشعار لجميع الأجهزة...", "info");
+      await sendSystemPushNotification(title, body, target);
       logAdminAction("إرسال إشعار", "تم إرسال إشعار للطلاب: " + title);
       document.getElementById("pushTitleInput").value = "";
       document.getElementById("pushBodyInput").value = "";
-      showToast("تم إرسال الإشعار بنجاح", "success");
+      showToast("تم إرسال الإشعار السحابي الفوري لجميع أجهزة الطلاب بنجاح ✓", "success");
     });
 
     async function approvePayment(id) {
@@ -2088,6 +2084,11 @@
       var p = payments.find(function(x) { return x.id === id; });
       if (p) {
         p.status = "APPROVED";
+
+        if (window.FirebaseService) {
+          await window.FirebaseService.updatePaymentStatus(id, "APPROVED");
+        }
+
         var u = users.find(function(x) { return x.email === p.userEmail; });
         if (u) {
           if (!u.enrolledCourses) u.enrolledCourses = [];
@@ -2102,7 +2103,7 @@
         localStorage.setItem("edu_payments", JSON.stringify(payments));
         localStorage.setItem("edu_users", JSON.stringify(users));
 
-        sendSystemPushNotification("تم تفعيل الكورس بنجاح", "مرحباً " + p.userName + "، تم اعتماد إيصال الدفع وتفعيل كورس: " + p.courseTitle + " في حسابك.", p.userEmail);
+        await sendSystemPushNotification("تم تفعيل الكورس بنجاح", "مرحباً " + p.userName + "، تم اعتماد إيصال الدفع وتفعيل كورس: " + p.courseTitle + " في حسابك.", p.userEmail);
         showToast("تم تفعيل الكورس وإرسال الإشعار الفوري للطالب ✓", "success");
       }
     }
@@ -2133,7 +2134,6 @@
         var users = JSON.parse(localStorage.getItem("edu_users")) || [];
         var targetUser = users.find(function(u) { return u.email === email; });
 
-        // حذف مباشر من Firestore بالـ UID أو بالـ Email
         if (window.firebase && firebase.firestore) {
           try {
             if (targetUser && targetUser.uid) {
@@ -2324,7 +2324,7 @@
       }
     }
 
-    // تفعيل الاستماع اللحظي (Realtime Listeners) لجميع البيانات
+    // تفعيل الاستماع اللحظي الشامل لجميع المجموعات السحابية
     document.addEventListener("DOMContentLoaded", function() {
       var toggleBtn = document.getElementById("mobileSidebarToggleBtn");
       if (toggleBtn) {
@@ -2342,6 +2342,7 @@
           window.FirebaseService.subscribeCourses(function() { renderAdmin(); });
           window.FirebaseService.subscribeExams(function() { renderAdmin(); });
           window.FirebaseService.subscribeUsers(function() { renderAdmin(); });
+          window.FirebaseService.subscribePayments(function() { renderAdmin(); });
         }
       }, 250);
 
