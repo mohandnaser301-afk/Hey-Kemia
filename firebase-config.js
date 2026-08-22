@@ -88,7 +88,7 @@ function compressImageBase64(base64Str, maxWidth, maxHeight, quality) {
 window.compressImageBase64 = compressImageBase64;
 
 window.FirebaseService = {
-  // 1. تسجيل طالب جديد مع تصفير أي ارتباطات سابقة
+  // 1. تسجيل طالب جديد
   async registerStudent(userData) {
     const fb = getFirebase();
     let uid = "u_" + Date.now();
@@ -102,10 +102,11 @@ window.FirebaseService = {
       }
     }
 
+    const cleanEmail = userData.email.toLowerCase().trim();
     const userDoc = {
       uid: uid,
       fullName: userData.fullName,
-      email: userData.email.toLowerCase().trim(),
+      email: cleanEmail,
       studentPhone: userData.studentPhone,
       parentPhone: userData.parentPhone || "غير مسجل",
       governorate: userData.governorate,
@@ -129,10 +130,11 @@ window.FirebaseService = {
   async loginUser(email, password) {
     const fb = getFirebase();
     let foundUser = null;
+    const cleanEmail = email.toLowerCase().trim();
 
     if (fb && fb.auth) {
       try {
-        const userCredential = await fb.auth().signInWithEmailAndPassword(email, password);
+        const userCredential = await fb.auth().signInWithEmailAndPassword(cleanEmail, password);
         const uid = userCredential.user.uid;
         const snap = await fb.firestore().collection("users").doc(uid).get();
         if (snap.exists) foundUser = snap.data();
@@ -142,7 +144,7 @@ window.FirebaseService = {
     }
 
     if (!foundUser && fb && fb.firestore) {
-      const qSnap = await fb.firestore().collection("users").where("email", "==", email.toLowerCase().trim()).get();
+      const qSnap = await fb.firestore().collection("users").where("email", "==", cleanEmail).get();
       if (!qSnap.empty) {
         foundUser = qSnap.docs[0].data();
         foundUser.uid = qSnap.docs[0].id;
@@ -166,7 +168,7 @@ window.FirebaseService = {
     window.location.href = "login.html";
   },
 
-  // 2. إدارة المستخدمين السحابية
+  // 2. إدارة المستخدمين السحابية مع الحذف الشامل (Cascade Deletion)
   subscribeUsers(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -205,16 +207,29 @@ window.FirebaseService = {
     }
   },
 
-  async deleteUserByEmail(email) {
+  async deleteUserCascade(email) {
     const fb = getFirebase();
     if (fb && fb.firestore && email) {
       const cleanEmail = email.toLowerCase().trim();
-      const qSnap = await fb.firestore().collection("users").where("email", "==", cleanEmail).get();
-      const promises = [];
-      qSnap.forEach(doc => {
-        promises.push(doc.ref.delete());
-      });
-      await Promise.all(promises);
+      const batch = fb.firestore().batch();
+
+      // 1. حذف وثيقة المستخدم
+      const userSnap = await fb.firestore().collection("users").where("email", "==", cleanEmail).get();
+      userSnap.forEach(doc => batch.delete(doc.ref));
+
+      // 2. حذف طلبات الدفع الخاصة بالطالب
+      const paySnap = await fb.firestore().collection("payments").where("userEmail", "==", cleanEmail).get();
+      paySnap.forEach(doc => batch.delete(doc.ref));
+
+      // 3. حذف رسائل الدعم
+      const msgSnap = await fb.firestore().collection("support_messages").where("senderEmail", "==", cleanEmail).get();
+      msgSnap.forEach(doc => batch.delete(doc.ref));
+
+      // 4. حذف تسليمات الامتحانات
+      const subSnap = await fb.firestore().collection("submissions").where("userEmail", "==", cleanEmail).get();
+      subSnap.forEach(doc => batch.delete(doc.ref));
+
+      await batch.commit();
     }
   },
 
@@ -260,7 +275,7 @@ window.FirebaseService = {
     }
   },
 
-  // 4. الامتحانات
+  // 4. إدارة الامتحانات
   subscribeExams(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -292,7 +307,7 @@ window.FirebaseService = {
     }
   },
 
-  // 5. المدفوعات والاشتراكات السحابية
+  // 5. إدارة المدفوعات والاشتراكات
   subscribePayments(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -325,7 +340,7 @@ window.FirebaseService = {
     }
   },
 
-  // 6. الإشعارات السحابية
+  // 6. إدارة الإشعارات السحابية
   subscribeNotifications(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -351,11 +366,11 @@ window.FirebaseService = {
     }
   },
 
-  // 7. شات الدعم الفني السحابي اللحظي
+  // 7. إدارة شات الدعم الفني الذكي 10x
   subscribeSupportMessages(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
-      return fb.firestore().collection("support_messages").orderBy("createdAt", "asc").limit(100).onSnapshot(snap => {
+      return fb.firestore().collection("support_messages").orderBy("createdAt", "asc").limit(150).onSnapshot(snap => {
         const list = [];
         snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
         if (callback) callback(list);
