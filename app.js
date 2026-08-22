@@ -1,6 +1,5 @@
 // =========================================================
 // المحرك البرمجي وحصن الأمان لمنصة هي كيميا !
-// مزامنة فورية كاملة + استماع للإشعارات السحابية + مشغل الفيديو
 // =========================================================
 
 function sanitizeText(str) {
@@ -48,7 +47,7 @@ function customConfirm(message, title, confirmText, cancelText) {
 }
 window.customConfirm = customConfirm;
 
-// 2. فحص وتنبيه تفعيل الإشعارات على الموبايل
+// 2. فحص وتنبيه تفعيل الإشعارات
 function checkAndPromptNotifications() {
   if (localStorage.getItem("hk_notif_prompt_handled") === "true") return;
   if (!("Notification" in window)) return;
@@ -144,7 +143,7 @@ function triggerDeviceNativeNotification(title, body, targetUrl) {
   }
 }
 
-// 3. المراقبة اللحظية الصارمة لطرد الحساب المحذوف فوراً
+// 3. المراقبة اللحظية الشاملة للحساب (تحديث الرتبة، تفعيل الكورسات، أو الطرد الفوري إذا حُذف)
 function monitorCurrentUserStatus() {
   var user = getCurrentUser();
   if (!user || !user.email) return;
@@ -152,23 +151,47 @@ function monitorCurrentUserStatus() {
   var interval = setInterval(function() {
     if (window.firebase && firebase.firestore) {
       clearInterval(interval);
-      
-      var docRef = user.uid ? firebase.firestore().collection("users").doc(user.uid) : null;
-      if (docRef) {
-        docRef.onSnapshot(function(docSnap) {
-          if (!docSnap.exists) {
-            forceLogoutUser();
-          } else {
-            var updated = docSnap.data();
-            if (updated.role !== user.role || JSON.stringify(updated.enrolledCourses) !== JSON.stringify(user.enrolledCourses)) {
-              localStorage.setItem("current_user", JSON.stringify(updated));
-              updateNavbarAndAuthGuards();
-            }
-          }
-        }, function() {
+
+      // الاستماع للوثيقة المباشرة بالبريد الإلكتروني لضمان التطابق التام مع أي تعديل أو حذف
+      firebase.firestore().collection("users").where("email", "==", user.email.toLowerCase()).onSnapshot(function(snapshot) {
+        if (snapshot.empty) {
+          // الحساب غير موجود في السحابة = تم حذفه
           forceLogoutUser();
-        });
-      }
+        } else {
+          var liveDoc = snapshot.docs[0].data();
+          liveDoc.uid = snapshot.docs[0].id;
+
+          var roleChanged = liveDoc.role !== user.role;
+          var coursesChanged = JSON.stringify(liveDoc.enrolledCourses || []) !== JSON.stringify(user.enrolledCourses || []);
+          var customLessonsChanged = JSON.stringify(liveDoc.customAllowedLessons || {}) !== JSON.stringify(user.customAllowedLessons || {});
+
+          if (roleChanged || coursesChanged || customLessonsChanged) {
+            localStorage.setItem("current_user", JSON.stringify(liveDoc));
+            user = liveDoc;
+
+            if (roleChanged) {
+              showToast("تم تحديث رتبتك الإدارية إلى: " + liveDoc.role, "info", "تحديث الصلاحيات");
+              setTimeout(function() {
+                if (liveDoc.role === "SUPER_ADMIN" || liveDoc.role === "ADMIN") {
+                  window.location.replace("admin.html");
+                } else if (liveDoc.role === "SUPPORT") {
+                  window.location.replace("support.html");
+                } else {
+                  window.location.replace("dashboard.html");
+                }
+              }, 800);
+            } else if (coursesChanged || customLessonsChanged) {
+              showToast("تم تحديث الكورسات والمحاضرات المفعلة في حسابك بنجاح ✓", "success", "تفعيل المحتوى");
+              if (typeof renderStudentDashboard === "function") {
+                renderStudentDashboard();
+              }
+            }
+            updateNavbarAndAuthGuards();
+          }
+        }
+      }, function() {
+        forceLogoutUser();
+      });
     }
   }, 200);
 }
@@ -181,10 +204,10 @@ function forceLogoutUser() {
   showToast("تم حذف هذا الحساب من قِبل الإدارة.", "error", "تنبيه أمني");
   setTimeout(function() {
     window.location.replace("login.html");
-  }, 500);
+  }, 400);
 }
 
-// 4. استماع لحظي للإشعارات السحابية وبثها على أجهزة الطلاب فقط دون الأدمن المرسل
+// 4. استماع لحظي للإشعارات السحابية
 function initRealtimeNotificationsReceiver() {
   var lastKnownNotifId = localStorage.getItem("hk_last_received_notif_id") || "";
   var isFirstLoad = true;
@@ -207,13 +230,12 @@ function initRealtimeNotificationsReceiver() {
           lastKnownNotifId = latest.id;
           localStorage.setItem("hk_last_received_notif_id", latest.id);
 
-          // عدم إرسال إشعار للمرسل (الأدمن) نفسه
           if (user && latest.senderEmail && user.email.toLowerCase() === latest.senderEmail) {
             return;
           }
 
           if (!user && latest.targetEmail !== "ALL") return;
-          if (user && (latest.targetEmail === "ALL" || latest.targetEmail === user.email)) {
+          if (user && (latest.targetEmail === "ALL" || latest.targetEmail === user.email.toLowerCase())) {
             triggerDeviceNativeNotification(latest.title, latest.body, latest.targetUrl);
             showToast(latest.body, "info", latest.title);
           }
@@ -357,26 +379,19 @@ async function handleEnrollClick(courseId) {
     var confirmed = await customConfirm("هل تؤكد رغبتك في الاشتراك بالكورس المجاني: " + course.title + "؟", "تأكيد الاشتراك");
     if (!confirmed) return;
 
-    var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-    var uIdx = users.findIndex(function(u) { return u.email === user.email; });
-    if (uIdx !== -1) {
-      if (!users[uIdx].enrolledCourses) users[uIdx].enrolledCourses = [];
-      users[uIdx].enrolledCourses.push(courseId);
+    var newEnrolled = user.enrolledCourses || [];
+    if (!newEnrolled.includes(courseId)) newEnrolled.push(courseId);
 
-      if (window.FirebaseService && users[uIdx].uid) {
-        try {
-          await window.FirebaseService.updateUserPermissions(users[uIdx].uid, users[uIdx].enrolledCourses, users[uIdx].customAllowedLessons);
-        } catch (e) {}
-      }
-
-      localStorage.setItem("edu_users", JSON.stringify(users));
-      user.enrolledCourses = users[uIdx].enrolledCourses;
-      localStorage.setItem("current_user", JSON.stringify(user));
-
-      showToast("تم تفعيل الكورس في حسابك بنجاح", "success");
-      setTimeout(function() { window.location.href = "course-view.html?id=" + courseId; }, 1000);
-      return;
+    if (window.FirebaseService) {
+      await window.FirebaseService.updateUserEnrollmentsByEmail(user.email, newEnrolled, user.customAllowedLessons);
     }
+
+    user.enrolledCourses = newEnrolled;
+    localStorage.setItem("current_user", JSON.stringify(user));
+
+    showToast("تم تفعيل الكورس في حسابك بنجاح", "success");
+    setTimeout(function() { window.location.href = "course-view.html?id=" + courseId; }, 1000);
+    return;
   }
 
   var proceed = await customConfirm("هل تريد الانتقال لصفحة تأكيد ودفع رسوم الكورس: " + (course ? course.title : "") + "؟", "الاشتراك بالكورس");

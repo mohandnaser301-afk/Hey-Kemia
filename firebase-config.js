@@ -34,7 +34,6 @@ function getFirebase() {
   return firebase;
 }
 
-// دالة تحويل أي رابط يوتيوب إلى رابط Embed صالح للتشغيل الفوري
 function formatYouTubeEmbedUrl(url) {
   if (!url) return "";
   url = url.trim();
@@ -143,7 +142,9 @@ window.FirebaseService = {
 
     if (!foundUser && fb && fb.firestore) {
       const qSnap = await fb.firestore().collection("users").where("email", "==", email.toLowerCase()).get();
-      if (!qSnap.empty) foundUser = qSnap.docs[0].data();
+      if (!qSnap.empty) {
+        foundUser = qSnap.docs[0].data();
+      }
     }
 
     if (foundUser) {
@@ -163,42 +164,58 @@ window.FirebaseService = {
     window.location.href = "login.html";
   },
 
+  // 1. المستخدمين
   subscribeUsers(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
       return fb.firestore().collection("users").onSnapshot(snap => {
         const list = [];
-        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        snap.forEach(doc => list.push({ uid: doc.id, ...doc.data() }));
         localStorage.setItem("edu_users", JSON.stringify(list));
         if (callback) callback(list);
       });
     }
   },
 
-  async updateUserRole(uid, newRole) {
+  async updateUserRoleByEmail(email, newRole) {
     const fb = getFirebase();
-    if (fb && fb.firestore && uid) {
-      await fb.firestore().collection("users").doc(uid).update({ role: newRole });
-    }
-  },
-
-  async updateUserPermissions(uid, enrolledCourses, customLessons) {
-    const fb = getFirebase();
-    if (fb && fb.firestore && uid) {
-      await fb.firestore().collection("users").doc(uid).update({
-        enrolledCourses: enrolledCourses,
-        customAllowedLessons: customLessons || {}
+    if (fb && fb.firestore && email) {
+      const qSnap = await fb.firestore().collection("users").where("email", "==", email.toLowerCase()).get();
+      const promises = [];
+      qSnap.forEach(doc => {
+        promises.push(doc.ref.update({ role: newRole }));
       });
+      await Promise.all(promises);
     }
   },
 
-  async deleteUser(uid) {
+  async updateUserEnrollmentsByEmail(email, enrolledCourses, customLessons) {
     const fb = getFirebase();
-    if (fb && fb.firestore && uid) {
-      await fb.firestore().collection("users").doc(uid).delete();
+    if (fb && fb.firestore && email) {
+      const qSnap = await fb.firestore().collection("users").where("email", "==", email.toLowerCase()).get();
+      const promises = [];
+      qSnap.forEach(doc => {
+        const updateData = { enrolledCourses: enrolledCourses };
+        if (customLessons) updateData.customAllowedLessons = customLessons;
+        promises.push(doc.ref.update(updateData));
+      });
+      await Promise.all(promises);
     }
   },
 
+  async deleteUserByEmail(email) {
+    const fb = getFirebase();
+    if (fb && fb.firestore && email) {
+      const qSnap = await fb.firestore().collection("users").where("email", "==", email.toLowerCase()).get();
+      const promises = [];
+      qSnap.forEach(doc => {
+        promises.push(doc.ref.delete());
+      });
+      await Promise.all(promises);
+    }
+  },
+
+  // 2. الكورسات
   subscribeCourses(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -217,15 +234,12 @@ window.FirebaseService = {
       if (courseData.image && courseData.image.startsWith("data:image")) {
         courseData.image = await compressImageBase64(courseData.image, 450, 260, 0.45);
       }
-
-      // تصحيح وتحويل كافة روابط محاضرات الكورس لصيغة Embed صالحة
       if (courseData.lessons && Array.isArray(courseData.lessons)) {
         courseData.lessons = courseData.lessons.map(l => ({
           ...l,
           videoUrl: formatYouTubeEmbedUrl(l.videoUrl)
         }));
       }
-
       if (courseId) {
         await fb.firestore().collection("courses").doc(courseId).set(courseData, { merge: true });
         return { id: courseId, ...courseData };
@@ -243,6 +257,7 @@ window.FirebaseService = {
     }
   },
 
+  // 3. الامتحانات
   subscribeExams(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -274,6 +289,7 @@ window.FirebaseService = {
     }
   },
 
+  // 4. المدفوعات
   subscribePayments(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -306,7 +322,7 @@ window.FirebaseService = {
     }
   },
 
-  // إرسال الإشعارات السحابية
+  // 5. الإشعارات السحابية
   subscribeNotifications(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {

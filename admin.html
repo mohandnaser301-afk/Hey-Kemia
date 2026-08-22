@@ -398,33 +398,33 @@
           <input type="text" id="studentSearchInput" oninput="filterStudentsTable()" placeholder="ابحث بالاسم، البريد الإلكتروني، أو رقم الهاتف...">
           <select id="studentGovFilter" onchange="filterStudentsTable()">
             <option value="">جميع محافظات مصر (27 محافظة)</option>
+            <option value="كفر الشيخ">كفر الشيخ</option>
+            <option value="القاهرة">القاهرة</option>
             <option value="الإسكندرية">الإسكندرية</option>
-            <option value="الإسماعيلية">الإسماعيلية</option>
-            <option value="أسوان">أسوان</option>
-            <option value="أسيوط">أسيوط</option>
-            <option value="الأقصر">الأقصر</option>
-            <option value="البحر الأحمر">البحر الأحمر</option>
-            <option value="البحيرة">البحيرة</option>
-            <option value="بني سويف">بني سويف</option>
-            <option value="بورسعيد">بورسعيد</option>
-            <option value="جنوب سيناء">جنوب سيناء</option>
             <option value="الجيزة">الجيزة</option>
             <option value="الدقهلية">الدقهلية</option>
-            <option value="دمياط">دمياط</option>
-            <option value="سوهاج">سوهاج</option>
-            <option value="السويس">السويس</option>
-            <option value="الشرقية">الشرقية</option>
-            <option value="شمال سيناء">شمال سيناء</option>
             <option value="الغربية">الغربية</option>
-            <option value="الفيوم">الفيوم</option>
-            <option value="القاهرة">القاهرة</option>
-            <option value="القليوبية">القليوبية</option>
-            <option value="قنا">قنا</option>
-            <option value="كفر الشيخ">كفر الشيخ</option>
-            <option value="مطروح">مطروح</option>
+            <option value="الشرقية">الشرقية</option>
             <option value="المنوفية">المنوفية</option>
+            <option value="البحيرة">البحيرة</option>
+            <option value="القليوبية">القليوبية</option>
+            <option value="دمياط">دمياط</option>
+            <option value="بورسعيد">بورسعيد</option>
+            <option value="الإسماعيلية">الإسماعيلية</option>
+            <option value="السويس">السويس</option>
+            <option value="الفيوم">الفيوم</option>
+            <option value="بني سويف">بني سويف</option>
             <option value="المنيا">المنيا</option>
+            <option value="أسيوط">أسيوط</option>
+            <option value="سوهاج">سوهاج</option>
+            <option value="قنا">قنا</option>
+            <option value="الأقصر">الأقصر</option>
+            <option value="أسوان">أسوان</option>
+            <option value="مطروح">مطروح</option>
             <option value="الوادي الجديد">الوادي الجديد</option>
+            <option value="البحر الأحمر">البحر الأحمر</option>
+            <option value="شمال سيناء">شمال سيناء</option>
+            <option value="جنوب سيناء">جنوب سيناء</option>
           </select>
         </div>
 
@@ -1019,7 +1019,9 @@
       var arrow = document.getElementById("mobileMenuArrowIcon");
       if (nav) {
         var isOpen = nav.classList.toggle("show-mobile-menu");
-        if (arrow) arrow.style.transform = isOpen ? "rotate(180deg)" : "rotate(0deg)";
+        if (arrow) {
+          arrow.style.transform = isOpen ? "rotate(180deg)" : "rotate(0deg)";
+        }
       }
     }
 
@@ -1111,7 +1113,7 @@
       row.innerHTML = 
         '<div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">' +
           '<input type="text" class="lesson-title-input" placeholder="عنوان المحاضرة" value="' + (title || "") + '" style="flex:2; min-width:180px;">' +
-          '<input type="text" class="lesson-video-input" placeholder="رابط يوتيوب تضمين (Embed)" value="' + (video || "") + '" style="flex:2; min-width:180px;">' +
+          '<input type="text" class="lesson-video-input" placeholder="رابط يوتيوب أو Embed" value="' + (video || "") + '" style="flex:2; min-width:180px;">' +
           '<input type="text" class="lesson-dur-input" placeholder="المدة (مثال: 45 دقيقة)" value="' + (duration || "45 دقيقة") + '" style="flex:1; min-width:100px;">' +
           '<button type="button" class="btn-action btn-action-danger" onclick="this.closest(\'.lesson-item-row\').remove()" style="padding:6px 10px;">حذف المحاضرة</button>' +
         '</div>' +
@@ -1168,7 +1170,7 @@
           lessons.push({
             id: idx + 1,
             title: t,
-            videoUrl: v,
+            videoUrl: formatYouTubeEmbedUrl(v),
             duration: d || "45 دقيقة",
             pdfs: pdfs
           });
@@ -1263,9 +1265,9 @@
         users[uIdx].enrolledCourses = newEnrolled;
         users[uIdx].customAllowedLessons = newCustomLessons;
 
-        if (window.FirebaseService && users[uIdx].uid) {
+        if (window.FirebaseService) {
           try {
-            await window.FirebaseService.updateUserPermissions(users[uIdx].uid, newEnrolled, newCustomLessons);
+            await window.FirebaseService.updateUserEnrollmentsByEmail(studentEmail, newEnrolled, newCustomLessons);
           } catch (e) {
             console.warn("تحديث السحابة:", e.message);
           }
@@ -1274,7 +1276,7 @@
         localStorage.setItem("edu_users", JSON.stringify(users));
 
         var currentLoggedIn = getCurrentUser();
-        if (currentLoggedIn && currentLoggedIn.email === studentEmail) {
+        if (currentLoggedIn && currentLoggedIn.email.toLowerCase() === studentEmail.toLowerCase()) {
           currentLoggedIn.enrolledCourses = newEnrolled;
           currentLoggedIn.customAllowedLessons = newCustomLessons;
           localStorage.setItem("current_user", JSON.stringify(currentLoggedIn));
@@ -1282,7 +1284,7 @@
 
         logAdminAction("تعديل صلاحيات المحاضرات", "تم تحديث الكورسات والمحاضرات المسموحة للطالب: " + users[uIdx].fullName);
         closeModal("studentCoursePermissionsModal");
-        showToast("تم حفظ الصلاحيات وتفعيلها لجميع الأجهزة بنجاح ✓", "success");
+        showToast("تم تفعيل الكورسات والمحاضرات للطالب سحابياً بنجاح ✓", "success");
       }
     }
 
@@ -1815,7 +1817,7 @@
           '<td><button type="button" class="btn-action btn-action-primary" onclick="viewReceiptImage(\'' + p.receipt + '\')">معاينة الإيصال</button></td>' +
           "<td>" + (p.status === "PENDING" ? '<button class="btn-action btn-action-success" onclick="approvePayment(\'' + p.id + '\')">قبول وتفعيل وإشعار</button>' : '<span style="color:#10b981; font-weight:bold;">مفعل</span>') + "</td>" +
         "</tr>";
-      }).join("");
+      }).reverse().join("");
 
       if (isSuperAdmin) {
         var hackersBody = document.getElementById("hackersTableBody");
@@ -1996,23 +1998,17 @@
         return;
       }
 
-      var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-      var uIdx = users.findIndex(function(u) { return u.email === targetEmail; });
+      showToast("جاري إسناد الرتبة وتحديث صلاحيات الحساب سحابياً...", "info");
 
-      if (uIdx !== -1) {
-        users[uIdx].role = newRole;
-
-        if (window.FirebaseService && users[uIdx].uid) {
-          try {
-            await window.FirebaseService.updateUserRole(users[uIdx].uid, newRole);
-          } catch (err) {}
+      try {
+        if (window.FirebaseService) {
+          await window.FirebaseService.updateUserRoleByEmail(targetEmail, newRole);
         }
-
-        localStorage.setItem("edu_users", JSON.stringify(users));
-
-        logAdminAction("إسناد رتبة إدارية", "تمت ترقية الحساب: " + users[uIdx].fullName + " إلى رتبة: " + newRole);
+        logAdminAction("إسناد رتبة إدارية", "تمت ترقية الحساب: " + targetEmail + " إلى رتبة: " + newRole);
         closeModal("addStaffModal");
-        showToast("تمت ترقية الحساب سحابياً بنجاح إلى الطاقم الإداري ✓", "success");
+        showToast("تمت ترقية الحساب سحابياً وتفعيل صلاحياته فوراً ✓", "success");
+      } catch (err) {
+        showToast("تعذر التحديث السحابي: " + err.message, "error");
       }
     });
 
@@ -2038,24 +2034,17 @@
       var targetEmail = document.getElementById("editStaffTargetEmail").value;
       var newRole = document.getElementById("editStaffNewRoleSelect").value;
 
-      var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-      var uIdx = users.findIndex(function(u) { return u.email === targetEmail; });
+      showToast("جاري حفظ التعديل وتحديث صلاحيات المسؤول فورياً...", "info");
 
-      if (uIdx !== -1) {
-        var oldRole = users[uIdx].role;
-        users[uIdx].role = newRole;
-
-        if (window.FirebaseService && users[uIdx].uid) {
-          try {
-            await window.FirebaseService.updateUserRole(users[uIdx].uid, newRole);
-          } catch (err) {}
+      try {
+        if (window.FirebaseService) {
+          await window.FirebaseService.updateUserRoleByEmail(targetEmail, newRole);
         }
-
-        localStorage.setItem("edu_users", JSON.stringify(users));
-
-        logAdminAction("تعديل رتبة مسؤول", "تم تعديل رتبة " + users[uIdx].fullName + " من " + oldRole + " إلى " + newRole);
+        logAdminAction("تعديل رتبة مسؤول", "تم تعديل رتبة " + targetEmail + " إلى " + newRole);
         closeModal("editStaffRoleModal");
-        showToast("تم تحديث رتبة المسؤول سحابياً بنجاح ✓", "success");
+        showToast("تم تحديث رتبة وصلاحيات المسؤول سحابياً وفورياً ✓", "success");
+      } catch (err) {
+        showToast("تعذر التحديث السحابي: " + err.message, "error");
       }
     }
 
@@ -2067,7 +2056,7 @@
 
       if (!title || !body) return;
 
-      showToast("جاري إرسال الإشعار لجميع الأجهزة...", "info");
+      showToast("جاري بث الإشعار لجميع الأجهزة سحابياً...", "info");
       await sendSystemPushNotification(title, body, target);
       logAdminAction("إرسال إشعار", "تم إرسال إشعار للطلاب: " + title);
       document.getElementById("pushTitleInput").value = "";
@@ -2089,22 +2078,20 @@
           await window.FirebaseService.updatePaymentStatus(id, "APPROVED");
         }
 
-        var u = users.find(function(x) { return x.email === p.userEmail; });
-        if (u) {
-          if (!u.enrolledCourses) u.enrolledCourses = [];
-          if (!u.enrolledCourses.includes(p.courseId)) u.enrolledCourses.push(p.courseId);
-
-          if (window.FirebaseService && u.uid) {
-            try {
-              await window.FirebaseService.updateUserPermissions(u.uid, u.enrolledCourses, u.customAllowedLessons);
-            } catch (err) {}
-          }
+        var u = users.find(function(x) { return x.email.toLowerCase() === p.userEmail.toLowerCase(); });
+        var targetEnrolled = (u && u.enrolledCourses) ? u.enrolledCourses : [];
+        if (!targetEnrolled.includes(p.courseId)) {
+          targetEnrolled.push(p.courseId);
         }
-        localStorage.setItem("edu_payments", JSON.stringify(payments));
-        localStorage.setItem("edu_users", JSON.stringify(users));
+
+        if (window.FirebaseService) {
+          try {
+            await window.FirebaseService.updateUserEnrollmentsByEmail(p.userEmail, targetEnrolled);
+          } catch (err) {}
+        }
 
         await sendSystemPushNotification("تم تفعيل الكورس بنجاح", "مرحباً " + p.userName + "، تم اعتماد إيصال الدفع وتفعيل كورس: " + p.courseTitle + " في حسابك.", p.userEmail);
-        showToast("تم تفعيل الكورس وإرسال الإشعار الفوري للطالب ✓", "success");
+        showToast("تم تفعيل الكورس في حساب الطالب سحابياً وإرسال الإشعار الفوري ✓", "success");
       }
     }
 
@@ -2129,26 +2116,17 @@
         return;
       }
 
-      var confirmed = await customConfirm("هل تريد حذف هذا الحساب نهائياً؟ سيتم تسجيل خروجه فوراً ومسحه من قاعدة البيانات.", "حذف الحساب نهائياً");
+      var confirmed = await customConfirm("هل تريد حذف هذا الحساب نهائياً؟ سيتم مسحه من قاعدة البيانات وطرده فوراً من أي جهاز.", "حذف الحساب نهائياً");
       if (confirmed) {
-        var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-        var targetUser = users.find(function(u) { return u.email === email; });
-
-        if (window.firebase && firebase.firestore) {
+        if (window.FirebaseService) {
           try {
-            if (targetUser && targetUser.uid) {
-              await firebase.firestore().collection("users").doc(targetUser.uid).delete();
-            } else {
-              var qSnap = await firebase.firestore().collection("users").where("email", "==", email.toLowerCase()).get();
-              qSnap.forEach(async function(d) {
-                await d.ref.delete();
-              });
-            }
+            await window.FirebaseService.deleteUserByEmail(email);
           } catch (e) {
             console.warn("حذف سحابي:", e.message);
           }
         }
 
+        var users = JSON.parse(localStorage.getItem("edu_users")) || [];
         localStorage.setItem("edu_users", JSON.stringify(users.filter(function(u) { return u.email !== email; })));
         showToast("تم مسح الحساب من قاعدة البيانات بنجاح وسيتم طرده فوراً ✓", "success");
       }
@@ -2324,7 +2302,6 @@
       }
     }
 
-    // تفعيل الاستماع اللحظي الشامل لجميع المجموعات السحابية
     document.addEventListener("DOMContentLoaded", function() {
       var toggleBtn = document.getElementById("mobileSidebarToggleBtn");
       if (toggleBtn) {
