@@ -88,21 +88,26 @@ function compressImageBase64(base64Str, maxWidth, maxHeight, quality) {
 window.compressImageBase64 = compressImageBase64;
 
 window.FirebaseService = {
-  // 1. التسجيل والمصادقة
+  // 1. التسجيل والتحقق من البريد الإلكتروني
   async registerStudent(userData) {
     const fb = getFirebase();
     let uid = "u_" + Date.now();
+    const cleanEmail = userData.email.toLowerCase().trim();
 
     if (fb && fb.auth) {
       try {
-        const userCredential = await fb.auth().createUserWithEmailAndPassword(userData.email, userData.password);
+        const userCredential = await fb.auth().createUserWithEmailAndPassword(cleanEmail, userData.password);
         uid = userCredential.user.uid;
+        // إرسال رسالة تفعيل البريد الإلكتروني تلقائياً
+        await userCredential.user.sendEmailVerification();
       } catch (authErr) {
-        console.warn("Auth Notice:", authErr.message);
+        if (authErr.code === 'auth/email-already-in-use') {
+          throw new Error("هذا البريد الإلكتروني مسجل بالفعل بحساب آخر.");
+        }
+        throw authErr;
       }
     }
 
-    const cleanEmail = userData.email.toLowerCase().trim();
     const userDoc = {
       uid: uid,
       fullName: userData.fullName,
@@ -116,6 +121,7 @@ window.FirebaseService = {
       enrolledCourses: ["c1"],
       customAllowedLessons: {},
       courseAccessCount: {},
+      emailVerified: false,
       createdAt: new Date().toISOString()
     };
 
@@ -123,7 +129,6 @@ window.FirebaseService = {
       await fb.firestore().collection("users").doc(uid).set(userDoc);
     }
 
-    localStorage.setItem("current_user", JSON.stringify(userDoc));
     return userDoc;
   },
 
@@ -135,11 +140,30 @@ window.FirebaseService = {
     if (fb && fb.auth) {
       try {
         const userCredential = await fb.auth().signInWithEmailAndPassword(cleanEmail, password);
-        const uid = userCredential.user.uid;
+        const fbUser = userCredential.user;
+        const uid = fbUser.uid;
         const snap = await fb.firestore().collection("users").doc(uid).get();
-        if (snap.exists) foundUser = snap.data();
+        if (snap.exists) {
+          foundUser = snap.data();
+          foundUser.uid = uid;
+        }
+
+        // تحديث حالة تأكيد البريد إذا كان طالباً
+        if (foundUser && foundUser.role === "STUDENT") {
+          if (!fbUser.emailVerified) {
+            localStorage.setItem("unverified_email", cleanEmail);
+            throw new Error("EMAIL_NOT_VERIFIED");
+          } else if (!foundUser.emailVerified) {
+            await fb.firestore().collection("users").doc(uid).update({ emailVerified: true });
+            foundUser.emailVerified = true;
+          }
+        }
       } catch (e) {
-        console.warn("Auth fallback:", e.message);
+        if (e.message === "EMAIL_NOT_VERIFIED") throw e;
+        if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+          throw new Error("البريد الإلكتروني أو كلمة المرور غير صحيحة");
+        }
+        throw e;
       }
     }
 
@@ -156,6 +180,15 @@ window.FirebaseService = {
       return foundUser;
     } else {
       throw new Error("البريد الإلكتروني أو كلمة المرور غير صحيحة");
+    }
+  },
+
+  async resendVerificationEmail(email, password) {
+    const fb = getFirebase();
+    if (fb && fb.auth) {
+      const userCredential = await fb.auth().signInWithEmailAndPassword(email.toLowerCase().trim(), password);
+      await userCredential.user.sendEmailVerification();
+      await fb.auth().signOut();
     }
   },
 
@@ -226,7 +259,6 @@ window.FirebaseService = {
 
       await batch.commit();
 
-      // حذف ثريد الدعم الفني
       try {
         const chatMsgs = await fb.firestore().collection("support_threads").doc(cleanEmail).collection("messages").get();
         const chatBatch = fb.firestore().batch();
@@ -332,7 +364,7 @@ window.FirebaseService = {
     }
   },
 
-  // 5. المدفوعات والاعتماد الفوري للكورسات
+  // 5. المدفوعات والاعتماد الفوري
   subscribePayments(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -392,7 +424,7 @@ window.FirebaseService = {
     }
   },
 
-  // 7. منظومة الدعم الفني المنفصل لكل طالب
+  // 7. منظومة الدعم الفني المنفصلة
   subscribeStudentChat(studentEmail, callback) {
     const fb = getFirebase();
     if (fb && fb.firestore && studentEmail) {
@@ -434,10 +466,8 @@ window.FirebaseService = {
         createdAt: now
       };
 
-      // إضافة الرسالة في Subcollection الخاص بالطالب
       await fb.firestore().collection("support_threads").doc(studentEmail).collection("messages").add(messageDoc);
 
-      // تحديث وثيقة الثريد الرئيسية
       const threadUpdate = {
         studentEmail: studentEmail,
         studentName: msgData.studentName || studentEmail,

@@ -3,42 +3,39 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>إنشاء حساب طالب جديد - هي كيميا !</title>
+  <title>إنشاء حساب طالب - هي كيميا !</title>
   <link rel="stylesheet" href="style.css">
   <style>
     .auth-page-wrapper {
-      min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 95px 16px 40px;
-      position: relative;
+      padding: 80px 16px 30px;
     }
     .auth-card-modern {
-      background: rgba(255, 255, 255, 0.94);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.8);
-      box-shadow: 0 20px 50px rgba(14, 19, 56, 0.09);
-      border-radius: 24px;
-      padding: 34px 28px;
-      max-width: 540px;
+      background: #ffffff;
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.06);
+      border-radius: 20px;
+      padding: 30px 22px;
+      max-width: 520px;
       width: 100%;
-      position: relative;
     }
-    .stepper-container { margin: 20px 0 26px; position: relative; }
+    .stepper-container { margin: 16px 0 22px; position: relative; }
     .stepper-nav { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2; }
-    .stepper-track-bg { position: absolute; top: 18px; left: 24px; right: 24px; height: 3px; background: #E2E8F0; z-index: 1; }
-    .stepper-track-fill { position: absolute; top: 18px; right: 24px; height: 3px; background: #00D2FF; z-index: 1; transition: width 0.3s ease; width: 0%; }
+    .stepper-track-bg { position: absolute; top: 16px; left: 20px; right: 20px; height: 3px; background: #E2E8F0; z-index: 1; }
+    .stepper-track-fill { position: absolute; top: 16px; right: 20px; height: 3px; background: #00D2FF; z-index: 1; transition: width 0.3s ease; width: 0%; }
     .step-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-    .step-circle { width: 36px; height: 36px; border-radius: 50%; background: #fff; border: 2px solid #CBD5E1; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; color: #94A3B8; }
+    .step-circle { width: 34px; height: 34px; border-radius: 50%; background: #fff; border: 2px solid #CBD5E1; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12.5px; color: #94A3B8; }
     .step-item.active .step-circle { border-color: #00D2FF; background: var(--royal-indigo-base); color: #fff; }
     .step-item.completed .step-circle { background: #10B981; border-color: #10B981; color: #fff; }
     .step-label { font-size: 11px; font-weight: 800; color: #64748B; }
     .form-step-pane { display: none; }
     .form-step-pane.active { display: block; animation: fadeInStep 0.25s ease; }
     @keyframes fadeInStep { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-    .step-actions-bar { display: flex; gap: 10px; margin-top: 20px; padding-top: 14px; border-top: 1px solid #EEF2F6; }
+    .step-actions-bar { display: flex; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #EEF2F6; }
+    .success-verify-card { display: none; text-align: center; padding: 20px 0; }
   </style>
 </head>
 <body>
@@ -49,12 +46,6 @@
         <div class="capsule-logo">HK</div>
         <span class="brand-text">هي كيميا<span>!</span></span>
       </a>
-      <button type="button" class="nav-mobile-toggle" onclick="toggleNavMenu()">☰</button>
-      <div class="capsule-links" id="mainNavLinks">
-        <a href="index.html">الرئيسية</a>
-        <a href="index.html#courses">الكورسات</a>
-        <a href="support.html">الدعم الفني</a>
-      </div>
       <div class="capsule-auth">
         <a href="login.html" class="nav-btn-link">تسجيل الدخول</a>
       </div>
@@ -64,34 +55,45 @@
   <div class="auth-page-wrapper">
     <div class="auth-card-modern">
       
-      <div style="text-align: center;">
-        <h1 style="font-size: 22px; font-weight: 900; color: var(--royal-indigo-base); margin-bottom: 4px;">إنشاء حساب طالب جديد</h1>
-        <p style="color: var(--text-muted); font-size: 13px;">منظومة الكيمياء للأستاذ محمد السعيد</p>
+      <div id="registerHeader">
+        <div style="text-align: center;">
+          <h1 style="font-size: 20px; font-weight: 900; color: var(--royal-indigo-base); margin-bottom: 4px;">إنشاء حساب جديد</h1>
+          <p style="color: var(--text-muted); font-size: 13px;">منظومة الكيمياء للأستاذ محمد السعيد</p>
+        </div>
+
+        <div class="stepper-container">
+          <div class="stepper-track-bg"></div>
+          <div class="stepper-track-fill" id="stepProgressBar"></div>
+          <div class="stepper-nav">
+            <div class="step-item active" id="stepItem1"><div class="step-circle" id="bubble1">1</div><span class="step-label">البيانات</span></div>
+            <div class="step-item" id="stepItem2"><div class="step-circle" id="bubble2">2</div><span class="step-label">التواصل</span></div>
+            <div class="step-item" id="stepItem3"><div class="step-circle" id="bubble3">3</div><span class="step-label">كلمة المرور</span></div>
+          </div>
+        </div>
       </div>
 
-      <div class="stepper-container">
-        <div class="stepper-track-bg"></div>
-        <div class="stepper-track-fill" id="stepProgressBar"></div>
-        <div class="stepper-nav">
-          <div class="step-item active" id="stepItem1"><div class="step-circle" id="bubble1">1</div><span class="step-label">البيانات الشخصية</span></div>
-          <div class="step-item" id="stepItem2"><div class="step-circle" id="bubble2">2</div><span class="step-label">التواصل والدراسة</span></div>
-          <div class="step-item" id="stepItem3"><div class="step-circle" id="bubble3">3</div><span class="step-label">كلمة المرور</span></div>
-        </div>
+      <div class="success-verify-card" id="successVerifyCard">
+        <div style="width:50px; height:50px; background:#D1FAE5; color:#059669; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 12px; font-size:22px; font-weight:bold;">✓</div>
+        <h2 style="font-size:18px; font-weight:900; color:var(--royal-indigo-base); margin-bottom:8px;">تم إنشاء الحساب بنجاح!</h2>
+        <p style="font-size:13.5px; color:#475569; line-height:1.6; margin-bottom:18px;">
+          أرسلنا رسالة تأكيد إلى بريدك الإلكتروني. يرجى فتح الرسالة والضغط على رابط التفعيل ثم تسجيل الدخول للبدء.
+        </p>
+        <a href="login.html" class="btn btn-primary" style="width:100%; text-decoration:none; padding:12px;">الانتقال لصفحة تسجيل الدخول ←</a>
       </div>
 
       <form id="multiStepRegisterForm">
         
-        <!-- الخطوة 1: البيانات الشخصية -->
+        <!-- الخطوة 1 -->
         <div class="form-step-pane active" id="stepPane1">
           <div class="form-group">
-            <label>الاسم ثلاثي أو رباعي (باللغة العربية فقط):</label>
-            <input type="text" id="regFullName" placeholder="محمد أحمد السعيد" required oninput="validateArabicInput(this)">
-            <small style="color: #64748b; font-size: 11px; margin-top: 3px;">* يقبل الحروف والمسافات العربية فقط.</small>
+            <label>الاسم ثلاثي أو رباعي (عربي فقط):</label>
+            <input type="text" id="regFullName" placeholder="محمد أحمد السعيد" required oninput="this.value = this.value.replace(/[^\u0600-\u06FF\s]/g, '')">
           </div>
 
           <div class="form-group">
-            <label>البريد الإلكتروني:</label>
+            <label>البريد الإلكتروني الصحيح:</label>
             <input type="email" id="regEmail" placeholder="student@example.com" required>
+            <small style="color:#64748B; font-size:11px; margin-top:2px;">* سيتم إرسال رابط تأكيد وتفعيل الحساب لهذا البريد.</small>
           </div>
 
           <div class="form-group">
@@ -128,22 +130,20 @@
           </div>
 
           <div class="step-actions-bar">
-            <button type="button" class="btn btn-primary" style="width: 100%;" onclick="goToStep(2)">متابعة الخطوة التالية ←</button>
+            <button type="button" class="btn btn-primary" style="width: 100%;" onclick="goToStep(2)">التالي ←</button>
           </div>
         </div>
 
-        <!-- الخطوة 2: التواصل والدراسة -->
+        <!-- الخطوة 2 -->
         <div class="form-step-pane" id="stepPane2">
           <div class="form-group">
-            <label>رقم هاتف الطالب (واتساب):</label>
-            <input type="tel" id="regStudentPhone" placeholder="01xxxxxxxxx" maxlength="11" required oninput="validateEgyptianPhoneInput(this)">
-            <small style="color: #64748b; font-size: 11px; margin-top: 3px;">* يجب أن يتكون من 11 رقماً مصرياً يبدأ بـ (010, 011, 012, 015).</small>
+            <label>رقم هاتف الطالب (11 رقم):</label>
+            <input type="tel" id="regStudentPhone" placeholder="01xxxxxxxxx" maxlength="11" required oninput="this.value=this.value.replace(/\D/g,'')">
           </div>
 
           <div class="form-group">
-            <label>رقم هاتف ولي الأمر:</label>
-            <input type="tel" id="regParentPhone" placeholder="01xxxxxxxxx" maxlength="11" required oninput="validateEgyptianPhoneInput(this)">
-            <small style="color: #64748b; font-size: 11px; margin-top: 3px;">* 11 رقماً مصرياً ويبدأ بـ (010, 011, 012, 015).</small>
+            <label>رقم هاتف ولي الأمر (11 رقم):</label>
+            <input type="tel" id="regParentPhone" placeholder="01xxxxxxxxx" maxlength="11" required oninput="this.value=this.value.replace(/\D/g,'')">
           </div>
 
           <div class="form-row">
@@ -162,11 +162,11 @@
 
           <div class="step-actions-bar">
             <button type="button" class="btn btn-outline" onclick="goToStep(1)">→ السابق</button>
-            <button type="button" class="btn btn-primary" style="flex:1;" onclick="goToStep(3)">متابعة الخطوة الأخيرة ←</button>
+            <button type="button" class="btn btn-primary" style="flex:1;" onclick="goToStep(3)">التالي ←</button>
           </div>
         </div>
 
-        <!-- الخطوة 3: كلمة المرور -->
+        <!-- الخطوة 3 -->
         <div class="form-step-pane" id="stepPane3">
           <div class="form-group">
             <label>كلمة المرور:</label>
@@ -180,13 +180,13 @@
 
           <div class="step-actions-bar">
             <button type="button" class="btn btn-outline" onclick="goToStep(2)">→ السابق</button>
-            <button type="submit" class="btn btn-primary" style="flex:1; background:linear-gradient(135deg,#00D2FF,#0284C7);">إتمام التسجيل والدخول ✓</button>
+            <button type="submit" class="btn btn-primary" style="flex:1;">إتمام التسجيل وإرسال التفعيل ✓</button>
           </div>
         </div>
 
       </form>
 
-      <div style="text-align:center; margin-top: 18px; font-size: 13px; color: var(--text-muted);">
+      <div style="text-align:center; margin-top: 18px; font-size: 13px; color: var(--text-muted);" id="registerFooterLink">
         لديك حساب بالفعل؟ <a href="login.html" style="color:var(--cyan-accent); font-weight:800; text-decoration:none;">تسجيل الدخول</a>
       </div>
     </div>
@@ -197,29 +197,6 @@
   <script>
     var currentStep = 1;
 
-    function toggleNavMenu() {
-      var links = document.getElementById("mainNavLinks");
-      if (links) links.classList.toggle("show-mobile-nav");
-    }
-
-    // تقييد الاسم باللغة العربية فقط
-    function validateArabicInput(input) {
-      input.value = input.value.replace(/[^\u0600-\u06FF\s]/g, "");
-    }
-
-    function isArabicOnly(text) {
-      return /^[\u0600-\u06FF\s]+$/.test(text);
-    }
-
-    // تقييد خانة الهاتف بالأرقام فقط وحد أقصى 11 رقماً
-    function validateEgyptianPhoneInput(input) {
-      input.value = input.value.replace(/\D/g, "");
-      if (input.value.length > 11) {
-        input.value = input.value.slice(0, 11);
-      }
-    }
-
-    // التحقق من صحة رقم الهاتف المصري
     function isValidEgyptianPhone(phone) {
       return /^(010|011|012|015)\d{8}$/.test(phone);
     }
@@ -227,15 +204,11 @@
     async function checkAccountDuplicates(name, email, phone) {
       if (window.firebase && firebase.firestore) {
         var db = firebase.firestore();
-        
-        var nameSnap = await db.collection("users").where("fullName", "==", name).get();
-        if (!nameSnap.empty) throw new Error("هذا الاسم مسجل بالفعل، يرجى كتابة الاسم ثلاثياً أو رباعياً بوضوح.");
-
-        var emailSnap = await db.collection("users").where("email", "==", email.toLowerCase()).get();
+        var emailSnap = await db.collection("users").where("email", "==", email.toLowerCase().trim()).get();
         if (!emailSnap.empty) throw new Error("هذا البريد الإلكتروني مستخدم بالفعل بحساب نشط.");
 
         var phoneSnap = await db.collection("users").where("studentPhone", "==", phone).get();
-        if (!phoneSnap.empty) throw new Error("رقم هاتف الطالب هذا مسجل بحساب آخر بالفعل.");
+        if (!phoneSnap.empty) throw new Error("رقم هاتف الطالب مسجل بحساب آخر.");
       }
     }
 
@@ -244,15 +217,8 @@
         var name = document.getElementById("regFullName").value.trim();
         var email = document.getElementById("regEmail").value.trim();
 
-        if (!name || !email) {
-          showToast("يرجى إدخال الاسم والبريد الإلكتروني", "error");
-          return;
-        }
-
-        if (!isArabicOnly(name) || name.length < 5) {
-          showToast("يجب إدخال اسم الطالب كاملاً باللغة العربية فقط", "error");
-          return;
-        }
+        if (!name || !email) return showToast("يرجى إدخال الاسم والبريد", "error");
+        if (name.length < 5) return showToast("يجب إدخال الاسم ثلاثياً باللغة العربية", "error");
       }
 
       if (step === 3 && currentStep === 2) {
@@ -260,77 +226,41 @@
         var pPhone = document.getElementById("regParentPhone").value.trim();
         var school = document.getElementById("regSchoolName").value.trim();
 
-        if (!sPhone || !pPhone || !school) {
-          showToast("يرجى ملء جميع أرقام التواصل واسم المدرسة", "error");
-          return;
-        }
-
-        if (!isValidEgyptianPhone(sPhone)) {
-          showToast("رقم هاتف الطالب يجب أن يكون 11 رقماً مصرياً يبدأ بـ (010, 011, 012, 015)", "error");
-          return;
-        }
-
-        if (!isValidEgyptianPhone(pPhone)) {
-          showToast("رقم هاتف ولي الأمر يجب أن يكون 11 رقماً مصرياً يبدأ بـ (010, 011, 012, 015)", "error");
-          return;
-        }
-
-        if (sPhone === pPhone) {
-          showToast("يجب أن يكون رقم ولي الأمر مختلفاً عن رقم الطالب", "error");
-          return;
-        }
+        if (!sPhone || !pPhone || !school) return showToast("يرجى ملء جميع الحقول", "error");
+        if (!isValidEgyptianPhone(sPhone) || !isValidEgyptianPhone(pPhone)) return showToast("أرقام الهواتف يجب أن تكون 11 رقماً مصرياً يبدأ بـ 01", "error");
+        if (sPhone === pPhone) return showToast("يجب أن يكون رقم ولي الأمر مختلفاً عن رقم الطالب", "error");
       }
 
       currentStep = step;
       document.querySelectorAll(".form-step-pane").forEach(p => p.classList.remove("active"));
       document.getElementById("stepPane" + step).classList.add("active");
 
-      var progressPercent = step === 1 ? 0 : step === 2 ? 50 : 100;
-      document.getElementById("stepProgressBar").style.width = progressPercent + "%";
+      document.getElementById("stepProgressBar").style.width = (step === 1 ? 0 : step === 2 ? 50 : 100) + "%";
 
       for (var i = 1; i <= 3; i++) {
         var item = document.getElementById("stepItem" + i);
         var bubble = document.getElementById("bubble" + i);
         item.classList.remove("active", "completed");
-        if (i < step) {
-          item.classList.add("completed");
-          bubble.innerHTML = "✓";
-        } else if (i === step) {
-          item.classList.add("active");
-          bubble.innerText = i;
-        } else {
-          bubble.innerText = i;
-        }
+        if (i < step) { item.classList.add("completed"); bubble.innerHTML = "✓"; }
+        else if (i === step) { item.classList.add("active"); bubble.innerText = i; }
+        else { bubble.innerText = i; }
       }
     }
 
     document.getElementById("multiStepRegisterForm").addEventListener("submit", async function(e) {
       e.preventDefault();
-
       var password = document.getElementById("regPassword").value;
       var confirmPassword = document.getElementById("regConfirmPassword").value;
 
-      if (password !== confirmPassword) {
-        showToast("كلمات المرور غير متطابقة", "error");
-        return;
-      }
-
-      if (password.length < 6) {
-        showToast("كلمة المرور يجب ألا تقل عن 6 خانات", "error");
-        return;
-      }
+      if (password !== confirmPassword) return showToast("كلمات المرور غير متطابقة", "error");
+      if (password.length < 6) return showToast("كلمة المرور يجب ألا تقل عن 6 خانات", "error");
 
       var name = document.getElementById("regFullName").value.trim();
       var email = document.getElementById("regEmail").value.trim().toLowerCase();
       var studentPhone = document.getElementById("regStudentPhone").value.trim();
       var parentPhone = document.getElementById("regParentPhone").value.trim();
 
-      if (!isValidEgyptianPhone(studentPhone) || !isValidEgyptianPhone(parentPhone)) {
-        showToast("تأكد من إدخال أرقام هواتف مصرية صحيحة (11 رقماً)", "error");
-        return;
-      }
-
-      showToast("جاري فحص البيانات وتأمين الحساب...", "info");
+      showToast("جاري إنشاء الحساب وإرسال رابط التفعيل...", "info");
 
       try {
         await checkAccountDuplicates(name, email, studentPhone);
@@ -347,8 +277,11 @@
         };
 
         await window.FirebaseService.registerStudent(newUser);
-        showToast("تم إنشاء الحساب بنجاح، جاري الدخول...", "success");
-        setTimeout(function() { window.location.href = "dashboard.html"; }, 1100);
+
+        document.getElementById("registerHeader").style.display = "none";
+        document.getElementById("multiStepRegisterForm").style.display = "none";
+        document.getElementById("registerFooterLink").style.display = "none";
+        document.getElementById("successVerifyCard").style.display = "block";
       } catch (err) {
         showToast(err.message || "حدث خطأ أثناء التسجيل", "error");
       }
