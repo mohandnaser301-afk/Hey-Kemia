@@ -9,8 +9,8 @@
   <style>
     .tab-content-section { display: none; }
     .tab-content-section.active { display: block; }
-    .modal { display: none; position: fixed; inset: 0; background: rgba(8, 10, 33, 0.82); z-index: 99999; justify-content: center; align-items: center; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: 12px; }
-    .modal-content { background: #fff; color: #191b26; border: 1px solid var(--border-subtle); padding: 26px; border-radius: 16px; max-width: 840px; width: 92%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(8, 10, 33, 0.85); z-index: 999999; justify-content: center; align-items: center; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: 12px; }
+    .modal-content { background: #fff; color: #191b26; border: 1px solid var(--border-subtle); padding: 26px; border-radius: 16px; max-width: 840px; width: 95%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
     
     .sidebar-badge-count {
       background: #ef4444;
@@ -116,7 +116,7 @@
     .hacker-badge.HIGH { background: #ffedd5; color: #ea580c; border: 1px solid #fdba74; }
     .hacker-badge.MEDIUM { background: #fef9c3; color: #ca8a04; border: 1px solid #fde047; }
 
-    .exam-q-box {
+    .exam-q-box, .exam-q-edit-block {
       background: #f8f9fc;
       border: 1px solid #e2e8f0;
       padding: 14px;
@@ -227,8 +227,34 @@
       .charts-grid { grid-template-columns: 1fr; }
       .student-filter-bar { flex-direction: column; }
       .modal-content { padding: 18px 14px; }
-      .topbar { flex-direction: column; align-items: flex-start; }
+      .topbar { flex-direction: column; align-items: stretch; gap: 10px; }
       .topbar button, .topbar .btn { width: 100%; text-align: center; }
+
+      .mobile-sidebar-toggle-btn {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        padding: 12px 16px;
+        background: var(--royal-indigo-light);
+        color: #fff;
+        border: 1px solid var(--border-subtle);
+        border-radius: 10px;
+        font-weight: 800;
+        font-size: 13.5px;
+        cursor: pointer;
+        margin-bottom: 12px;
+      }
+
+      .sidebar-nav {
+        display: none;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .sidebar-nav.show-mobile-menu {
+        display: flex !important;
+      }
     }
   </style>
 </head>
@@ -246,9 +272,9 @@
         </div>
       </div>
 
-      <button type="button" class="mobile-sidebar-toggle-btn" id="mobileSidebarToggleBtn">
+      <button type="button" class="mobile-sidebar-toggle-btn" id="mobileSidebarToggleBtn" onclick="toggleAdminMobileNav()">
         <span style="display:flex; align-items:center; gap:8px;">
-          <span>قائمة الإدارة</span>
+          <span>☰</span>
           <span id="mobileMenuCurrentLabel">الرسوم البيانية والإحصائيات</span>
         </span>
         <span id="mobileMenuArrowIcon">▼</span>
@@ -283,8 +309,9 @@
         <a onclick="handleMobileTabSelect('logsTab', this, 'سجل النشاطات')" class="nav-item">
           <span>سجل النشاطات</span>
         </a>
-        <a href="support.html" class="nav-item">
+        <a href="support.html" class="nav-item" onclick="markSupportAsSeen()">
           <span>شات الدعم المستقل</span>
+          <span class="sidebar-badge-count" id="badgeSupportCount" style="display:none;">0</span>
         </a>
         <a href="index.html" class="nav-item"><span>عرض الموقع</span></a>
         <a href="javascript:void(0)" onclick="logout()" class="nav-item logout"><span>تسجيل الخروج</span></a>
@@ -343,6 +370,13 @@
             </div>
           </div>
         </div>
+
+        <div class="chart-card" style="margin-bottom: 24px;">
+          <h3>معدل اجتياز الطلاب في الامتحانات</h3>
+          <div style="height: 220px;">
+            <canvas id="examsBarChart"></canvas>
+          </div>
+        </div>
       </div>
 
       <!-- 2. الكورسات -->
@@ -372,7 +406,7 @@
         </div>
       </div>
 
-      <!-- 3. إدارة وسجلات الطلاب المتطابقة مع لوحة الطالب -->
+      <!-- 3. إدارة وسجلات الطلاب -->
       <div id="studentsTab" class="tab-content-section">
         <header class="topbar">
           <div>
@@ -466,7 +500,7 @@
         <header class="topbar">
           <div>
             <h1 style="font-size:22px; font-weight:900; color:var(--royal-indigo-base);">طلبات الدفع والتحصيل</h1>
-            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">مراجعة الإيصالات والاعتماد أو الرفض مع التفعيل الفوري</p>
+            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">مراجعة الإيصالات بالصورة والاعتماد أو الرفض الفوري في حساب الطالب</p>
           </div>
         </header>
         <div class="table-container">
@@ -486,7 +520,7 @@
         </div>
       </div>
 
-      <!-- 6. إرسال الإشعارات المباشرة للطلاب -->
+      <!-- 6. إرسال الإشعارات -->
       <div id="pushNotifTab" class="tab-content-section">
         <header class="topbar">
           <div>
@@ -591,6 +625,159 @@
       </div>
 
     </main>
+  </div>
+
+  <!-- مودال إضافة كورس جديد -->
+  <div id="addCourseModal" class="modal">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 style="color:var(--royal-indigo-base); font-size:16px; font-weight:800;">إضافة كورس جديد للمنصة</h3>
+        <button type="button" onclick="closeModal('addCourseModal')" style="background:none; border:none; font-size:16px; cursor:pointer;">✕</button>
+      </div>
+      <div>
+        <div class="form-group">
+          <label>اسم الكورس:</label>
+          <input type="text" id="addCourseTitle" placeholder="مثال: كورس الباب الثاني: التحليل الكيميائي">
+        </div>
+        <div class="form-group">
+          <label>وصف ومحتوى الكورس:</label>
+          <textarea id="addCourseDesc" rows="3" placeholder="اكتب نبذة عن المحاضرات ومحتواها..."></textarea>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group" style="flex:1;">
+            <label>نوع الكورس:</label>
+            <select id="addCoursePricingType" onchange="togglePricingInput('add')">
+              <option value="paid" selected>كورس مدفوع</option>
+              <option value="free">كورس مجاني (0 ج.م)</option>
+            </select>
+          </div>
+          <div class="form-group" id="addCoursePriceGrp" style="flex:1;">
+            <label>سعر الكورس (ج.م):</label>
+            <input type="number" id="addCoursePrice" value="250">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="flex:1;">
+            <label>نظام المشاهدة:</label>
+            <select id="addCourseViewsType" onchange="toggleViewsInput('add')">
+              <option value="limited" selected>مرات مشاهدة محددة</option>
+              <option value="unlimited">مشاهدة مفتوحة (غير محدودة)</option>
+            </select>
+          </div>
+          <div class="form-group" id="addCourseViewsGrp" style="flex:1;">
+            <label>أقصى عدد مرات مشاهدة:</label>
+            <input type="number" id="addCourseMaxViews" value="5" min="1">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="flex:1;">
+            <label>الصف الدراسي:</label>
+            <input type="text" id="addCourseTag" value="الصف الثالث الثانوي">
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>اختيار صورة الغلاف من جهازك:</label>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <input type="file" id="addCourseFileInput" accept="image/*" onchange="handleImageUpload(event, 'add')">
+              <img id="addCourseImgPreview" src="https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80" class="image-preview-box" alt="معاينة الغلاف">
+            </div>
+            <input type="hidden" id="addCourseImageBase64" value="https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80">
+          </div>
+        </div>
+        
+        <div style="background:#F8F9FC; border:1px solid var(--border-subtle); padding:16px; border-radius:10px; margin:14px 0;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h4 style="font-size:13.5px; font-weight:800; color:var(--royal-indigo-base);">قائمة المحاضرات وملفات الـ PDF:</h4>
+            <button type="button" class="btn btn-outline" style="padding:4px 10px; font-size:11.5px;" onclick="addLessonRow('add')">+ إضافة محاضرة أخرى</button>
+          </div>
+          <div id="addLessonsContainer"></div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:15px;">
+          <button type="button" class="btn btn-primary" style="flex:1;" onclick="saveNewCourse()">حفظ ونشر الكورس</button>
+          <button type="button" class="btn btn-outline" onclick="closeModal('addCourseModal')">إلغاء</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- مودال تعديل كورس موجود -->
+  <div id="editCourseModal" class="modal">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 style="color:var(--royal-indigo-base); font-size:16px; font-weight:800;">تعديل بيانات ومحاضرات وملفات الكورس</h3>
+        <button type="button" onclick="closeModal('editCourseModal')" style="background:none; border:none; font-size:16px; cursor:pointer;">✕</button>
+      </div>
+      <div>
+        <input type="hidden" id="editCourseId">
+        <div class="form-group">
+          <label>اسم الكورس:</label>
+          <input type="text" id="editCourseTitle">
+        </div>
+        <div class="form-group">
+          <label>الوصف:</label>
+          <textarea id="editCourseDesc" rows="3"></textarea>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group" style="flex:1;">
+            <label>نوع الكورس:</label>
+            <select id="editCoursePricingType" onchange="togglePricingInput('edit')">
+              <option value="paid">كورس مدفوع</option>
+              <option value="free">كورس مجاني (0 ج.م)</option>
+            </select>
+          </div>
+          <div class="form-group" id="editCoursePriceGrp" style="flex:1;">
+            <label>السعر (ج.م):</label>
+            <input type="number" id="editCoursePrice">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="flex:1;">
+            <label>نظام المشاهدة:</label>
+            <select id="editCourseViewsType" onchange="toggleViewsInput('edit')">
+              <option value="limited">مرات مشاهدة محددة</option>
+              <option value="unlimited">مشاهدة مفتوحة (غير محدودة)</option>
+            </select>
+          </div>
+          <div class="form-group" id="editCourseViewsGrp" style="flex:1;">
+            <label>مرات المشاهدة المسموحة:</label>
+            <input type="number" id="editCourseMaxViews" min="1">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="flex:1;">
+            <label>الصف:</label>
+            <input type="text" id="editCourseTag">
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>تغيير صورة الغلاف من جهازك:</label>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <input type="file" id="editCourseFileInput" accept="image/*" onchange="handleImageUpload(event, 'edit')">
+              <img id="editCourseImgPreview" src="" class="image-preview-box" alt="معاينة الغلاف">
+            </div>
+            <input type="hidden" id="editCourseImageBase64">
+          </div>
+        </div>
+
+        <div style="background:#F8F9FC; border:1px solid var(--border-subtle); padding:16px; border-radius:10px; margin:14px 0;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h4 style="font-size:13.5px; font-weight:800; color:var(--royal-indigo-base);">محاضرات الكورس وملفات الـ PDF:</h4>
+            <button type="button" class="btn btn-outline" style="padding:4px 10px; font-size:11.5px;" onclick="addLessonRow('edit')">+ إضافة محاضرة أخرى</button>
+          </div>
+          <div id="editLessonsContainer"></div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:15px;">
+          <button type="button" class="btn btn-primary" style="flex:1;" onclick="saveEditedCourse()">حفظ التعديلات</button>
+          <button type="button" class="btn btn-outline" onclick="closeModal('editCourseModal')">إلغاء</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- مودال ترقية حساب مسجل للإدارة -->
@@ -780,159 +967,6 @@
     </div>
   </div>
 
-  <!-- مودال إضافة كورس جديد -->
-  <div id="addCourseModal" class="modal">
-    <div class="modal-content">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h3 style="color:var(--royal-indigo-base); font-size:16px; font-weight:800;">إضافة كورس جديد للمنصة</h3>
-        <button type="button" onclick="closeModal('addCourseModal')" style="background:none; border:none; font-size:16px; cursor:pointer;">✕</button>
-      </div>
-      <div>
-        <div class="form-group">
-          <label>اسم الكورس:</label>
-          <input type="text" id="addCourseTitle" placeholder="مثال: كورس الباب الثاني: التحليل الكيميائي">
-        </div>
-        <div class="form-group">
-          <label>وصف ومحتوى الكورس:</label>
-          <textarea id="addCourseDesc" rows="3" placeholder="اكتب نبذة عن المحاضرات ومحتواها..."></textarea>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group" style="flex:1;">
-            <label>نوع الكورس:</label>
-            <select id="addCoursePricingType" onchange="togglePricingInput('add')">
-              <option value="paid" selected>كورس مدفوع</option>
-              <option value="free">كورس مجاني (0 ج.م)</option>
-            </select>
-          </div>
-          <div class="form-group" id="addCoursePriceGrp" style="flex:1;">
-            <label>سعر الكورس (ج.م):</label>
-            <input type="number" id="addCoursePrice" value="250">
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group" style="flex:1;">
-            <label>نظام المشاهدة:</label>
-            <select id="addCourseViewsType" onchange="toggleViewsInput('add')">
-              <option value="limited" selected>مرات مشاهدة محددة</option>
-              <option value="unlimited">مشاهدة مفتوحة (غير محدودة)</option>
-            </select>
-          </div>
-          <div class="form-group" id="addCourseViewsGrp" style="flex:1;">
-            <label>أقصى عدد مرات مشاهدة:</label>
-            <input type="number" id="addCourseMaxViews" value="5" min="1">
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group" style="flex:1;">
-            <label>الصف الدراسي:</label>
-            <input type="text" id="addCourseTag" value="الصف الثالث الثانوي">
-          </div>
-          <div class="form-group" style="flex:1;">
-            <label>اختيار صورة الغلاف من جهازك:</label>
-            <div style="display:flex; gap:10px; align-items:center;">
-              <input type="file" id="addCourseFileInput" accept="image/*" onchange="handleImageUpload(event, 'add')">
-              <img id="addCourseImgPreview" src="https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80" class="image-preview-box" alt="معاينة الغلاف">
-            </div>
-            <input type="hidden" id="addCourseImageBase64" value="https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80">
-          </div>
-        </div>
-        
-        <div style="background:#F8F9FC; border:1px solid var(--border-subtle); padding:16px; border-radius:10px; margin:14px 0;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <h4 style="font-size:13.5px; font-weight:800; color:var(--royal-indigo-base);">قائمة المحاضرات وملفات الـ PDF:</h4>
-            <button type="button" class="btn btn-outline" style="padding:4px 10px; font-size:11.5px;" onclick="addLessonRow('add')">+ إضافة محاضرة أخرى</button>
-          </div>
-          <div id="addLessonsContainer"></div>
-        </div>
-
-        <div style="display:flex; gap:10px; margin-top:15px;">
-          <button type="button" class="btn btn-primary" style="flex:1;" onclick="saveNewCourse()">حفظ ونشر الكورس</button>
-          <button type="button" class="btn btn-outline" onclick="closeModal('addCourseModal')">إلغاء</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- مودال تعديل كورس موجود -->
-  <div id="editCourseModal" class="modal">
-    <div class="modal-content">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h3 style="color:var(--royal-indigo-base); font-size:16px; font-weight:800;">تعديل بيانات ومحاضرات وملفات الكورس</h3>
-        <button type="button" onclick="closeModal('editCourseModal')" style="background:none; border:none; font-size:16px; cursor:pointer;">✕</button>
-      </div>
-      <div>
-        <input type="hidden" id="editCourseId">
-        <div class="form-group">
-          <label>اسم الكورس:</label>
-          <input type="text" id="editCourseTitle">
-        </div>
-        <div class="form-group">
-          <label>الوصف:</label>
-          <textarea id="editCourseDesc" rows="3"></textarea>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group" style="flex:1;">
-            <label>نوع الكورس:</label>
-            <select id="editCoursePricingType" onchange="togglePricingInput('edit')">
-              <option value="paid">كورس مدفوع</option>
-              <option value="free">كورس مجاني (0 ج.م)</option>
-            </select>
-          </div>
-          <div class="form-group" id="editCoursePriceGrp" style="flex:1;">
-            <label>السعر (ج.م):</label>
-            <input type="number" id="editCoursePrice">
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group" style="flex:1;">
-            <label>نظام المشاهدة:</label>
-            <select id="editCourseViewsType" onchange="toggleViewsInput('edit')">
-              <option value="limited">مرات مشاهدة محددة</option>
-              <option value="unlimited">مشاهدة مفتوحة (غير محدودة)</option>
-            </select>
-          </div>
-          <div class="form-group" id="editCourseViewsGrp" style="flex:1;">
-            <label>مرات المشاهدة المسموحة:</label>
-            <input type="number" id="editCourseMaxViews" min="1">
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group" style="flex:1;">
-            <label>الصف:</label>
-            <input type="text" id="editCourseTag">
-          </div>
-          <div class="form-group" style="flex:1;">
-            <label>تغيير صورة الغلاف من جهازك:</label>
-            <div style="display:flex; gap:10px; align-items:center;">
-              <input type="file" id="editCourseFileInput" accept="image/*" onchange="handleImageUpload(event, 'edit')">
-              <img id="editCourseImgPreview" src="" class="image-preview-box" alt="معاينة الغلاف">
-            </div>
-            <input type="hidden" id="editCourseImageBase64">
-          </div>
-        </div>
-
-        <div style="background:#F8F9FC; border:1px solid var(--border-subtle); padding:16px; border-radius:10px; margin:14px 0;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <h4 style="font-size:13.5px; font-weight:800; color:var(--royal-indigo-base);">محاضرات الكورس وملفات الـ PDF:</h4>
-            <button type="button" class="btn btn-outline" style="padding:4px 10px; font-size:11.5px;" onclick="addLessonRow('edit')">+ إضافة محاضرة أخرى</button>
-          </div>
-          <div id="editLessonsContainer"></div>
-        </div>
-
-        <div style="display:flex; gap:10px; margin-top:15px;">
-          <button type="button" class="btn btn-primary" style="flex:1;" onclick="saveEditedCourse()">حفظ التعديلات</button>
-          <button type="button" class="btn btn-outline" onclick="closeModal('editCourseModal')">إلغاء</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- مودال تفاصيل الطالب والطباعة -->
   <div id="studentDetailsModal" class="modal">
     <div class="modal-content" id="printableStudentCard">
@@ -1004,14 +1038,12 @@
       if (m) m.style.display = "none"; 
     }
 
-    function toggleMobileSidebarMenu() {
+    function toggleAdminMobileNav() {
       var nav = document.getElementById("adminSidebarNav");
       var arrow = document.getElementById("mobileMenuArrowIcon");
       if (nav) {
         var isOpen = nav.classList.toggle("show-mobile-menu");
-        if (arrow) {
-          arrow.style.transform = isOpen ? "rotate(180deg)" : "rotate(0deg)";
-        }
+        if (arrow) arrow.style.transform = isOpen ? "rotate(180deg)" : "rotate(0deg)";
       }
     }
 
@@ -1044,7 +1076,8 @@
     function switchTab(tabId, element) {
       document.querySelectorAll(".tab-content-section").forEach(function(el) { el.classList.remove("active"); });
       document.querySelectorAll(".sidebar-nav .nav-item").forEach(function(btn) { btn.classList.remove("active"); });
-      document.getElementById(tabId).classList.add("active");
+      var target = document.getElementById(tabId);
+      if (target) target.classList.add("active");
       if (element) element.classList.add("active");
 
       if (tabId === "paymentsTab") markSectionAsSeen("payments");
@@ -1055,30 +1088,20 @@
       }
     }
 
-    function updateNotificationBadges(payments, hackerLogs) {
-      var seenTimes = JSON.parse(localStorage.getItem("edu_seen_badges_time")) || {};
-
-      var lastSeenPayTime = seenTimes.payments || 0;
-      var newPendingPayments = payments.filter(function(p) { 
-        return p.status === "PENDING" && (p.id > lastSeenPayTime || !lastSeenPayTime); 
-      }).length;
-
+    function updateNotificationBadges(payments, hackerLogs, supportThreads) {
+      var pendingPayments = payments.filter(function(p) { return p.status === "PENDING"; }).length;
       var badgePay = document.getElementById("badgePaymentsCount");
       if (badgePay) {
-        badgePay.innerText = newPendingPayments;
-        badgePay.style.display = newPendingPayments > 0 ? "inline-block" : "none";
+        badgePay.innerText = pendingPayments;
+        badgePay.style.display = pendingPayments > 0 ? "inline-block" : "none";
       }
 
-      var lastSeenHckTime = seenTimes.hackers || 0;
-      var newHackers = hackerLogs.filter(function(h) {
-        var hTime = typeof h.id === "string" && h.id.startsWith("HCK_") ? parseInt(h.id.replace("HCK_", "")) : 0;
-        return hTime > lastSeenHckTime || !lastSeenHckTime;
-      }).length;
-
-      var badgeHck = document.getElementById("badgeHackersCount");
-      if (badgeHck) {
-        badgeHck.innerText = newHackers;
-        badgeHck.style.display = newHackers > 0 ? "inline-block" : "none";
+      var totalUnreadSupport = 0;
+      (supportThreads || []).forEach(function(t) { totalUnreadSupport += (t.unreadCount || 0); });
+      var badgeSup = document.getElementById("badgeSupportCount");
+      if (badgeSup) {
+        badgeSup.innerText = totalUnreadSupport;
+        badgeSup.style.display = totalUnreadSupport > 0 ? "inline-block" : "none";
       }
     }
 
@@ -1086,7 +1109,6 @@
       var container = document.getElementById(mode === "add" ? "addLessonsContainer" : "editLessonsContainer");
       var row = document.createElement("div");
       row.className = "lesson-item-row";
-
       var lessonUid = "les_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
 
       row.innerHTML = 
@@ -1163,7 +1185,7 @@
       document.getElementById("permStudentNameDisplay").innerText = name;
 
       var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-      var student = users.find(function(u) { return u.uid === uid || u.id === uid; });
+      var student = users.find(function(u) { return (u.uid && u.uid === uid) || (u.id && u.id === uid); });
       if (!student) {
         showToast("لم يتم العثور على بيانات الطالب", "error");
         return;
@@ -1216,7 +1238,7 @@
     async function saveStudentCoursePermissions() {
       var studentUid = document.getElementById("permStudentUidHidden").value;
       var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-      var uIdx = users.findIndex(function(u) { return u.uid === studentUid || u.id === studentUid; });
+      var uIdx = users.findIndex(function(u) { return (u.uid && u.uid === studentUid) || (u.id && u.id === studentUid); });
 
       if (uIdx !== -1) {
         var newEnrolled = [];
@@ -1410,7 +1432,6 @@
       var container = document.getElementById("editExamQuestionsContainer");
       var div = document.createElement("div");
       div.className = "exam-q-edit-block";
-      div.style.cssText = "background:#fff; border:1px solid var(--border-subtle); padding:12px; border-radius:8px; margin-bottom:10px;";
       div.innerHTML = 
         '<div style="display:flex; justify-content:space-between; margin-bottom:6px;">' +
           '<label style="font-weight:bold; font-size:12px;">نص السؤال:</label>' +
@@ -1514,7 +1535,6 @@
 
       var isFree = document.getElementById("addCoursePricingType").value === "free";
       var viewsType = document.getElementById("addCourseViewsType").value;
-
       var lessonsArr = extractLessonsFromContainer("addLessonsContainer");
       if (lessonsArr.length === 0) {
         showToast("يرجى إدخال عنوان ورابط المحاضرة بشكل صحيح", "error");
@@ -1695,44 +1715,35 @@
       reader.readAsDataURL(file);
     }
 
-    // الاعتماد الفوري المباشر للدفع وتفعيل الكورس في Firestore
-    async function approvePayment(id) {
-      var confirmed = await customConfirm("هل تؤكد قبول وتفعيل هذا الطلب وإرسال إشعار فوري للطالب؟", "اعتماد الدفع");
+    // الاعتماد والرفض المباشر للدفع
+    async function approvePayment(id, userUid, courseId, courseTitle, userEmail) {
+      var confirmed = await customConfirm("هل تؤكد قبول وتفعيل هذا الطلب وتفعيل الكورس للطالب فوراً؟", "اعتماد الدفع");
       if (!confirmed) return;
 
-      var payments = JSON.parse(localStorage.getItem("edu_payments")) || [];
-      var p = payments.find(function(x) { return x.id === id; });
-      if (p) {
-        showToast("جاري تفعيل الكورس للطالب...", "info");
-
-        if (window.FirebaseService) {
-          try {
-            await window.FirebaseService.approvePaymentAndEnroll(id, p.userUid, p.courseId, p.userEmail);
-            if (p.userUid) {
-              await window.FirebaseService.pushNotificationToCloud("تم تفعيل الكورس بنجاح", "مرحباً " + p.userName + "، تم اعتماد إيصال الدفع وتفعيل كورس: " + p.courseTitle + " في حسابك.", p.userUid);
-            }
-            showToast("تم تفعيل الكورس في حساب الطالب سحابياً وإرسال الإشعار الفوري ✓", "success");
-          } catch (err) {
-            showToast("حدث خطأ أثناء تفعيل الكورس: " + err.message, "error");
+      if (window.FirebaseService) {
+        showToast("جاري تفعيل الكورس للطالب سحابياً...", "info");
+        try {
+          await window.FirebaseService.approvePaymentAndEnroll(id, userUid, courseId, userEmail);
+          if (userUid) {
+            await window.FirebaseService.pushNotificationToCloud("تم تفعيل الكورس بنجاح", "تم اعتماد اشتراكك في: " + courseTitle, userUid, "dashboard.html");
           }
+          showToast("تم تفعيل الكورس للطالب سحابياً وبث الإشعار", "success");
+        } catch (err) {
+          showToast("حدث خطأ أثناء تفعيل الكورس: " + err.message, "error");
         }
       }
     }
 
-    // رفض طلب الدفع
-    async function rejectPayment(id) {
-      var confirmed = await customConfirm("هل تريد رفض طلب الدفع هذا؟", "رفض الطلب");
+    async function rejectPayment(id, userUid, courseTitle) {
+      var confirmed = await customConfirm("هل أنت متأكد من رفض هذا الطلب؟ لن يتم منح الطالب أي صلاحية.", "رفض طلب الدفع", "تأكيد الرفض", "إلغاء");
       if (!confirmed) return;
-
-      var payments = JSON.parse(localStorage.getItem("edu_payments")) || [];
-      var p = payments.find(function(x) { return x.id === id; });
 
       if (window.FirebaseService) {
         showToast("جاري رفض الطلب...", "info");
         try {
           await window.FirebaseService.rejectPayment(id);
-          if (p && p.userUid) {
-            await window.FirebaseService.pushNotificationToCloud("تم رفض طلب الاشتراك", "عذراً، لم يتم اعتماد إيصال الدفع لكورس: " + p.courseTitle + ". يرجى التواصل مع الدعم الفني.", p.userUid, "support.html");
+          if (userUid) {
+            await window.FirebaseService.pushNotificationToCloud("تم رفض طلب الاشتراك", "عذراً، لم يتم اعتماد إيصال الدفع لكورس: " + courseTitle + ". يرجى التواصل مع الدعم الفني.", userUid, "support.html");
           }
           showToast("تم رفض الطلب بنجاح", "info");
         } catch (err) {
@@ -1745,22 +1756,15 @@
       var confirmed = await customConfirm("هل تريد حذف هذا الامتحان سحابياً ونهائياً؟", "حذف الامتحان");
       if (confirmed) {
         if (window.FirebaseService) {
-          try {
-            await window.FirebaseService.deleteExam(id);
-          } catch (e) {}
+          try { await window.FirebaseService.deleteExam(id); } catch (e) {}
         }
-        var exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
-        localStorage.setItem("edu_exams", JSON.stringify(exams.filter(function(x) { return x.id != id; })));
         showToast("تم حذف الامتحان سحابياً بنجاح", "info");
       }
     }
 
     async function deleteUserByUidAction(uid) {
       var currentUser = getCurrentUser();
-      if (!currentUser || currentUser.role !== "SUPER_ADMIN") {
-        showToast("حذف الحسابات مقتصر على المشرف العام فقط", "error");
-        return;
-      }
+      if (!currentUser || currentUser.role !== "SUPER_ADMIN") return showToast("حذف الحسابات مقتصر على المشرف العام فقط", "error");
 
       var confirmed = await customConfirm("هل تريد حذف هذا الحساب نهائياً؟ سيتم مسح كافة البيانات والجلسات وطرده فوراً.", "حذف شامل للحساب");
       if (confirmed) {
@@ -1771,9 +1775,6 @@
             console.warn("حذف سحابي:", e.message);
           }
         }
-
-        var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-        localStorage.setItem("edu_users", JSON.stringify(users.filter(function(u) { return u.uid !== uid && u.id !== uid; })));
         showToast("تم مسح الحساب وبياناته سحابياً بنجاح وسيتم طرده فوراً ✓", "success");
       }
     }
@@ -1786,13 +1787,8 @@
       var confirmed = await customConfirm("هل تريد حذف كورس: " + target.title + " نهائياً من السحابة لجميع الطلاب؟", "حذف الكورس");
       if (confirmed) {
         if (window.FirebaseService && target.id) {
-          try {
-            await window.FirebaseService.deleteCourse(target.id);
-          } catch (e) {}
+          try { await window.FirebaseService.deleteCourse(target.id); } catch (e) {}
         }
-        courses.splice(courseIndex, 1);
-        localStorage.setItem("edu_courses", JSON.stringify(courses));
-        logAdminAction("حذف كورس", "تم حذف كورس: " + target.title);
         showToast("تم حذف الكورس سحابياً بنجاح", "info");
       }
     }
@@ -1813,7 +1809,8 @@
       var enrolledUsers = allStudentsCache.filter(function(u) { return u.enrolledCourses && u.enrolledCourses.map(String).includes(String(courseId)); });
 
       currentWatchStatsList = enrolledUsers.map(function(u) {
-        var log = courseLogs[u.uid] || courseLogs[u.email] || { totalSeconds: 0, lastActive: "لم يبدأ بعد" };
+        var uidKey = u.uid || u.id;
+        var log = courseLogs[uidKey] || courseLogs[u.email] || { totalSeconds: 0, lastActive: "لم يبدأ بعد" };
         var accessCount = (u.courseAccessCount && u.courseAccessCount[courseId]) || 0;
         return {
           fullName: u.fullName,
@@ -1840,7 +1837,6 @@
         var hours = Math.floor(item.totalSeconds / 3600);
         var minutes = Math.floor((item.totalSeconds % 3600) / 60);
         var seconds = item.totalSeconds % 60;
-
         var formattedTime = hours > 0 
           ? (hours + " ساعة و " + minutes + " دقيقة") 
           : (minutes > 0 ? (minutes + " دقيقة و " + seconds + " ثانية") : (seconds + " ثانية"));
@@ -1884,11 +1880,7 @@
               fill: true
             }]
           },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } }
-          }
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
         });
       }
 
@@ -1910,55 +1902,61 @@
               backgroundColor: ["#0E1338", "#00D2FF", "#10b981", "#1D255E", "#5CE1E6", "#0284C7", "#f59e0b"]
             }]
           },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom" } } }
+        });
+      }
+
+      var examsCtx = document.getElementById("examsBarChart");
+      if (examsCtx) {
+        if (examsChartInstance) examsChartInstance.destroy();
+        var passCount = submissions.filter(function(s) { return s.percentage >= 60; }).length;
+        var failCount = submissions.filter(function(s) { return s.percentage < 60; }).length;
+
+        examsChartInstance = new Chart(examsCtx, {
+          type: "bar",
+          data: {
+            labels: ["درجات امتياز (85%+)", "اجتياز ناجح (60-84%)", "يحتاج تدريب (<60%)"],
+            datasets: [{
+              label: "عدد الطلاب",
+              data: [
+                submissions.filter(function(s) { return s.percentage >= 85; }).length,
+                submissions.filter(function(s) { return s.percentage >= 60 && s.percentage < 85; }).length,
+                failCount
+              ],
+              backgroundColor: ["#10b981", "#00D2FF", "#ef4444"],
+              borderRadius: 6
+            }]
+          },
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { position: "bottom" } }
+            plugins: { legend: { display: false } }
           }
         });
       }
     }
 
     function openAddStaffModal() {
-      var user = getCurrentUser();
-      if (!user || user.role !== "SUPER_ADMIN") {
-        showToast("إسناد الرتب مقتصر على المشرف العام فقط", "error");
-        return;
-      }
-
       var users = JSON.parse(localStorage.getItem("edu_users")) || [];
       var eligibleUsers = users.filter(function(u) { return u.role === "STUDENT"; });
-
       var select = document.getElementById("staffRegisteredUserSelect");
       if (eligibleUsers.length === 0) {
         select.innerHTML = '<option value="">لا يوجد مستخدمون مسجلون متاحون للترقية</option>';
       } else {
         select.innerHTML = eligibleUsers.map(function(u) {
-          return '<option value="' + u.uid + '">' + u.fullName + ' (' + u.email + ' - ' + (u.studentPhone || "") + ')</option>';
+          return '<option value="' + (u.uid || u.id) + '">' + u.fullName + ' (' + u.email + ' - ' + (u.studentPhone || "") + ')</option>';
         }).join("");
       }
-
       openModal("addStaffModal");
     }
 
     document.getElementById("assignStaffRoleForm").addEventListener("submit", async function(e) {
       e.preventDefault();
-      var user = getCurrentUser();
-      if (!user || user.role !== "SUPER_ADMIN") {
-        showToast("غير مصرح لك بإسناد الرتب", "error");
-        return;
-      }
-
       var targetUid = document.getElementById("staffRegisteredUserSelect").value;
       var newRole = document.getElementById("staffRoleAssignSelect").value;
-
-      if (!targetUid) {
-        showToast("يرجى اختيار حساب مسجل", "error");
-        return;
-      }
+      if (!targetUid) return;
 
       showToast("جاري إسناد الرتبة وتحديث صلاحيات الحساب سحابياً...", "info");
-
       try {
         if (window.FirebaseService) {
           await window.FirebaseService.updateUserRoleByUid(targetUid, newRole);
@@ -1972,11 +1970,6 @@
     });
 
     function openEditStaffRoleModal(uid, name, currentRole) {
-      var user = getCurrentUser();
-      if (!user || user.role !== "SUPER_ADMIN") {
-        showToast("تعديل الرتب مقتصر على المشرف العام فقط", "error");
-        return;
-      }
       document.getElementById("editStaffTargetUid").value = uid;
       document.getElementById("editStaffTargetName").innerText = name;
       document.getElementById("editStaffNewRoleSelect").value = currentRole;
@@ -1984,17 +1977,10 @@
     }
 
     async function saveStaffRoleChange() {
-      var user = getCurrentUser();
-      if (!user || user.role !== "SUPER_ADMIN") {
-        showToast("غير مصرح لك بتعديل الرتب", "error");
-        return;
-      }
-
       var targetUid = document.getElementById("editStaffTargetUid").value;
       var newRole = document.getElementById("editStaffNewRoleSelect").value;
 
-      showToast("جاري حفظ التعديل وتحديث صلاحيات المسؤول فورياً...", "info");
-
+      showToast("جاري حفظ التعديل وتحديث الصلاحيات فورياً...", "info");
       try {
         if (window.FirebaseService) {
           await window.FirebaseService.updateUserRoleByUid(targetUid, newRole);
@@ -2012,12 +1998,10 @@
       var target = document.getElementById("pushTargetSelect").value;
       var title = document.getElementById("pushTitleInput").value.trim();
       var body = document.getElementById("pushBodyInput").value.trim();
-
       if (!title || !body) return;
 
       showToast("جاري بث الإشعار لجميع الأجهزة سحابياً...", "info");
-      await sendSystemPushNotification(title, body, target);
-      logAdminAction("إرسال إشعار", "تم إرسال إشعار للطلاب: " + title);
+      await window.FirebaseService.pushNotificationToCloud(title, body, target);
       document.getElementById("pushTitleInput").value = "";
       document.getElementById("pushBodyInput").value = "";
       showToast("تم إرسال الإشعار السحابي الفوري لجميع أجهزة الطلاب بنجاح ✓", "success");
@@ -2025,13 +2009,9 @@
 
     function renderAdmin() {
       var user = getCurrentUser();
-      if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN")) {
-        showToast("عذراً، مخصص للإدارة فقط", "error");
-        setTimeout(function() { window.location.href = "login.html"; }, 1000);
-        return;
-      }
-      document.getElementById("adminUserName").innerText = user.fullName;
+      if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN")) return;
 
+      document.getElementById("adminUserName").innerText = user.fullName;
       var isSuperAdmin = user.role === "SUPER_ADMIN";
       document.getElementById("adminRoleDisplay").innerText = isSuperAdmin ? "المشرف العام" : "مشرف إدارة";
       document.getElementById("adminAvatarRole").innerText = "HK";
@@ -2056,10 +2036,11 @@
       var payments = JSON.parse(localStorage.getItem("edu_payments")) || [];
       var logs = JSON.parse(localStorage.getItem("edu_activity_logs")) || [];
       var subs = JSON.parse(localStorage.getItem("edu_submissions")) || [];
+      var supportThreads = JSON.parse(localStorage.getItem("edu_support_threads")) || [];
 
       allStudentsCache = users.filter(function(u) { return u.role === "STUDENT"; });
 
-      updateNotificationBadges(payments, JSON.parse(localStorage.getItem("edu_hacker_logs")) || []);
+      updateNotificationBadges(payments, JSON.parse(localStorage.getItem("edu_hacker_logs")) || [], supportThreads);
 
       var revenue = payments.filter(function(p) { return p.status === "APPROVED"; }).reduce(function(sum, p) { return sum + (Number(p.amount) || 0); }, 0);
       document.getElementById("totalRevenue").innerText = revenue + " ج.م";
@@ -2076,30 +2057,24 @@
           allStudentsCache.map(function(s) { return '<option value="' + (s.uid || s.id) + '">' + s.fullName + ' (' + s.email + ')</option>'; }).join("");
       }
 
-      var coursesBody = document.getElementById("coursesTableBody");
-      if (courses.length === 0) {
-        coursesBody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد كورسات مضافة بعد.</td></tr>';
-      } else {
-        coursesBody.innerHTML = courses.map(function(c, index) {
-          var priceTag = (c.isFree || Number(c.price) === 0) ? '<span style="color:#059669; font-weight:bold;">مجاني</span>' : (c.price + " ج.م");
-          var viewsTag = (c.maxViewsType === "unlimited" || !c.maxViews || Number(c.maxViews) === 0) ? '<span style="color:#00D2FF; font-weight:bold;">مفتوحة</span>' : (c.maxViews + " مرات");
+      // جدول الكورسات
+      document.getElementById("coursesTableBody").innerHTML = courses.map(function(c, index) {
+        var priceTag = (c.isFree || Number(c.price) === 0) ? '<span style="color:#059669; font-weight:bold;">مجاني</span>' : (c.price + " ج.م");
+        return "<tr>" +
+          '<td><img src="' + (c.image || "") + '" style="width:45px; height:32px; object-fit:cover; border-radius:6px;" onerror="this.src=\'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80\'"></td>' +
+          "<td><strong>" + c.title + "</strong></td>" +
+          "<td>" + priceTag + "</td>" +
+          "<td>" + (c.lessons || []).length + " محاضرات</td>" +
+          "<td>" + allStudentsCache.filter(function(u) { return u.enrolledCourses && u.enrolledCourses.map(String).includes(String(c.id)); }).length + " طالب</td>" +
+          "<td>" +
+            '<button type="button" class="btn-action btn-action-success" onclick="openCourseWatchStats(\'' + c.id + '\', \'' + c.title.replace(/'/g, "\\'") + '\')" style="margin-left:4px;">تقرير المشاهدات</button>' +
+            '<button type="button" class="btn-action btn-action-primary" onclick="openEditCourseModal(' + index + ')" style="margin-left:4px;">تعديل</button>' +
+            '<button type="button" class="btn-action btn-action-danger" onclick="deleteCourse(' + index + ')">حذف</button>' +
+          "</td>" +
+        "</tr>";
+      }).join("");
 
-          return "<tr>" +
-            '<td><img src="' + (c.image || "") + '" style="width:45px; height:32px; object-fit:cover; border-radius:6px;" onerror="this.src=\'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80\'"></td>' +
-            "<td><strong>" + c.title + "</strong></td>" +
-            "<td>" + priceTag + "</td>" +
-            "<td>" + viewsTag + "</td>" +
-            "<td>" + (c.lessons || []).length + " محاضرات</td>" +
-            "<td>" + allStudentsCache.filter(function(u) { return u.enrolledCourses && u.enrolledCourses.map(String).includes(String(c.id)); }).length + " طالب</td>" +
-            "<td>" +
-              '<button type="button" class="btn-action btn-action-success" onclick="openCourseWatchStats(\'' + c.id + '\', \'' + c.title.replace(/'/g, "\\'") + '\')" style="margin-left:4px;">تقرير المشاهدات</button>' +
-              '<button type="button" class="btn-action btn-action-primary" onclick="openEditCourseModal(' + index + ')" style="margin-left:4px;">تعديل</button>' +
-              '<button type="button" class="btn-action btn-action-danger" onclick="deleteCourse(' + index + ')">حذف</button>' +
-            "</td>" +
-          "</tr>";
-        }).join("");
-      }
-
+      // جدول الامتحانات
       document.getElementById("examsTableBody").innerHTML = exams.map(function(e) {
         return "<tr>" +
           "<td><strong>" + e.title + "</strong></td>" +
@@ -2114,20 +2089,24 @@
         "</tr>";
       }).join("");
 
-      // جدول المدفوعات مع زري القبول والرفض المباشر
+      // جدول المدفوعات مع زري القبول والرفض
       document.getElementById("paymentsTableBody").innerHTML = payments.map(function(p) {
         var actionBtns = "";
         if (p.status === "PENDING") {
-          actionBtns = '<button class="btn-action btn-action-success" onclick="approvePayment(\'' + p.id + '\')">قبول وتفعيل</button>' +
-                       '<button class="btn-action btn-action-danger" onclick="rejectPayment(\'' + p.id + '\')">رفض الطلب</button>';
+          actionBtns = 
+            '<button class="btn-action btn-action-success" onclick="approvePayment(\'' + p.id + '\', \'' + (p.userUid || '') + '\', \'' + p.courseId + '\', \'' + (p.courseTitle || '').replace(/'/g, "\\'") + '\', \'' + (p.userEmail || '') + '\')">قبول وتفعيل</button>' +
+            '<button class="btn-action btn-action-danger" onclick="rejectPayment(\'' + p.id + '\', \'' + (p.userUid || '') + '\', \'' + (p.courseTitle || '').replace(/'/g, "\\'") + '\')">رفض</button>';
         } else if (p.status === "APPROVED") {
-          actionBtns = '<span style="color:#10b981; font-weight:bold;">مفعل ✓</span>';
+          actionBtns = '<span style="color:#059669; font-weight:800;">تم التفعيل ✓</span>';
         } else {
-          actionBtns = '<span style="color:#ef4444; font-weight:bold;">مرفوض ✕</span>';
+          actionBtns = '<span style="color:#dc2626; font-weight:800;">تم الرفض ✕</span>';
         }
 
         return "<tr>" +
-          "<td>" + p.userName + "</td><td>" + p.studentPhone + "</td><td>" + p.courseTitle + "</td><td>" + p.amount + " ج.م</td>" +
+          "<td>" + p.userName + "<br><small style=\"color:#64748B;\">" + p.userEmail + "</small></td>" +
+          "<td>" + p.studentPhone + "</td>" +
+          "<td>" + p.courseTitle + "</td>" +
+          "<td>" + p.amount + " ج.م</td>" +
           '<td><button type="button" class="btn-action btn-action-primary" onclick="viewReceiptImage(\'' + p.receipt + '\')">معاينة الإيصال</button></td>' +
           "<td>" + actionBtns + "</td>" +
         "</tr>";
@@ -2152,14 +2131,16 @@
         }
       }
 
+      // جدول الطاقم
       document.getElementById("staffTableBody").innerHTML = users.filter(function(u) { return u.role !== "STUDENT"; }).map(function(s) {
         var isTargetSuper = s.role === "SUPER_ADMIN";
+        var uidKey = s.uid || s.id;
         var actionBtns = "";
 
         if (isSuperAdmin) {
           if (!isTargetSuper) {
-            actionBtns = '<button class="btn-action btn-action-primary" onclick="openEditStaffRoleModal(\'' + (s.uid || s.id) + '\', \'' + s.fullName.replace(/'/g, "\\'") + '\', \'' + s.role + '\')" style="margin-left:4px;">تعديل الرتبة</button>' +
-                         '<button class="btn-action btn-action-danger" onclick="deleteUserByUidAction(\'' + (s.uid || s.id) + '\')">إلغاء الحساب</button>';
+            actionBtns = '<button class="btn-action btn-action-primary" onclick="openEditStaffRoleModal(\'' + uidKey + '\', \'' + s.fullName.replace(/'/g, "\\'") + '\', \'' + s.role + '\')" style="margin-left:4px;">تعديل الرتبة</button>' +
+                         '<button class="btn-action btn-action-danger" onclick="deleteUserByUidAction(\'' + uidKey + '\')">إلغاء الحساب</button>';
           } else {
             actionBtns = '<span style="color:var(--cyan-accent); font-weight:bold; font-size:12px;">المشرف العام</span>';
           }
@@ -2234,7 +2215,7 @@
 
       var allCourses = JSON.parse(localStorage.getItem("edu_courses")) || [];
       var submissions = JSON.parse(localStorage.getItem("edu_submissions")) || [];
-      var studentSubs = submissions.filter(function(sub) { return sub.userUid === uid || sub.userId === uid || sub.userEmail === student.email; });
+      var studentSubs = submissions.filter(function(sub) { return sub.userUid === uid || sub.userEmail === student.email; });
 
       var enrolledCourseTitles = allCourses
         .filter(function(c) { return student.enrolledCourses && student.enrolledCourses.map(String).includes(String(c.id)); })
@@ -2261,7 +2242,7 @@
           (studentSubs.length > 0
             ? '<table class="exams-table" style="font-size:12.5px;">' +
                 '<thead><tr><th>الامتحان</th><th>التاريخ</th><th>الدرجة</th><th>النسبة</th></tr></thead>' +
-                '<tbody>' + studentSubs.map(function(sub) { return '<tr><td>' + sub.examTitle + '</td><td>' + (sub.createdAt ? new Date(sub.createdAt).toLocaleDateString("ar-EG") : (sub.date || "-")) + '</td><td>' + sub.score + '/' + sub.total + '</td><td><strong>' + sub.percentage + '%</strong></td></tr>'; }).join('') + '</tbody>' +
+                '<tbody>' + studentSubs.map(function(sub) { return '<tr><td>' + sub.examTitle + '</td><td>' + (sub.createdAt ? new Date(sub.createdAt).toLocaleDateString("ar-EG") : "-") + '</td><td>' + sub.score + '/' + sub.total + '</td><td><strong>' + sub.percentage + '%</strong></td></tr>'; }).join('') + '</tbody>' +
               '</table>'
             : '<p style="font-size:13px; color:var(--text-muted);">لم يتم تسليم امتحانات بعد.</p>') +
         '</div>';
@@ -2281,24 +2262,20 @@
     }
 
     document.addEventListener("DOMContentLoaded", function() {
-      var toggleBtn = document.getElementById("mobileSidebarToggleBtn");
-      if (toggleBtn) {
-        toggleBtn.addEventListener("click", toggleMobileSidebarMenu);
-        toggleBtn.addEventListener("touchend", function(e) {
-          e.preventDefault();
-          toggleMobileSidebarMenu();
-        });
-      }
-
       var initInterval = setInterval(function() {
         if (window.FirebaseService && window.firebase && firebase.firestore) {
           clearInterval(initInterval);
-          
           window.FirebaseService.subscribeCourses(function() { renderAdmin(); });
           window.FirebaseService.subscribeExams(function() { renderAdmin(); });
           window.FirebaseService.subscribeUsers(function() { renderAdmin(); });
           window.FirebaseService.subscribePayments(function() { renderAdmin(); });
           window.FirebaseService.subscribeSubmissions(function() { renderAdmin(); });
+          if (window.FirebaseService.subscribeAllSupportThreads) {
+            window.FirebaseService.subscribeAllSupportThreads(function(threads) {
+              localStorage.setItem("edu_support_threads", JSON.stringify(threads));
+              renderAdmin();
+            });
+          }
         }
       }, 250);
 
