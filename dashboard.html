@@ -5,103 +5,247 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>لوحة الطالب - هي كيميا !</title>
   <link rel="stylesheet" href="dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    .tab-content-section { display: none; }
-    .tab-content-section.active { display: block; }
-    
-    .student-metric-card {
-      background: var(--bg-card);
-      backdrop-filter: var(--liquid-glass-blur);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid var(--border-subtle);
-      border-radius: 14px;
-      padding: 18px 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      box-shadow: inset 0 1px 2px rgba(255,255,255,0.7), 0 4px 15px rgba(12, 7, 84, 0.03);
-    }
-    .metric-value {
-      font-size: 24px;
-      font-weight: 900;
-      color: var(--royal-indigo-base);
-    }
-    .metric-label {
-      font-size: 12.5px;
-      font-weight: 700;
-      color: var(--text-muted);
+    :root {
+      --dash-bg: #f8fafc;
+      --card-bg: #ffffff;
+      --primary-dark: #0E1338;
+      --accent-cyan: #00D2FF;
+      --accent-blue: #0284C7;
+      --text-main: #0f172a;
+      --text-sub: #64748b;
+      --border-color: #e2e8f0;
+      --card-shadow: 0 10px 25px -5px rgba(14, 19, 56, 0.05), 0 8px 10px -6px rgba(14, 19, 56, 0.03);
     }
 
+    body {
+      background: var(--dash-bg);
+      font-family: inherit;
+      color: var(--text-main);
+      margin: 0;
+      padding: 0;
+    }
+
+    .tab-content-section { display: none; }
+    .tab-content-section.active { display: block; animation: fadeInTab 0.3s ease; }
+    @keyframes fadeInTab { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* شبكة الإحصائيات الحديثة */
+    .student-stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .modern-stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--card-shadow);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.25s ease;
+    }
+
+    .modern-stat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 30px rgba(0, 210, 255, 0.1);
+      border-color: rgba(0, 210, 255, 0.4);
+    }
+
+    .stat-content-box .stat-num {
+      font-size: 26px;
+      font-weight: 900;
+      color: var(--primary-dark);
+      margin: 4px 0 0;
+      line-height: 1.2;
+    }
+
+    .stat-content-box .stat-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-sub);
+    }
+
+    .stat-icon-wrapper {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .icon-cyan { background: rgba(0, 210, 255, 0.12); color: #0284C7; }
+    .icon-emerald { background: rgba(16, 185, 129, 0.12); color: #059669; }
+    .icon-purple { background: rgba(147, 51, 234, 0.12); color: #7e22ce; }
+    .icon-amber { background: rgba(245, 158, 11, 0.12); color: #d97706; }
+
+    /* بانر الترحيب والإنجاز */
+    .student-welcome-banner {
+      background: linear-gradient(135deg, #0E1338 0%, #1D255E 100%);
+      color: #fff;
+      border-radius: 20px;
+      padding: 28px 24px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 15px 30px rgba(14, 19, 56, 0.15);
+    }
+
+    .student-welcome-banner::after {
+      content: "";
+      position: absolute;
+      top: -40px;
+      left: -40px;
+      width: 140px;
+      height: 140px;
+      background: radial-gradient(circle, rgba(0, 210, 255, 0.25) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .welcome-text-side h2 {
+      font-size: 20px;
+      font-weight: 900;
+      margin: 0 0 6px;
+    }
+
+    .welcome-text-side p {
+      margin: 0;
+      font-size: 13.5px;
+      color: #94A3B8;
+    }
+
+    /* شبكة الكورسات الاحترافية */
     .courses-grid-student {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
       gap: 20px;
     }
+
     .student-course-card {
-      background: var(--bg-card);
-      backdrop-filter: var(--liquid-glass-blur);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid var(--border-subtle);
-      border-radius: 14px;
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 4px 15px rgba(12, 7, 84, 0.03);
-      transition: transform 0.2s ease, border-color 0.2s ease;
+      box-shadow: var(--card-shadow);
+      transition: all 0.25s ease;
     }
+
     .student-course-card:hover {
-      transform: translateY(-3px);
+      transform: translateY(-4px);
       border-color: rgba(0, 210, 255, 0.4);
+      box-shadow: 0 15px 35px rgba(14, 19, 56, 0.08);
     }
-    .student-course-img {
+
+    .course-card-thumbnail {
       width: 100%;
-      height: 160px;
+      height: 165px;
       object-fit: cover;
+      display: block;
     }
-    .student-course-content {
-      padding: 16px;
+
+    .student-course-body {
+      padding: 18px;
       display: flex;
       flex-direction: column;
       flex: 1;
     }
 
-    .progress-bar-container {
-      width: 100%;
-      height: 6px;
-      background: #E2E8F0;
-      border-radius: 6px;
-      overflow: hidden;
-      margin: 10px 0 14px;
+    .course-meta-tags {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
     }
-    .progress-bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #00D2FF, #0284C7);
+
+    .badge-enrolled {
+      background: rgba(16, 185, 129, 0.12);
+      color: #059669;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
       border-radius: 6px;
     }
 
-    .profile-info-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 14px;
-      margin-top: 15px;
+    .student-course-title {
+      font-size: 15.5px;
+      font-weight: 900;
+      color: var(--primary-dark);
+      margin: 0 0 10px;
+      line-height: 1.4;
     }
-    .profile-info-box {
-      background: #ffffff;
-      border: 1px solid #E2E8F0;
-      border-radius: 10px;
-      padding: 12px 16px;
+
+    .course-progress-box {
+      margin: 10px 0 16px;
     }
-    .profile-info-box .p-label {
+
+    .progress-meta-text {
+      display: flex;
+      justify-content: space-between;
       font-size: 11.5px;
       font-weight: 700;
-      color: #64748B;
-      display: block;
-      margin-bottom: 2px;
+      color: var(--text-sub);
+      margin-bottom: 5px;
     }
-    .profile-info-box .p-value {
-      font-size: 14px;
+
+    .progress-track {
+      width: 100%;
+      height: 7px;
+      background: #E2E8F0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #00D2FF, #0284C7);
+      border-radius: 8px;
+    }
+
+    .btn-watch-course {
+      width: 100%;
+      padding: 11px;
+      background: var(--primary-dark);
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
       font-weight: 800;
-      color: var(--royal-indigo-base);
+      font-size: 13px;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      display: block;
+      box-sizing: border-box;
+      transition: background 0.2s ease, transform 0.2s ease;
+      margin-top: auto;
+    }
+
+    .btn-watch-course:hover {
+      background: #1D255E;
+      color: #00D2FF;
+      transform: translateY(-2px);
+    }
+
+    @media (max-width: 900px) {
+      .student-welcome-banner { flex-direction: column; align-items: flex-start; gap: 14px; }
+      .student-stats-row { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 540px) {
+      .student-stats-row { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -121,7 +265,8 @@
 
       <button type="button" class="mobile-sidebar-toggle-btn" id="studentMobileToggleBtn" onclick="toggleStudentMobileMenu()">
         <span style="display:flex; align-items:center; gap:8px;">
-          <span>قائمة التحكم</span>
+          <span>☰</span>
+          <span id="studentMobileLabelDisplay">المحتوى والكورسات</span>
         </span>
         <span id="studentMobileArrowIcon">▼</span>
       </button>
@@ -155,34 +300,54 @@
       
       <!-- 1. المحتوى والكورسات -->
       <div id="myCoursesTab" class="tab-content-section active">
-        <header class="topbar">
-          <div>
-            <h1 style="font-size:20px; font-weight:900; color:var(--royal-indigo-base);">المنصة التعليمية</h1>
-            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">متابعة المحاضرات والواجبات والمذكرات</p>
+        
+        <!-- بانر الترحيب -->
+        <div class="student-welcome-banner">
+          <div class="welcome-text-side">
+            <h2>مرحباً بك، <span id="welcomeStudentName">طالب</span>!</h2>
+            <p>منصة الكيمياء المتكاملة - الأستاذ محمد السعيد معك خطوة بخطوة للدرجة النهائية.</p>
           </div>
-        </header>
+          <a href="index.html#courses" class="btn btn-outline" style="border-color:#00D2FF; color:#00D2FF; padding:8px 16px; font-size:12.5px; text-decoration:none;">تصفح المناهج</a>
+        </div>
 
-        <section class="stats-grid">
-          <div class="student-metric-card">
-            <span class="metric-label">الكورسات المفعلة</span>
-            <span class="metric-value" id="statEnrolledCoursesCount">0</span>
+        <!-- بطاقات الإحصائيات -->
+        <section class="student-stats-row">
+          <div class="modern-stat-card">
+            <div class="stat-content-box">
+              <span class="stat-title">الكورسات المفعلة</span>
+              <h3 class="stat-num" id="statEnrolledCoursesCount">0</h3>
+            </div>
+            <div class="stat-icon-wrapper icon-cyan">كورس</div>
           </div>
-          <div class="student-metric-card">
-            <span class="metric-label">الامتحانات المكتملة</span>
-            <span class="metric-value" id="statCompletedExamsCount">0</span>
+
+          <div class="modern-stat-card">
+            <div class="stat-content-box">
+              <span class="stat-title">الاختبارات المنجزة</span>
+              <h3 class="stat-num" id="statCompletedExamsCount">0</h3>
+            </div>
+            <div class="stat-icon-wrapper icon-emerald">اختبار</div>
           </div>
-          <div class="student-metric-card">
-            <span class="metric-label">متوسط الدرجات</span>
-            <span class="metric-value" id="statAverageScoreDisplay">0%</span>
+
+          <div class="modern-stat-card">
+            <div class="stat-content-box">
+              <span class="stat-title">متوسط التقييم</span>
+              <h3 class="stat-num" id="statAverageScoreDisplay">0%</h3>
+            </div>
+            <div class="stat-icon-wrapper icon-purple">تقييم</div>
           </div>
-          <div class="student-metric-card">
-            <span class="metric-label">ساعات الحضور</span>
-            <span class="metric-value" id="statTotalWatchTime">0 س</span>
+
+          <div class="modern-stat-card">
+            <div class="stat-content-box">
+              <span class="stat-title">ساعات الحضور</span>
+              <h3 class="stat-num" id="statTotalWatchTime">0 س</h3>
+            </div>
+            <div class="stat-icon-wrapper icon-amber">حضور</div>
           </div>
         </section>
 
-        <div style="margin: 25px 0 15px;">
-          <h2 style="font-size: 16px; font-weight: 800; color: var(--royal-indigo-base);">الكورسات المشترك بها</h2>
+        <div style="margin: 28px 0 16px; display:flex; justify-content:space-between; align-items:center;">
+          <h2 style="font-size: 17px; font-weight: 900; color: var(--primary-dark); margin:0;">الكورسات المفعلة بحسابك</h2>
+          <span style="font-size:12px; color:var(--text-sub);" id="enrolledCountBadge">0 كورس متاح</span>
         </div>
 
         <div class="courses-grid-student" id="studentEnrolledCoursesGrid"></div>
@@ -192,8 +357,8 @@
       <div id="myExamsTab" class="tab-content-section">
         <header class="topbar">
           <div>
-            <h1 style="font-size:20px; font-weight:900; color:var(--royal-indigo-base);">سجل نتائج الامتحانات</h1>
-            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">تقييم تفصيلي للاختبارات والمحاولات الدورية</p>
+            <h1 style="font-size:20px; font-weight:900; color:var(--primary-dark);">سجل نتائج الامتحانات</h1>
+            <p class="subtitle" style="color:var(--text-sub); font-size:13px;">تقييم تفصيلي للاختبارات والمحاولات الدورية</p>
           </div>
         </header>
 
@@ -205,7 +370,7 @@
                 <th>تاريخ التسليم</th>
                 <th>الدرجة</th>
                 <th>النسبة المئوية</th>
-                <th>التقييم</th>
+                <th>التقييم الأكاديمي</th>
               </tr>
             </thead>
             <tbody id="studentExamsHistoryTableBody"></tbody>
@@ -217,44 +382,44 @@
       <div id="myProfileTab" class="tab-content-section">
         <header class="topbar">
           <div>
-            <h1 style="font-size:20px; font-weight:900; color:var(--royal-indigo-base);">بيانات الطالب الأكاديمية</h1>
-            <p class="subtitle" style="color:var(--text-muted); font-size:13px;">المعلومات المعتمدة والمسجلة في المنظومة</p>
+            <h1 style="font-size:20px; font-weight:900; color:var(--primary-dark);">بيانات الطالب الأكاديمية</h1>
+            <p class="subtitle" style="color:var(--text-sub); font-size:13px;">المعلومات المعتمدة والمسجلة في المنظومة</p>
           </div>
         </header>
 
-        <div style="background:#fff; border:1px solid var(--border-subtle); border-radius:14px; padding:20px; max-width:800px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #EEF2F6; padding-bottom:12px;">
+        <div style="background:#fff; border:1px solid var(--border-color); border-radius:18px; padding:24px; max-width:820px; box-shadow:var(--card-shadow);">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:14px;">
             <div>
-              <h3 id="profNameHeading" style="font-size:16px; font-weight:900; color:var(--royal-indigo-base); margin-bottom:2px;">-</h3>
-              <span id="profEmailSub" style="font-size:12px; color:var(--text-muted);">-</span>
+              <h3 id="profNameHeading" style="font-size:17px; font-weight:900; color:var(--primary-dark); margin-bottom:2px;">-</h3>
+              <span id="profEmailSub" style="font-size:12px; color:var(--text-sub);">-</span>
             </div>
-            <span class="badge" style="background:rgba(0,210,255,0.1); color:#0284C7; font-weight:800; padding:4px 10px; border-radius:14px; font-size:11.5px;">حساب طالب نشط</span>
+            <span class="badge-enrolled">حساب طالب نشط</span>
           </div>
 
-          <div class="profile-info-grid">
-            <div class="profile-info-box">
-              <span class="p-label">الاسم بالكامل</span>
-              <span class="p-value" id="profFullName">-</span>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-top:16px;">
+            <div style="background:#F8FAFC; border:1px solid var(--border-color); border-radius:10px; padding:12px 14px;">
+              <span style="font-size:11.5px; font-weight:700; color:#64748B; display:block;">الاسم بالكامل</span>
+              <strong style="font-size:14px; color:var(--primary-dark);" id="profFullName">-</strong>
             </div>
-            <div class="profile-info-box">
-              <span class="p-label">رقم الهاتف (واتساب)</span>
-              <span class="p-value" id="profStudentPhone">-</span>
+            <div style="background:#F8FAFC; border:1px solid var(--border-color); border-radius:10px; padding:12px 14px;">
+              <span style="font-size:11.5px; font-weight:700; color:#64748B; display:block;">رقم الهاتف</span>
+              <strong style="font-size:14px; color:var(--primary-dark);" id="profStudentPhone">-</strong>
             </div>
-            <div class="profile-info-box">
-              <span class="p-label">رقم ولي الأمر</span>
-              <span class="p-value" id="profParentPhone">-</span>
+            <div style="background:#F8FAFC; border:1px solid var(--border-color); border-radius:10px; padding:12px 14px;">
+              <span style="font-size:11.5px; font-weight:700; color:#64748B; display:block;">رقم ولي الأمر</span>
+              <strong style="font-size:14px; color:var(--primary-dark);" id="profParentPhone">-</strong>
             </div>
-            <div class="profile-info-box">
-              <span class="p-label">المحافظة</span>
-              <span class="p-value" id="profGov">-</span>
+            <div style="background:#F8FAFC; border:1px solid var(--border-color); border-radius:10px; padding:12px 14px;">
+              <span style="font-size:11.5px; font-weight:700; color:#64748B; display:block;">المحافظة</span>
+              <strong style="font-size:14px; color:var(--primary-dark);" id="profGov">-</strong>
             </div>
-            <div class="profile-info-box">
-              <span class="p-label">المدرسة / السنتر</span>
-              <span class="p-value" id="profSchool">-</span>
+            <div style="background:#F8FAFC; border:1px solid var(--border-color); border-radius:10px; padding:12px 14px;">
+              <span style="font-size:11.5px; font-weight:700; color:#64748B; display:block;">المدرسة / السنتر</span>
+              <strong style="font-size:14px; color:var(--primary-dark);" id="profSchool">-</strong>
             </div>
-            <div class="profile-info-box">
-              <span class="p-label">نوع التعليم</span>
-              <span class="p-value" id="profEduType">-</span>
+            <div style="background:#F8FAFC; border:1px solid var(--border-color); border-radius:10px; padding:12px 14px;">
+              <span style="font-size:11.5px; font-weight:700; color:#64748B; display:block;">نوع التعليم</span>
+              <strong style="font-size:14px; color:var(--primary-dark);" id="profEduType">-</strong>
             </div>
           </div>
         </div>
@@ -282,6 +447,9 @@
       if (target) target.classList.add("active");
       if (element) element.classList.add("active");
 
+      var labelDisplay = document.getElementById("studentMobileLabelDisplay");
+      if (labelDisplay && labelName) labelDisplay.innerText = labelName;
+
       if (window.innerWidth <= 900) {
         var nav = document.getElementById("studentSidebarNav");
         var arrow = document.getElementById("studentMobileArrowIcon");
@@ -299,7 +467,9 @@
         return;
       }
 
+      var firstName = user.fullName ? user.fullName.split(" ")[0] : "طالب";
       document.getElementById("studentFullNameDisplay").innerText = user.fullName || "طالب";
+      document.getElementById("welcomeStudentName").innerText = firstName;
       document.getElementById("studentEduTypeBadge").innerText = user.educationType === "AZHAR" ? "الثانوية الأزهرية" : "الثانوية العامة";
 
       document.getElementById("profNameHeading").innerText = user.fullName || "-";
@@ -309,49 +479,60 @@
       document.getElementById("profParentPhone").innerText = user.parentPhone || "غير مسجل";
       document.getElementById("profGov").innerText = user.governorate || "مصر";
       document.getElementById("profSchool").innerText = user.schoolName || "غير محدد";
-      document.getElementById("profEduType").innerText = user.educationType === "AZHAR" ? "أزهري" : "عام";
+      document.getElementById("profEduType").innerText = user.educationType === "AZHAR" ? "ثانوي أزهري" : "ثانوي عام";
 
-      // الاعتماد على المحرك الحسابي الموحد لضمان التطابق مع سجلات الأدمن
-      var metrics = calculateStudentMetrics(user.uid);
+      // الحساب الموحد الدقيق المعتمد على UID
+      var uidKey = user.uid || user.id;
+      var metrics = calculateStudentMetrics(uidKey);
 
       document.getElementById("statEnrolledCoursesCount").innerText = metrics.enrolledCount;
       document.getElementById("statCompletedExamsCount").innerText = metrics.completedExams;
       document.getElementById("statAverageScoreDisplay").innerText = metrics.avgScore + "%";
       document.getElementById("statTotalWatchTime").innerText = metrics.totalHours + " س";
+      document.getElementById("enrolledCountBadge").innerText = metrics.enrolledCount + " كورس مفعل";
 
-      // عرض الكورسات المشترك بها
+      // عرض الكورسات
       var container = document.getElementById("studentEnrolledCoursesGrid");
       if (metrics.enrolledList.length === 0) {
-        container.innerHTML = '<div style="grid-column:1/-1; background:#fff; padding:30px; text-align:center; border-radius:12px; border:1px solid var(--border-subtle);">' +
-          '<p style="color:var(--text-muted); margin-bottom:12px; font-size:13.5px;">لا توجد كورسات مفعلة حالياً في حسابك.</p>' +
-          '<a href="index.html#courses" class="btn btn-primary" style="text-decoration:none; font-size:12.5px;">تصفح الكورسات المتاحة</a>' +
+        container.innerHTML = '<div style="grid-column:1/-1; background:#fff; padding:40px 20px; text-align:center; border-radius:18px; border:1px solid var(--border-color); box-shadow:var(--card-shadow);">' +
+          '<div style="width:50px; height:50px; background:#F1F5F9; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 12px; font-size:22px; font-weight:bold; color:#64748B;">📚</div>' +
+          '<h3 style="font-size:16px; font-weight:800; color:var(--primary-dark); margin:0 0 6px;">لا توجد كورسات مفعلة حالياً</h3>' +
+          '<p style="color:var(--text-sub); margin-bottom:18px; font-size:13px;">تصفح الكورسات والمحاضرات واشترك الآن لبدء رحلة التفوق.</p>' +
+          '<a href="index.html#courses" class="btn btn-primary" style="text-decoration:none; font-size:13px; padding:10px 24px;">تصفح المناهج المتاحة ←</a>' +
         '</div>';
       } else {
         container.innerHTML = metrics.enrolledList.map(function(course) {
           var lessons = course.lessons || [];
+          var courseIdStr = String(course.id);
           return '<div class="student-course-card">' +
-            '<img src="' + (course.image || "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80") + '" class="student-course-img" alt="' + course.title + '">' +
-            '<div class="student-course-content">' +
-              '<h3 style="font-size:15px; font-weight:800; margin-bottom:6px; color:var(--royal-indigo-base);">' + course.title + '</h3>' +
-              '<span style="font-size:12px; color:var(--text-muted);">' + lessons.length + ' محاضرات دراسية</span>' +
-              '<div class="progress-bar-container"><div class="progress-bar-fill" style="width: 100%;"></div></div>' +
-              '<a href="course-view.html?id=' + course.id + '" class="btn btn-primary" style="width:100%; text-align:center; padding:8px; font-size:12.5px; text-decoration:none; margin-top:auto;">متابعة المحاضرات</a>' +
+            '<img src="' + (course.image || "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80") + '" class="course-card-thumbnail" alt="' + sanitizeText(course.title) + '">' +
+            '<div class="student-course-body">' +
+              '<div class="course-meta-tags">' +
+                '<span class="badge-enrolled">مفعل بحسابك ✓</span>' +
+                '<span style="font-size:11.5px; font-weight:700; color:#64748B;">' + lessons.length + ' محاضرة</span>' +
+              '</div>' +
+              '<h3 class="student-course-title">' + sanitizeText(course.title) + '</h3>' +
+              '<div class="course-progress-box">' +
+                '<div class="progress-meta-text"><span>نسبة الإنجاز</span><span>100%</span></div>' +
+                '<div class="progress-track"><div class="progress-bar" style="width: 100%;"></div></div>' +
+              '</div>' +
+              '<a href="course-view.html?id=' + encodeURIComponent(courseIdStr) + '" class="btn-watch-course">متابعة المحاضرات ←</a>' +
             '</div>' +
           '</div>';
         }).join("");
       }
 
-      // عرض الامتحانات
+      // عرض سجل الامتحانات
       var examsTbody = document.getElementById("studentExamsHistoryTableBody");
       if (metrics.submissionsList.length === 0) {
-        examsTbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:20px;">لم يتم تسليم أي امتحانات بعد.</td></tr>';
+        examsTbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-sub); padding:24px;">لم تقم بتسليم أي اختبارات بعد.</td></tr>';
       } else {
         examsTbody.innerHTML = metrics.submissionsList.map(s => {
           var gradeBadge = s.percentage >= 85 
-            ? '<span style="color:#059669; font-weight:800;">ممتاز</span>' 
+            ? '<span style="color:#059669; font-weight:800;">ممتاز ✓</span>' 
             : (s.percentage >= 60 ? '<span style="color:#0284C7; font-weight:800;">اجتياز</span>' : '<span style="color:#dc2626; font-weight:800;">يحتاج تدريب</span>');
           return '<tr>' +
-            '<td><strong>' + s.examTitle + '</strong></td>' +
+            '<td><strong>' + sanitizeText(s.examTitle) + '</strong></td>' +
             '<td>' + (s.createdAt ? new Date(s.createdAt).toLocaleDateString("ar-EG") : "-") + '</td>' +
             '<td>' + s.score + ' / ' + s.total + '</td>' +
             '<td><strong>' + s.percentage + '%</strong></td>' +
