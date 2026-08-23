@@ -5,6 +5,57 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>هي كيميا ! - أ/ محمد السعيد</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    /* تنسيقات مخصصة لتأثير كلمة "هي كيميا !" الزجاجية خلف الأستاذ */
+    .teacher-arch-stage {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      overflow: hidden;
+    }
+
+    .hero-glass-brand-backdrop {
+      position: absolute;
+      top: 22%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .glass-chem-word {
+      font-size: clamp(38px, 6vw, 76px);
+      font-weight: 900;
+      letter-spacing: 6px;
+      text-align: center;
+      white-space: nowrap;
+      
+      /* تدرج لوني فخم من درجات الأزرق الملكي والسيان الكيميائي */
+      background: linear-gradient(135deg, rgba(0, 210, 255, 0.95) 0%, rgba(2, 132, 199, 0.85) 45%, rgba(14, 19, 56, 0.9) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      
+      /* تأثير زجاجي مع توهج وانعكاس إضاءة */
+      text-shadow: 0 10px 35px rgba(0, 210, 255, 0.4);
+      filter: drop-shadow(0 4px 20px rgba(2, 132, 199, 0.35));
+      opacity: 0.92;
+      transform: scale(1.05);
+    }
+
+    .teacher-cutout-img {
+      position: relative;
+      z-index: 2;
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+  </style>
 </head>
 <body>
 
@@ -31,7 +82,7 @@
     </nav>
   </div>
 
-  <!-- الهيرو الملكي -->
+  <!-- الهيرو الملكي المحدث بصورة الأستاذ والعبارة الزجاجية المتداخلة -->
   <section id="hero" class="hero-editorial-stage anim-fade-up">
     <div class="chem-watermark-bg">
       <span>Fe</span> <span>H₂SO₄</span> <span>⬡</span> <span>KMnO₄</span> <span>C₆H₆</span> <span>Cu</span> <span>Δ</span> <span>NaCl</span>
@@ -67,7 +118,13 @@
 
     <div class="teacher-arch-wrapper">
       <div class="teacher-arch-stage">
-        <img id="heroTeacherImg" src="teacher_clean_cutout.png" alt="أستاذ محمد السعيد" class="teacher-cutout-img">
+        <!-- كلمة هي كيميا الزجاجية المتداخلة خلف الأستاذ -->
+        <div class="hero-glass-brand-backdrop">
+          <span class="glass-chem-word">هــي كــيــمــيــا !</span>
+        </div>
+        
+        <!-- صورة الأستاذ -->
+        <img id="heroTeacherImg" src="teacher.jpg" alt="أستاذ محمد السعيد" class="teacher-cutout-img" onerror="this.src='teacher_clean_cutout.png'">
       </div>
     </div>
   </section>
@@ -116,7 +173,7 @@
     </div>
   </section>
 
-  <!-- قسم الامتحانات الشاملة (ديناميكي: يظهر فقط عند وجود امتحانات عامة وشاملة) -->
+  <!-- قسم الامتحانات الشاملة -->
   <section id="generalExamsSection" class="container anim-fade-up" style="display: none; padding: 20px 0 40px;">
     <div style="margin-bottom: 24px; text-align:right;">
       <span style="color:var(--cyan-accent); font-size:12px; font-weight:800; background:rgba(0, 210, 255, 0.1); padding:4px 14px; border-radius:20px;">تقييمات المستوى الشاملة</span>
@@ -146,7 +203,7 @@
     </section>
   </div>
 
-  <!-- الفوتر وقسم الحقوق والتواصل -->
+  <!-- الفوتر -->
   <footer class="platform-footer anim-fade-up">
     <div class="container">
       <div class="footer-grid">
@@ -225,24 +282,28 @@
 
       var studentAverages = {};
       submissions.forEach(function(sub) {
-        if (!studentAverages[sub.userEmail]) {
-          studentAverages[sub.userEmail] = {
+        var userKey = sub.userUid || sub.userId || sub.userEmail;
+        if (!userKey) return;
+
+        if (!studentAverages[userKey]) {
+          studentAverages[userKey] = {
             name: sub.userName,
-            email: sub.userEmail,
+            userKey: userKey,
             totalPercent: 0,
             count: 0
           };
         }
-        studentAverages[sub.userEmail].totalPercent += Number(sub.percentage) || 0;
-        studentAverages[sub.userEmail].count += 1;
+        studentAverages[userKey].totalPercent += Number(sub.percentage) || 0;
+        studentAverages[userKey].count += 1;
       });
 
-      var topStudents = Object.keys(studentAverages).map(function(email) {
-        var s = studentAverages[email];
-        var u = users.find(function(user) { return user.email === email; });
+      var topStudents = Object.keys(studentAverages).map(function(key) {
+        var s = studentAverages[key];
+        var u = users.find(function(user) { 
+          return (user.uid && user.uid === key) || (user.id && user.id === key) || (user.email && user.email === key); 
+        });
         return {
           name: s.name,
-          email: s.email,
           gov: u ? (u.governorate || "محافظة كفر الشيخ") : "مصر",
           average: Math.round(s.totalPercent / s.count)
         };
@@ -280,11 +341,11 @@
       }
 
       container.innerHTML = courses.map(function(c) {
-        var isEnrolled = user && user.enrolledCourses && user.enrolledCourses.includes(c.id);
+        var isEnrolled = isStudentEnrolledInCourse(user, c.id);
         var isFreeCourse = c.isFree || Number(c.price) === 0;
 
         var actionButton = isEnrolled
-          ? '<a href="course-view.html?id=' + c.id + '" class="btn btn-action-success" style="padding:10px 20px; font-size:13px; text-decoration:none;">دخول المحاضرات</a>'
+          ? '<a href="course-view.html?id=' + encodeURIComponent(String(c.id)) + '" class="btn btn-action-success" style="padding:10px 20px; font-size:13px; text-decoration:none;">دخول المحاضرات</a>'
           : (isFreeCourse 
               ? '<button onclick="handleEnrollClick(\'' + c.id + '\')" class="btn btn-cyan" style="padding:10px 20px; font-size:13px;">اشتراك فوري مجاني</button>'
               : '<button onclick="handleEnrollClick(\'' + c.id + '\')" class="btn btn-primary" style="padding:10px 20px; font-size:13px;">الاشتراك الآن</button>');
