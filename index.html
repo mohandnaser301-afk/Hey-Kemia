@@ -7,17 +7,17 @@
   <link rel="stylesheet" href="style.css">
   <style>
     /* =========================================================
-       تحسينات الهيرو الفاخر وتجربة الاستخدام التفاعلية
+       إعادة تصميم قسم الهيرو الملكي (UI / UX فخم ومتجاوب)
        ========================================================= */
 
     .chem-watermark-bg {
-      opacity: 0.07 !important;
-      filter: blur(0.5px);
+      opacity: 0.05 !important;
+      filter: blur(0.6px);
     }
 
     .hero-editorial-stage {
       position: relative;
-      padding: 110px 20px 40px;
+      padding: 100px 20px 40px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -26,87 +26,102 @@
     }
 
     .hero-top-text {
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       z-index: 5;
+      max-width: 820px;
+    }
+
+    .hero-badge-capsule {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(0, 210, 255, 0.35);
+      padding: 6px 18px;
+      border-radius: 30px;
+      box-shadow: 0 4px 15px rgba(14, 19, 56, 0.04);
+      margin-bottom: 14px;
+      color: var(--royal-indigo-base);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .hero-badge-capsule .dot-pulse {
+      width: 8px;
+      height: 8px;
+      background: #00D2FF;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #00D2FF;
+      animation: pulseDot 1.8s infinite;
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.6; }
     }
 
     .hero-main-title {
-      font-size: clamp(32px, 5vw, 54px);
+      font-size: clamp(34px, 5.2vw, 56px);
       font-weight: 900;
       color: var(--royal-indigo-base);
-      margin: 8px 0 4px;
-      line-height: 1.2;
+      margin: 4px 0 8px;
+      line-height: 1.18;
+      letter-spacing: -0.5px;
     }
 
     .hero-main-title span {
-      color: #00D2FF;
-      text-shadow: 0 4px 20px rgba(0, 210, 255, 0.35);
+      background: linear-gradient(135deg, #00D2FF 0%, #0284C7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 4px 15px rgba(0, 210, 255, 0.3));
     }
 
     .hero-sub-title {
-      font-size: clamp(16px, 2.4vw, 22px);
+      font-size: clamp(15px, 2.2vw, 20px);
       font-weight: 800;
-      color: #475569;
-      margin: 0 0 16px;
+      color: #64748B;
+      margin: 0 0 20px;
+      line-height: 1.5;
     }
 
-    .hero-sub-title span {
-      color: #0284C7;
-    }
-
-    /* شارة التخصص لدفعة 3 ثانوي */
-    .grade-badge-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: #ffffff;
-      padding: 6px 18px;
-      border-radius: 30px;
-      border: 1px solid rgba(0, 210, 255, 0.3);
-      box-shadow: 0 4px 15px rgba(14, 19, 56, 0.04);
-      margin-bottom: 18px;
+    .hero-sub-title strong {
       color: var(--royal-indigo-base);
-      font-size: 13px;
-      font-weight: 900;
     }
 
-    .grade-badge-tag span {
-      color: #0284C7;
-    }
-
+    /* أزرار الإجراء السريع بتصميم متوازن */
     .hero-action-buttons {
-      display: flex;
+      display: inline-flex;
       gap: 12px;
       justify-content: center;
       align-items: center;
-      margin-bottom: 28px;
+      margin-bottom: 30px;
       flex-wrap: wrap;
       z-index: 5;
     }
 
-    .btn-hero-primary {
+    .btn-hero-main {
       padding: 12px 28px;
       background: linear-gradient(135deg, #0E1338 0%, #1D255E 100%);
       color: #ffffff;
-      border: 1px solid rgba(0, 210, 255, 0.3);
+      border: 1px solid rgba(0, 210, 255, 0.35);
       border-radius: 12px;
       font-weight: 800;
       font-size: 14px;
       text-decoration: none;
-      box-shadow: 0 10px 25px rgba(14, 19, 56, 0.18);
+      box-shadow: 0 10px 25px rgba(14, 19, 56, 0.16);
       transition: all 0.25s ease;
       display: inline-flex;
       align-items: center;
       gap: 8px;
     }
 
-    .btn-hero-primary:hover {
+    .btn-hero-main:hover {
       transform: translateY(-2px);
       box-shadow: 0 14px 30px rgba(0, 210, 255, 0.25);
       color: #00D2FF;
     }
 
-    .btn-hero-secondary {
+    .btn-hero-sub {
       padding: 12px 24px;
       background: #ffffff;
       color: var(--royal-indigo-base);
@@ -119,36 +134,47 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.03);
     }
 
-    .btn-hero-secondary:hover {
+    .btn-hero-sub:hover {
       background: #F8FAFC;
       border-color: #0284C7;
       color: #0284C7;
     }
 
+    /* حاوية العرض والشعار الفخمة المترابطة بالبطاقات الجانبية */
+    .hero-center-stage-layout {
+      position: relative;
+      width: 100%;
+      max-width: 920px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 10px auto 0;
+    }
+
     .teacher-arch-stage {
       position: relative;
       width: 100%;
-      max-width: 520px;
-      min-height: 380px;
+      max-width: 480px;
+      min-height: 340px;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      border-radius: 260px 260px 30px 30px;
-      background: linear-gradient(180deg, rgba(14, 19, 56, 0.95) 0%, rgba(29, 37, 94, 0.98) 100%);
-      border: 2px solid rgba(0, 210, 255, 0.35);
-      box-shadow: inset 0 0 30px rgba(0, 210, 255, 0.15), 0 20px 45px rgba(14, 19, 56, 0.22);
+      border-radius: 240px 240px 24px 24px;
+      background: linear-gradient(180deg, #090D28 0%, #111742 60%, #1D255E 100%);
+      border: 2px solid rgba(0, 210, 255, 0.38);
+      box-shadow: inset 0 0 35px rgba(0, 210, 255, 0.15), 0 20px 45px rgba(14, 19, 56, 0.22);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       overflow: hidden;
-      margin: 0 auto;
+      z-index: 2;
     }
 
     .orbital-ring {
       position: absolute;
-      width: 320px;
-      height: 320px;
-      border: 1px dashed rgba(0, 210, 255, 0.25);
+      width: 300px;
+      height: 300px;
+      border: 1px dashed rgba(0, 210, 255, 0.22);
       border-radius: 50%;
       animation: rotateOrbit 22s linear infinite;
       pointer-events: none;
@@ -158,11 +184,11 @@
       position: absolute;
       top: -5px;
       left: 50%;
-      width: 10px;
-      height: 10px;
+      width: 9px;
+      height: 9px;
       background: #00D2FF;
       border-radius: 50%;
-      box-shadow: 0 0 14px #00D2FF, 0 0 24px #00D2FF;
+      box-shadow: 0 0 12px #00D2FF, 0 0 20px #00D2FF;
     }
 
     @keyframes rotateOrbit {
@@ -173,90 +199,144 @@
     .hero-glass-brand-backdrop {
       position: relative;
       z-index: 3;
-      padding: 30px 20px;
+      padding: 24px 20px;
+      text-align: center;
     }
 
     .glass-chem-word-standalone {
-      font-size: clamp(44px, 7vw, 78px);
+      font-size: clamp(44px, 6.8vw, 74px);
       font-weight: 900;
-      letter-spacing: 6px;
+      letter-spacing: 5px;
       line-height: 1.15;
       display: block;
-      background: linear-gradient(135deg, #00D2FF 0%, #E0F2FE 40%, #38BDF8 70%, #FFFFFF 100%);
+      background: linear-gradient(135deg, #00D2FF 0%, #BAE6FD 45%, #FFFFFF 85%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      text-shadow: 0 10px 35px rgba(0, 210, 255, 0.45);
-      filter: drop-shadow(0 6px 20px rgba(0, 210, 255, 0.35));
+      text-shadow: 0 10px 30px rgba(0, 210, 255, 0.4);
+      filter: drop-shadow(0 6px 20px rgba(0, 210, 255, 0.3));
     }
 
     .glass-chem-word-sub {
-      font-size: 13.5px;
+      font-size: 13px;
       font-weight: 800;
       color: #94A3B8;
-      letter-spacing: 2px;
+      letter-spacing: 1.5px;
       margin-top: 12px;
       display: block;
     }
 
-    .hero-side-widgets {
+    /* البطاقات الجانبية المتناسقة هندسياً */
+    .hero-side-card {
       position: absolute;
-      width: 100%;
-      max-width: 960px;
-      top: 55%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      display: flex;
-      justify-content: space-between;
-      pointer-events: none;
-      z-index: 4;
-      padding: 0 20px;
-      box-sizing: border-box;
-    }
-
-    .hero-side-widgets .widget-right,
-    .hero-side-widgets .widget-left {
-      pointer-events: auto;
+      top: 50%;
+      transform: translateY(-50%);
       background: rgba(255, 255, 255, 0.95);
       border: 1px solid rgba(0, 210, 255, 0.3);
-      padding: 16px 20px;
+      padding: 16px 18px;
       border-radius: 18px;
-      box-shadow: 0 15px 35px rgba(14, 19, 56, 0.08);
+      box-shadow: 0 12px 30px rgba(14, 19, 56, 0.08);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
-      max-width: 200px;
+      width: 190px;
+      z-index: 4;
       text-align: right;
       transition: all 0.25s ease;
     }
 
-    .hero-side-widgets .widget-right:hover,
-    .hero-side-widgets .widget-left:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 20px 40px rgba(0, 210, 255, 0.15);
+    .hero-side-card.right-side { right: 10px; }
+    .hero-side-card.left-side { left: 10px; }
+
+    .hero-side-card:hover {
+      transform: translateY(calc(-50% - 4px));
       border-color: #00D2FF;
+      box-shadow: 0 16px 35px rgba(0, 210, 255, 0.15);
     }
 
+    /* بطاقة الترحيب المخصصة للمسجلين */
+    .auth-user-welcome-card {
+      background: #ffffff;
+      border: 1px solid rgba(0, 210, 255, 0.35);
+      padding: 10px 20px;
+      border-radius: 14px;
+      box-shadow: 0 4px 18px rgba(14, 19, 56, 0.05);
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .auth-user-welcome-card strong {
+      color: var(--royal-indigo-base);
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .auth-user-welcome-card a {
+      background: var(--royal-indigo-base);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 800;
+      text-decoration: none;
+      transition: background 0.2s ease;
+    }
+
+    .auth-user-welcome-card a:hover {
+      background: #0284C7;
+    }
+
+    /* كروت خطوات المنصة (كيف تبدأ) */
+    .how-it-works-section { padding: 45px 0 55px; }
+    .how-it-works-header { text-align: right; margin-bottom: 26px; }
+    .how-it-works-header h2 { font-size: clamp(22px, 3.5vw, 32px); font-weight: 900; color: var(--royal-indigo-base); margin: 0 0 6px; }
+    .how-it-works-header p { font-size: 14px; color: #64748B; margin: 0; }
+
+    .steps-horizontal-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    .step-feature-card {
+      border-radius: 18px;
+      padding: 22px 18px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 220px;
+      box-shadow: 0 8px 20px rgba(14, 19, 56, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      transition: transform 0.25s ease;
+    }
+
+    .step-feature-card:hover { transform: translateY(-4px); }
+    .step-big-number { font-size: 38px; font-weight: 900; line-height: 1; align-self: flex-start; margin-bottom: 20px; }
+    .step-card-content h3 { font-size: 15.5px; font-weight: 900; margin: 0 0 6px; }
+    .step-card-content p { font-size: 12.5px; line-height: 1.55; margin: 0; opacity: 0.92; }
+
+    .step-card-1 { background: linear-gradient(145deg, #0284C7 0%, #0369A1 100%); color: #ffffff; }
+    .step-card-1 .step-big-number { color: #E0F2FE; }
+
+    .step-card-2 { background: linear-gradient(145deg, #BAE6FD 0%, #7DD3FC 100%); color: #0C4A6E; }
+    .step-card-2 .step-big-number { color: #0284C7; }
+
+    .step-card-3 { background: linear-gradient(145deg, #D1FAE5 0%, #A7F3D0 100%); color: #064E3B; }
+    .step-card-3 .step-big-number { color: #059669; }
+
+    .step-card-4 { background: linear-gradient(145deg, #A5F3FC 0%, #67E8F9 100%); color: #164E63; }
+    .step-card-4 .step-big-number { color: #0891B2; }
+
+    .step-card-5 { background: linear-gradient(145deg, #E2E8F0 0%, #CBD5E1 100%); color: #1E293B; }
+    .step-card-5 .step-big-number { color: #475569; }
+
     @media (max-width: 900px) {
-      .hero-side-widgets {
-        position: static;
-        transform: none;
-        flex-direction: row;
-        gap: 12px;
-        margin-top: 24px;
-        justify-content: center;
-      }
-      .hero-side-widgets .widget-right,
-      .hero-side-widgets .widget-left {
-        max-width: 100%;
-        flex: 1;
-      }
-      .teacher-arch-stage {
-        min-height: 320px;
-        border-radius: 200px 200px 24px 24px;
-      }
-      .orbital-ring {
-        width: 250px;
-        height: 250px;
-      }
+      .hero-center-stage-layout { flex-direction: column; gap: 14px; }
+      .hero-side-card { position: static; transform: none !important; width: 100%; max-width: 480px; }
+      .steps-horizontal-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 560px) {
+      .steps-horizontal-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -275,6 +355,7 @@
       <div class="capsule-links" id="mainCapsuleNavLinks">
         <a href="#hero" onclick="closeMobileNav()">الرئيسية</a>
         <a href="#courses" onclick="closeMobileNav()">الكورسات المتاحة</a>
+        <a href="#howItWorksSection" onclick="closeMobileNav()" class="guest-only-section">كيف تبدأ؟</a>
         <a href="#generalExamsSection" onclick="closeMobileNav()" id="navGeneralExamsLink" style="display:none;">الامتحانات الشاملة</a>
         <a href="#honorRoll" onclick="closeMobileNav()">لوحة الشرف</a>
         <a href="https://wa.me/201000000000" target="_blank" onclick="closeMobileNav()">حجز السنتر</a>
@@ -285,7 +366,7 @@
     </nav>
   </div>
 
-  <!-- الهيرو الملكي المخصص للثانوية العامة[cite: 3, 4] -->
+  <!-- الهيرو الملكي المطور بتصميم متزن للمسجلين والزوار[cite: 3, 4] -->
   <section id="hero" class="hero-editorial-stage anim-fade-up">
     <div class="chem-watermark-bg">
       <span>Fe</span> <span>H₂SO₄</span> <span>⬡</span> <span>KMnO₄</span> <span>C₆H₆</span> <span>Cu</span> <span>Δ</span> <span>NaCl</span>
@@ -296,86 +377,108 @@
     </div>
 
     <div class="hero-top-text">
-      <div class="welcome-pill-wrapper">
-        <span class="welcome-sparks">///</span>
-        <span class="welcome-pill">دفعة 2026 • الصف الثالث الثانوي</span>
+      <div class="hero-badge-capsule">
+        <span class="dot-pulse"></span>
+        <span>دفعة 2026 • كيمياء الصف الثالث الثانوي (عام وأزهر)</span>
       </div>
 
       <h1 class="hero-main-title">منصة هي كيميا<span>!</span></h1>
-      <h2 class="hero-sub-title">إشراف وتدريس: أستاذ/ <span>محمد السعيد</span></h2>
+      <h2 class="hero-sub-title">إشراف وتدريس: أستاذ/ <strong>محمد السعيد</strong></h2>
 
-      <div class="grade-badge-tag">
-        🧪 مخصصة لكيمياء <span>الصف الثالث الثانوي (عام وأزهر)</span>
+      <!-- بطاقة ترحيب ذكية للمستخدم المسجل -->
+      <div id="heroAuthWelcomeBox" class="auth-only-section" style="display:none;">
+        <div class="auth-user-welcome-card">
+          <span>👋 مرحباً بك، <strong id="heroStudentNameDisplay">طالب</strong></span>
+          <a id="heroDashboardLink" href="dashboard.html">دخول لوحة التحكم ←</a>
+        </div>
+      </div>
+
+      <!-- أزرار الإجراء السريع (تظهر للزوار فقط) -->
+      <div class="hero-action-buttons guest-only-section">
+        <a href="#courses" class="btn-hero-main">
+          <span>ابدأ مشاهدة الكورسات</span>
+          <span>←</span>
+        </a>
+        <a href="register.html" class="btn-hero-sub">إنشاء حساب جديد</a>
       </div>
     </div>
 
-    <!-- أزرار الإجراء السريع (تتغير ديناميكياً عند تسجيل الدخول) -->
-    <div class="hero-action-buttons" id="heroActionButtons">
-      <a href="#courses" class="btn-hero-primary">
-        <span>ابدأ مشاهدة الكورسات</span>
-        <span>←</span>
-      </a>
-      <a href="register.html" id="heroRegisterBtn" class="btn-hero-secondary">إنشاء حساب جديد</a>
-    </div>
+    <!-- مسرح الهيرو مع البطاقات الجانبية المتناسقة -->
+    <div class="hero-center-stage-layout">
+      <!-- البطاقة اليمنى -->
+      <div class="hero-side-card right-side">
+        <div style="color:#0284C7; font-size:12px; font-weight:800; margin-bottom:2px;">★ تقييم معتمد</div>
+        <div style="font-size:18px; font-weight:900; color:var(--royal-indigo-base);">+10 سنوات</div>
+        <div style="font-size:11.5px; color:#64748B; font-weight:700; margin-top:2px;">خبرة وتدريس كيمياء 3 ثانوي</div>
+      </div>
 
-    <div class="teacher-arch-wrapper">
+      <!-- القوس الزجاجي -->
       <div class="teacher-arch-stage" id="heroArchStage">
         <div class="orbital-ring">
           <div class="orbital-electron"></div>
         </div>
+        <div class="hero-glass-brand-backdrop">
+          <span class="glass-chem-word-standalone">هــي كــيــمــيــا !</span>
+          <span class="glass-chem-word-sub">شرح متقدم • بنك تدريبات • متابعة مستمرة</span>
+        </div>
+      </div>
 
-        <div class="hero-glass-brand-backdrop" id="heroScrollBrandBox">
-          <span class="glass-chem-word-standalone" id="scrollChemTitle">هــي كــيــمــيــا !</span>
-          <span class="glass-chem-word-sub" id="scrollChemSub">شرح مفصل • بنك تدريبات • متابعة مستمرة</span>
+      <!-- البطاقة اليسرى -->
+      <div class="hero-side-card left-side">
+        <div style="color:#00D2FF; font-size:20px; font-weight:900; line-height:1;">“</div>
+        <div style="font-size:12px; font-weight:800; color:var(--royal-indigo-base); line-height:1.5;">طريقك المباشر والأضمن لإتقان الكيمياء والدرجة النهائية</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- قسم (إزاي هي كيميا بتشتغل؟) - يظهر فقط للزوار غير المسجلين -->
+  <section id="howItWorksSection" class="how-it-works-section container anim-fade-up guest-only-section">
+    <div class="how-it-works-header">
+      <h2>إزاي منصة هي كيميا بتشتغل؟</h2>
+      <p>كل خطوة في المنصة معمولة ومحسوبة علشان تخلي رحلتك في كيمياء الثانوية العامة أسهل وتضمن الدرجة النهائية:</p>
+    </div>
+
+    <div class="steps-horizontal-grid">
+      <div class="step-feature-card step-card-1">
+        <div class="step-big-number">1</div>
+        <div class="step-card-content">
+          <h3>أنشئ حسابك الأكاديمي</h3>
+          <p>سجل بياناتك ومحافظتك بسهولة وفعل حسابك لتصل فوراً لكل المحاضرات والمذكرات التأسيسية المتاحة.</p>
+        </div>
+      </div>
+
+      <div class="step-feature-card step-card-2">
+        <div class="step-big-number">2</div>
+        <div class="step-card-content">
+          <h3>تصفح أبواب المنهج</h3>
+          <p>هتلاقي المنهج مقسم ككورسات منظمة لكل باب (العناصر الانتقالية، التحليل، الاتزان، الكهربية، والعضوية).</p>
+        </div>
+      </div>
+
+      <div class="step-feature-card step-card-3">
+        <div class="step-big-number">3</div>
+        <div class="step-card-content">
+          <h3>اشترك وابدأ التعلم</h3>
+          <p>اشترك بضغطة واحدة في الكورسات التأسيسية المجانية أو ادفع للكورسات المدفوعة لتتابع على اللابتوب أو الموبايل.</p>
+        </div>
+      </div>
+
+      <div class="step-feature-card step-card-4">
+        <div class="step-big-number">4</div>
+        <div class="step-card-content">
+          <h3>ذاكر واتمرن بذكاء</h3>
+          <p>شاهد الشرح بجودة فائقة، حمل مذكرات الـ PDF، وحل الاختبارات الإلكترونية بعد كل درس مع تقييم درجاتك فوراً.</p>
+        </div>
+      </div>
+
+      <div class="step-feature-card step-card-5">
+        <div class="step-big-number">5</div>
+        <div class="step-card-content">
+          <h3>اسأل ونافس الأوائل</h3>
+          <p>تواصل مع شات الدعم والأسئلة مباشرة مع فريق أ/ محمد السعيد، ونافس زملاءك لتتصدر لوحة شرف المنصة.</p>
         </div>
       </div>
     </div>
-
-    <div class="hero-side-widgets">
-      <div class="widget-right">
-        <div class="rating-stars">★★★★★</div>
-        <div class="exp-years" style="font-size:12px; color:#64748B;">خبرة تدريس 3 ثانوي</div>
-        <div class="exp-years" style="color:#0284C7; font-weight:900; font-size:16px;">+10 سنوات</div>
-        <div class="exp-label" style="font-size:11.5px; color:#64748B;">كيمياء الثانوية العامة والأزهر</div>
-      </div>
-
-      <div class="widget-left">
-        <div class="quote-symbol" style="color:#00D2FF; font-size:24px; font-weight:900; line-height:1;">“</div>
-        <div class="quote-text" style="font-size:12.5px; font-weight:800; color:var(--royal-indigo-base); line-height:1.5;">طريقك الأضمن للدرجة النهائية في الكيمياء</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- شريط الإحصائيات[cite: 3, 4] -->
-  <section class="container anim-fade-up">
-    <div class="stats-counter-strip">
-      <div class="stat-strip-box">
-        <div class="stat-strip-num" id="statStudentsNum">+4,500</div>
-        <div class="stat-strip-label">طالب مسجل بالمنصة</div>
-      </div>
-      <div class="stat-strip-box">
-        <div class="stat-strip-num" id="statHoursNum">+120</div>
-        <div class="stat-strip-label">ساعة شرح وتطبيق عملي</div>
-      </div>
-      <div class="stat-strip-box">
-        <div class="stat-strip-num" id="statQuestionsNum">+2,500</div>
-        <div class="stat-strip-label">سؤال وناتج تعلم متاح</div>
-      </div>
-      <div class="stat-strip-box">
-        <div class="stat-strip-num" id="statSuccessNum">98.4%</div>
-        <div class="stat-strip-label">نسبة الدرجات النهائية</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- قسم لوحة شرف أوائل الشهر[cite: 3, 4] -->
-  <section id="honorRoll" class="honor-roll-section container anim-fade-up">
-    <div style="text-align:center; margin-bottom:10px;">
-      <span style="color:var(--cyan-accent); font-size:12px; font-weight:800; background:rgba(0, 210, 255, 0.1); padding:4px 14px; border-radius:20px;">لوحة التميز الأكاديمي</span>
-      <h2 style="font-size:24px; font-weight:900; color:var(--royal-indigo-base); margin-top:8px;">أوائل امتحانات الشهر</h2>
-      <p style="color:var(--text-muted); font-size:13.5px;">تكريم الطلاب الحاصلين على أعلى معدلات تراكمية (80% فأعلى) في تقييمات المنصة</p>
-    </div>
-    <div id="honorPodiumContainer" class="honor-podium-grid"></div>
   </section>
 
   <!-- الكورسات المتاحة[cite: 3, 4] -->
@@ -388,6 +491,16 @@
       </div>
       <div class="courses-grid-layout" id="coursesListContainer"></div>
     </div>
+  </section>
+
+  <!-- قسم لوحة شرف أوائل الشهر[cite: 3, 4] -->
+  <section id="honorRoll" class="honor-roll-section container anim-fade-up">
+    <div style="text-align:center; margin-bottom:10px;">
+      <span style="color:var(--cyan-accent); font-size:12px; font-weight:800; background:rgba(0, 210, 255, 0.1); padding:4px 14px; border-radius:20px;">لوحة التميز الأكاديمي</span>
+      <h2 style="font-size:24px; font-weight:900; color:var(--royal-indigo-base); margin-top:8px;">أوائل امتحانات الشهر</h2>
+      <p style="color:var(--text-muted); font-size:13.5px;">تكريم الطلاب الحاصلين على أعلى معدلات تراكمية (80% فأعلى) في تقييمات المنصة</p>
+    </div>
+    <div id="honorPodiumContainer" class="honor-podium-grid"></div>
   </section>
 
   <!-- قسم الامتحانات الشاملة[cite: 3, 4] -->
@@ -411,8 +524,8 @@
     </div>
   </section>
 
-  <!-- بانر التسجيل (يختفي للمسجلين)[cite: 3, 4] -->
-  <div class="container anim-fade-up" id="bottomCtaContainer">
+  <!-- بانر التسجيل (يظهر فقط لغير المسجلين)[cite: 3, 4] -->
+  <div class="container anim-fade-up guest-only-section" id="bottomCtaContainer">
     <section id="bottomCtaSection" class="cta-banner-bottom">
       <h2>جاهز تقفل الكيمياء مع أ/ محمد السعيد؟</h2>
       <p style="margin-bottom:24px; opacity:0.9; font-size:15px;">أنشئ حسابك الآن وابدأ مشاهدة المحاضرات الأولى فوراً</p>
@@ -431,7 +544,7 @@
 
         <div class="footer-links-col">
           <h4>روابط هامة</h4>
-          <ul class="footer-links-list" id="footerLinksList">
+          <ul class="footer-links-list">
             <li><a href="#hero">الرئيسية</a></li>
             <li><a href="#courses">الكورسات المتاحة</a></li>
             <li><a href="#honorRoll">لوحة الشرف</a></li>
@@ -495,27 +608,30 @@
 
     function updatePageAuthState() {
       var user = getCurrentUser();
-      
-      var ctaContainer = document.getElementById("bottomCtaContainer");
-      var heroRegBtn = document.getElementById("heroRegisterBtn");
+      var welcomeBox = document.getElementById("heroAuthWelcomeBox");
+      var nameDisplay = document.getElementById("heroStudentNameDisplay");
+      var dashLink = document.getElementById("heroDashboardLink");
 
       if (user) {
-        if (ctaContainer) ctaContainer.style.display = "none";
+        // إخفاء كل العناصر والأقسام الخاصة بالزوار غير المسجلين فوراً
+        document.querySelectorAll(".guest-only-section").forEach(function(el) { el.style.display = "none"; });
+        document.querySelectorAll(".guest-only-link").forEach(function(el) { el.style.display = "none"; });
         
-        if (heroRegBtn) {
-          heroRegBtn.innerText = "لوحة التحكم الخاصة بك";
-          heroRegBtn.href = (user.role === "SUPER_ADMIN" || user.role === "ADMIN") ? "admin.html" : "dashboard.html";
+        // إظهار روابط وعناصر المستخدم المسجل
+        document.querySelectorAll(".auth-only-section").forEach(function(el) { el.style.display = "block"; });
+        document.querySelectorAll(".auth-only-link").forEach(function(el) { el.style.display = "list-item"; });
+
+        if (nameDisplay && user.fullName) {
+          nameDisplay.innerText = user.fullName.split(" ")[0];
         }
 
-        document.querySelectorAll(".guest-only-link").forEach(function(el) { el.style.display = "none"; });
-        document.querySelectorAll(".auth-only-link").forEach(function(el) { el.style.display = "list-item"; });
-      } else {
-        if (ctaContainer) ctaContainer.style.display = "block";
-        if (heroRegBtn) {
-          heroRegBtn.innerText = "إنشاء حساب جديد";
-          heroRegBtn.href = "register.html";
+        if (dashLink) {
+          dashLink.href = (user.role === "SUPER_ADMIN" || user.role === "ADMIN") ? "admin.html" : "dashboard.html";
         }
+      } else {
+        document.querySelectorAll(".guest-only-section").forEach(function(el) { el.style.display = "block"; });
         document.querySelectorAll(".guest-only-link").forEach(function(el) { el.style.display = "list-item"; });
+        document.querySelectorAll(".auth-only-section").forEach(function(el) { el.style.display = "none"; });
         document.querySelectorAll(".auth-only-link").forEach(function(el) { el.style.display = "none"; });
       }
     }
