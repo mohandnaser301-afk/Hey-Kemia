@@ -198,7 +198,7 @@
       var urlParams = new URLSearchParams(window.location.search);
       var courseId = urlParams.get("id");
       var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-      currentCourse = courses.find(c => c.id == courseId);
+      currentCourse = courses.find(c => String(c.id) === String(courseId));
 
       if (!currentCourse) {
         showToast("لم يتم العثور على الكورس", "error");
@@ -206,8 +206,9 @@
         return;
       }
 
+      // التحقق الصارم والمرن من الصلاحية
       var isStaff = user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "SUPPORT";
-      var isEnrolled = user.enrolledCourses && user.enrolledCourses.includes(courseId);
+      var isEnrolled = isStudentEnrolledInCourse(user, courseId);
 
       if (!isStaff && !isEnrolled) {
         showToast("غير مصرح لك بمشاهدة هذا الكورس، يرجى الاشتراك أولاً", "error");

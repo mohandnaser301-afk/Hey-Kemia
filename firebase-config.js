@@ -88,7 +88,7 @@ function compressImageBase64(base64Str, maxWidth, maxHeight, quality) {
 window.compressImageBase64 = compressImageBase64;
 
 window.FirebaseService = {
-  // 1. التسجيل والتحقق من البريد الإلكتروني
+  // 1. التسجيل والتحقق من البريد
   async registerStudent(userData) {
     const fb = getFirebase();
     let uid = "u_" + Date.now();
@@ -199,7 +199,7 @@ window.FirebaseService = {
     window.location.href = "login.html";
   },
 
-  // 2. إدارة المستخدمين والمزامنة والحذف الشامل المبني على UID
+  // 2. إدارة المستخدمين والمزامنة
   subscribeUsers(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -222,7 +222,9 @@ window.FirebaseService = {
   async updateUserEnrollmentsByUid(uid, enrolledCourses, customLessons) {
     const fb = getFirebase();
     if (fb && fb.firestore && uid) {
-      const updateData = { enrolledCourses: enrolledCourses };
+      // توحيد جميع المعرفات كـ String لتفادي أخطاء المقارنة
+      const normalizedCourses = (enrolledCourses || []).map(String);
+      const updateData = { enrolledCourses: normalizedCourses };
       if (customLessons) updateData.customAllowedLessons = customLessons;
       await fb.firestore().collection("users").doc(uid).update(updateData);
     }
@@ -233,21 +235,17 @@ window.FirebaseService = {
     if (fb && fb.firestore && uid) {
       const batch = fb.firestore().batch();
 
-      // 1. حذف وثيقة المستخدم
       const userRef = fb.firestore().collection("users").doc(uid);
       batch.delete(userRef);
 
-      // 2. حذف طلبات الدفع الخاصة بالـ UID
-      const paySnap = await fb.firestore().collection("payments").where("userId", "==", uid).get();
+      const paySnap = await fb.firestore().collection("payments").where("userUid", "==", uid).get();
       paySnap.forEach(doc => batch.delete(doc.ref));
 
-      // 3. حذف تسليمات الامتحانات الخاصة بالـ UID
-      const subSnap = await fb.firestore().collection("submissions").where("userId", "==", uid).get();
+      const subSnap = await fb.firestore().collection("submissions").where("userUid", "==", uid).get();
       subSnap.forEach(doc => batch.delete(doc.ref));
 
       await batch.commit();
 
-      // 4. حذف ثريد الدعم الفني ورسائله
       try {
         const chatMsgs = await fb.firestore().collection("support_threads").doc(uid).collection("messages").get();
         const chatBatch = fb.firestore().batch();
@@ -258,7 +256,7 @@ window.FirebaseService = {
     }
   },
 
-  // 3. إدارة الكورسات
+  // 3. الكورسات
   subscribeCourses(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -300,7 +298,7 @@ window.FirebaseService = {
     }
   },
 
-  // 4. إدارة الامتحانات والتسليمات
+  // 4. الامتحانات والتسليمات
   subscribeExams(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -352,7 +350,7 @@ window.FirebaseService = {
     }
   },
 
-  // 5. المدفوعات والاعتماد الفوري للكورسات
+  // 5. المدفوعات وتفعيل الكورسات الفوري والمؤكد
   subscribePayments(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -373,15 +371,58 @@ window.FirebaseService = {
       }
       paymentData.createdAt = new Date().toISOString();
       paymentData.status = "PENDING";
+      paymentData.courseId = String(paymentData.courseId);
       const ref = await fb.firestore().collection("payments").add(paymentData);
       return ref.id;
     }
   },
 
-  async updatePaymentStatus(paymentId, status) {
+  async approvePaymentAndEnroll(paymentId, userUid, courseId, userEmail) {
+    const fb = getFirebase();
+    if (fb && fb.firestore) {
+      const stringCourseId = String(courseId);
+      let targetUid = userUid;
+
+      // في حال كان الـ UID مفقوداً في سجل دفع قديم، يتم البحث عنه بالبريد
+      if (!targetUid && userEmail) {
+        const cleanEmail = userEmail.toLowerCase().trim();
+        const qSnap = await fb.firestore().collection("users").where("email", "==", cleanEmail).get();
+        if (!qSnap.empty) {
+          targetUid = qSnap.docs[0].id;
+        }
+      }
+
+      if (!targetUid) {
+        throw new Error("لم يتم العثور على حساب الطالب المرتبط بعملية الدفع.");
+      }
+
+      const batch = fb.firestore().batch();
+      const payRef = fb.firestore().collection("payments").doc(paymentId);
+      batch.update(payRef, { status: "APPROVED", userUid: targetUid });
+
+      const userRef = fb.firestore().collection("users").doc(targetUid);
+      batch.update(userRef, {
+        enrolledCourses: firebase.firestore.FieldValue.arrayUnion(stringCourseId)
+      });
+
+      await batch.commit();
+
+      // تحديث فوري لكاش المستخدم محلياً إذا كان الأدمن نفسه أو نفس الجلسة
+      const currentUser = JSON.parse(localStorage.getItem("current_user"));
+      if (currentUser && currentUser.uid === targetUid) {
+        if (!currentUser.enrolledCourses) currentUser.enrolledCourses = [];
+        if (!currentUser.enrolledCourses.map(String).includes(stringCourseId)) {
+          currentUser.enrolledCourses.push(stringCourseId);
+          localStorage.setItem("current_user", JSON.stringify(currentUser));
+        }
+      }
+    }
+  },
+
+  async rejectPayment(paymentId) {
     const fb = getFirebase();
     if (fb && fb.firestore && paymentId) {
-      await fb.firestore().collection("payments").doc(paymentId).update({ status: status });
+      await fb.firestore().collection("payments").doc(paymentId).update({ status: "REJECTED" });
     }
   },
 
@@ -397,13 +438,13 @@ window.FirebaseService = {
     }
   },
 
-  async pushNotificationToCloud(title, body, targetUserId, targetUrl, senderEmail) {
+  async pushNotificationToCloud(title, body, targetUid, targetUrl, senderEmail) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
       await fb.firestore().collection("notifications").add({
         title: title,
         body: body,
-        targetUserId: targetUserId || "ALL",
+        targetUid: targetUid || "ALL",
         targetUrl: targetUrl || "dashboard.html",
         senderEmail: (senderEmail || "").toLowerCase().trim(),
         createdAt: new Date().toISOString()
@@ -411,7 +452,7 @@ window.FirebaseService = {
     }
   },
 
-  // 7. منظومة الدعم الفني المنفصل لكل طالب
+  // 7. الدعم الفني
   subscribeStudentChat(studentUid, callback) {
     const fb = getFirebase();
     if (fb && fb.firestore && studentUid) {
@@ -432,7 +473,7 @@ window.FirebaseService = {
         .orderBy("lastMessageTime", "desc")
         .onSnapshot(snap => {
           const list = [];
-          snap.forEach(doc => list.push({ uid: doc.id, ...doc.data() }));
+          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
           if (callback) callback(list);
         });
     }
@@ -458,6 +499,7 @@ window.FirebaseService = {
         studentUid: studentUid,
         studentName: msgData.studentName || "طالب",
         studentPhone: msgData.studentPhone || "",
+        studentEmail: msgData.studentEmail || "",
         lastMessage: msgData.text,
         lastMessageTime: now,
         lastSenderRole: msgData.senderRole || "STUDENT"

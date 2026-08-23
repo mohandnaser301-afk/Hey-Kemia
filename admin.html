@@ -276,7 +276,6 @@
         </a>
         <a id="navHackerLogsItem" onclick="handleMobileTabSelect('hackersTab', this, 'سجل الأمان والهاكرز')" class="nav-item" style="color:#f87171; display:none;">
           <span>سجل الأمان والهاكرز</span>
-          <span class="sidebar-badge-count" id="badgeHackersCount" style="display:none;">0</span>
         </a>
         <a onclick="handleMobileTabSelect('staffTab', this, 'الطاقم الإداري')" class="nav-item">
           <span>الطاقم الإداري</span>
@@ -284,9 +283,8 @@
         <a onclick="handleMobileTabSelect('logsTab', this, 'سجل النشاطات')" class="nav-item">
           <span>سجل النشاطات</span>
         </a>
-        <a href="support.html" class="nav-item" onclick="markSupportAsSeen()">
+        <a href="support.html" class="nav-item">
           <span>شات الدعم المستقل</span>
-          <span class="sidebar-badge-count" id="badgeSupportCount" style="display:none;">0</span>
         </a>
         <a href="index.html" class="nav-item"><span>عرض الموقع</span></a>
         <a href="javascript:void(0)" onclick="logout()" class="nav-item logout"><span>تسجيل الخروج</span></a>
@@ -323,10 +321,10 @@
               <p style="font-size:12px; color:var(--text-muted);">الكورسات المنشورة</p>
             </div>
           </div>
-          <div class="stat-card" id="cardBreachesStat" style="display:none;">
+          <div class="stat-card">
             <div>
-              <h3 id="totalBreachesCount" style="font-size:20px; font-weight:900; color:#ef4444;">0</h3>
-              <p style="font-size:12px; color:var(--text-muted);">محاولات تم صدها</p>
+              <h3 id="totalCompletedExamsCount" style="font-size:20px; font-weight:900;">0</h3>
+              <p style="font-size:12px; color:var(--text-muted);">الاختبارات المسلمة</p>
             </div>
           </div>
         </section>
@@ -343,13 +341,6 @@
             <div style="height: 250px;">
               <canvas id="geoDoughnutChart"></canvas>
             </div>
-          </div>
-        </div>
-
-        <div class="chart-card" style="margin-bottom: 24px;">
-          <h3>معدل اجتياز الطلاب في الامتحانات</h3>
-          <div style="height: 220px;">
-            <canvas id="examsBarChart"></canvas>
           </div>
         </div>
       </div>
@@ -487,7 +478,7 @@
                 <th>الكورس</th>
                 <th>المبلغ</th>
                 <th>صورة الإيصال</th>
-                <th>الإجراء</th>
+                <th>الإجراء المباشر</th>
               </tr>
             </thead>
             <tbody id="paymentsTableBody"></tbody>
@@ -1172,14 +1163,14 @@
       document.getElementById("permStudentNameDisplay").innerText = name;
 
       var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-      var student = users.find(function(u) { return u.uid === uid; });
+      var student = users.find(function(u) { return u.uid === uid || u.id === uid; });
       if (!student) {
         showToast("لم يتم العثور على بيانات الطالب", "error");
         return;
       }
 
       var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-      var enrolled = student.enrolledCourses || [];
+      var enrolled = (student.enrolledCourses || []).map(String);
       var customLessons = student.customAllowedLessons || {};
 
       var container = document.getElementById("permissionsCoursesListContainer");
@@ -1187,7 +1178,7 @@
         container.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:15px;">لا توجد كورسات منشورة بالمنصة بعد.</p>';
       } else {
         container.innerHTML = courses.map(function(c) {
-          var isCourseActive = enrolled.includes(c.id);
+          var isCourseActive = enrolled.includes(String(c.id));
           var allowedLessonIds = customLessons[c.id] || [];
           var lessons = c.lessons || [];
 
@@ -1225,7 +1216,7 @@
     async function saveStudentCoursePermissions() {
       var studentUid = document.getElementById("permStudentUidHidden").value;
       var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-      var uIdx = users.findIndex(function(u) { return u.uid === studentUid; });
+      var uIdx = users.findIndex(function(u) { return u.uid === studentUid || u.id === studentUid; });
 
       if (uIdx !== -1) {
         var newEnrolled = [];
@@ -1233,7 +1224,7 @@
 
         document.querySelectorAll(".permission-course-card").forEach(function(card) {
           var masterCb = card.querySelector(".course-master-checkbox");
-          var courseId = masterCb.getAttribute("data-course-id");
+          var courseId = String(masterCb.getAttribute("data-course-id"));
           var isMasterChecked = masterCb.checked;
 
           var lessonCheckboxes = card.querySelectorAll(".lesson-single-checkbox");
@@ -1264,7 +1255,7 @@
         localStorage.setItem("edu_users", JSON.stringify(users));
 
         var currentLoggedIn = getCurrentUser();
-        if (currentLoggedIn && currentLoggedIn.uid === studentUid) {
+        if (currentLoggedIn && (currentLoggedIn.uid === studentUid || currentLoggedIn.id === studentUid)) {
           currentLoggedIn.enrolledCourses = newEnrolled;
           currentLoggedIn.customAllowedLessons = newCustomLessons;
           localStorage.setItem("current_user", JSON.stringify(currentLoggedIn));
@@ -1715,29 +1706,16 @@
         showToast("جاري تفعيل الكورس للطالب...", "info");
 
         if (window.FirebaseService) {
-          await window.FirebaseService.updatePaymentStatus(id, "APPROVED");
-        }
-
-        var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-        var targetUser = users.find(function(x) { 
-          return (p.userId && x.uid === p.userId) || (p.userEmail && x.email && x.email.toLowerCase() === p.userEmail.toLowerCase()); 
-        });
-
-        if (targetUser && targetUser.uid) {
-          var targetEnrolled = targetUser.enrolledCourses ? [...targetUser.enrolledCourses] : [];
-          if (!targetEnrolled.includes(p.courseId)) {
-            targetEnrolled.push(p.courseId);
-          }
-
-          if (window.FirebaseService) {
-            try {
-              await window.FirebaseService.updateUserEnrollmentsByUid(targetUser.uid, targetEnrolled);
-              await window.FirebaseService.pushNotificationToCloud("تم تفعيل الكورس بنجاح", "مرحباً " + p.userName + "، تم اعتماد إيصال الدفع وتفعيل كورس: " + p.courseTitle + " في حسابك.", targetUser.uid);
-            } catch (err) {}
+          try {
+            await window.FirebaseService.approvePaymentAndEnroll(id, p.userUid, p.courseId, p.userEmail);
+            if (p.userUid) {
+              await window.FirebaseService.pushNotificationToCloud("تم تفعيل الكورس بنجاح", "مرحباً " + p.userName + "، تم اعتماد إيصال الدفع وتفعيل كورس: " + p.courseTitle + " في حسابك.", p.userUid);
+            }
+            showToast("تم تفعيل الكورس في حساب الطالب سحابياً وإرسال الإشعار الفوري ✓", "success");
+          } catch (err) {
+            showToast("حدث خطأ أثناء تفعيل الكورس: " + err.message, "error");
           }
         }
-
-        showToast("تم تفعيل الكورس في حساب الطالب سحابياً وإرسال الإشعار الفوري ✓", "success");
       }
     }
 
@@ -1746,10 +1724,20 @@
       var confirmed = await customConfirm("هل تريد رفض طلب الدفع هذا؟", "رفض الطلب");
       if (!confirmed) return;
 
+      var payments = JSON.parse(localStorage.getItem("edu_payments")) || [];
+      var p = payments.find(function(x) { return x.id === id; });
+
       if (window.FirebaseService) {
         showToast("جاري رفض الطلب...", "info");
-        await window.FirebaseService.updatePaymentStatus(id, "REJECTED");
-        showToast("تم رفض الطلب بنجاح", "info");
+        try {
+          await window.FirebaseService.rejectPayment(id);
+          if (p && p.userUid) {
+            await window.FirebaseService.pushNotificationToCloud("تم رفض طلب الاشتراك", "عذراً، لم يتم اعتماد إيصال الدفع لكورس: " + p.courseTitle + ". يرجى التواصل مع الدعم الفني.", p.userUid, "support.html");
+          }
+          showToast("تم رفض الطلب بنجاح", "info");
+        } catch (err) {
+          showToast("حدث خطأ أثناء رفض الطلب: " + err.message, "error");
+        }
       }
     }
 
@@ -1785,7 +1773,7 @@
         }
 
         var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-        localStorage.setItem("edu_users", JSON.stringify(users.filter(function(u) { return u.uid !== uid; })));
+        localStorage.setItem("edu_users", JSON.stringify(users.filter(function(u) { return u.uid !== uid && u.id !== uid; })));
         showToast("تم مسح الحساب وبياناته سحابياً بنجاح وسيتم طرده فوراً ✓", "success");
       }
     }
@@ -1822,7 +1810,7 @@
       document.getElementById("watchModalCourseTitle").innerText = "تقرير المشاهدات: " + courseTitle;
       var tracking = JSON.parse(localStorage.getItem("edu_course_watch_logs")) || {};
       var courseLogs = tracking[courseId] || {};
-      var enrolledUsers = allStudentsCache.filter(function(u) { return u.enrolledCourses && u.enrolledCourses.includes(courseId); });
+      var enrolledUsers = allStudentsCache.filter(function(u) { return u.enrolledCourses && u.enrolledCourses.map(String).includes(String(courseId)); });
 
       currentWatchStatsList = enrolledUsers.map(function(u) {
         var log = courseLogs[u.uid] || courseLogs[u.email] || { totalSeconds: 0, lastActive: "لم يبدأ بعد" };
@@ -1926,35 +1914,6 @@
             responsive: true,
             maintainAspectRatio: false,
             plugins: { legend: { position: "bottom" } }
-          }
-        });
-      }
-
-      var examsCtx = document.getElementById("examsBarChart");
-      if (examsCtx) {
-        if (examsChartInstance) examsChartInstance.destroy();
-        var passCount = submissions.filter(function(s) { return s.percentage >= 60; }).length;
-        var failCount = submissions.filter(function(s) { return s.percentage < 60; }).length;
-
-        examsChartInstance = new Chart(examsCtx, {
-          type: "bar",
-          data: {
-            labels: ["درجات امتياز (85%+)", "اجتياز ناجح (60-84%)", "يحتاج تدريب (<60%)"],
-            datasets: [{
-              label: "عدد الطلاب",
-              data: [
-                submissions.filter(function(s) { return s.percentage >= 85; }).length,
-                submissions.filter(function(s) { return s.percentage >= 60 && s.percentage < 85; }).length,
-                failCount
-              ],
-              backgroundColor: ["#10b981", "#00D2FF", "#ef4444"],
-              borderRadius: 6
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } }
           }
         });
       }
@@ -2079,18 +2038,15 @@
 
       var hackerNavItem = document.getElementById("navHackerLogsItem");
       var pushNavItem = document.getElementById("navPushNotificationsItem");
-      var breachesCard = document.getElementById("cardBreachesStat");
       var btnAddStaff = document.getElementById("btnAddStaffBtn");
 
       if (isSuperAdmin) {
         if (hackerNavItem) hackerNavItem.style.display = "flex";
         if (pushNavItem) pushNavItem.style.display = "flex";
-        if (breachesCard) breachesCard.style.display = "flex";
         if (btnAddStaff) btnAddStaff.style.display = "inline-flex";
       } else {
         if (hackerNavItem) hackerNavItem.style.display = "none";
         if (pushNavItem) pushNavItem.style.display = "none";
-        if (breachesCard) breachesCard.style.display = "none";
         if (btnAddStaff) btnAddStaff.style.display = "none";
       }
 
@@ -2099,17 +2055,17 @@
       var users = JSON.parse(localStorage.getItem("edu_users")) || [];
       var payments = JSON.parse(localStorage.getItem("edu_payments")) || [];
       var logs = JSON.parse(localStorage.getItem("edu_activity_logs")) || [];
-      var hackerLogs = JSON.parse(localStorage.getItem("edu_hacker_logs")) || [];
+      var subs = JSON.parse(localStorage.getItem("edu_submissions")) || [];
 
       allStudentsCache = users.filter(function(u) { return u.role === "STUDENT"; });
 
-      updateNotificationBadges(payments, hackerLogs);
+      updateNotificationBadges(payments, JSON.parse(localStorage.getItem("edu_hacker_logs")) || []);
 
       var revenue = payments.filter(function(p) { return p.status === "APPROVED"; }).reduce(function(sum, p) { return sum + (Number(p.amount) || 0); }, 0);
       document.getElementById("totalRevenue").innerText = revenue + " ج.م";
       document.getElementById("totalCoursesCount").innerText = courses.length;
       document.getElementById("totalStudentsCount").innerText = allStudentsCache.length;
-      document.getElementById("totalBreachesCount").innerText = hackerLogs.length;
+      document.getElementById("totalCompletedExamsCount").innerText = subs.length;
 
       var selectExam = document.getElementById("newExamCourseSelect");
       if (selectExam) selectExam.innerHTML = courses.map(function(c) { return '<option value="' + c.id + '">' + c.title + '</option>'; }).join("");
@@ -2117,7 +2073,7 @@
       var pushTarget = document.getElementById("pushTargetSelect");
       if (pushTarget) {
         pushTarget.innerHTML = '<option value="ALL">جميع الطلاب المسجلين بالمنصة</option>' +
-          allStudentsCache.map(function(s) { return '<option value="' + s.uid + '">' + s.fullName + ' (' + s.email + ')</option>'; }).join("");
+          allStudentsCache.map(function(s) { return '<option value="' + (s.uid || s.id) + '">' + s.fullName + ' (' + s.email + ')</option>'; }).join("");
       }
 
       var coursesBody = document.getElementById("coursesTableBody");
@@ -2134,7 +2090,7 @@
             "<td>" + priceTag + "</td>" +
             "<td>" + viewsTag + "</td>" +
             "<td>" + (c.lessons || []).length + " محاضرات</td>" +
-            "<td>" + allStudentsCache.filter(function(u) { return u.enrolledCourses && u.enrolledCourses.includes(c.id); }).length + " طالب</td>" +
+            "<td>" + allStudentsCache.filter(function(u) { return u.enrolledCourses && u.enrolledCourses.map(String).includes(String(c.id)); }).length + " طالب</td>" +
             "<td>" +
               '<button type="button" class="btn-action btn-action-success" onclick="openCourseWatchStats(\'' + c.id + '\', \'' + c.title.replace(/'/g, "\\'") + '\')" style="margin-left:4px;">تقرير المشاهدات</button>' +
               '<button type="button" class="btn-action btn-action-primary" onclick="openEditCourseModal(' + index + ')" style="margin-left:4px;">تعديل</button>' +
@@ -2158,6 +2114,7 @@
         "</tr>";
       }).join("");
 
+      // جدول المدفوعات مع زري القبول والرفض المباشر
       document.getElementById("paymentsTableBody").innerHTML = payments.map(function(p) {
         var actionBtns = "";
         if (p.status === "PENDING") {
@@ -2178,6 +2135,7 @@
 
       if (isSuperAdmin) {
         var hackersBody = document.getElementById("hackersTableBody");
+        var hackerLogs = JSON.parse(localStorage.getItem("edu_hacker_logs")) || [];
         if (hackerLogs.length === 0) {
           hackersBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#10b981; padding:20px; font-weight:bold;">النظام آمن، لم يتم رصد أي نشاطات مشبوهة.</td></tr>';
         } else {
@@ -2188,7 +2146,7 @@
               '<td><strong style="color:#ef4444;">' + h.attackType + "</strong></td>" +
               "<td>" + h.userName + '<br><small style="color:var(--text-muted);">' + h.userEmail + "</small></td>" +
               '<td style="font-size:12px; max-width:240px; white-space:normal;">' + h.details + "</td>" +
-              '<td><button class="btn-action btn-action-danger" onclick="deleteUserByUidAction(\'' + h.userUid + '\')">حظر الحساب</button></td>' +
+              '<td><button class="btn-action btn-action-danger" onclick="deleteUserByUidAction(\'' + (h.userUid || h.userId) + '\')">حظر الحساب</button></td>' +
             "</tr>";
           }).join("");
         }
@@ -2200,8 +2158,8 @@
 
         if (isSuperAdmin) {
           if (!isTargetSuper) {
-            actionBtns = '<button class="btn-action btn-action-primary" onclick="openEditStaffRoleModal(\'' + s.uid + '\', \'' + s.fullName.replace(/'/g, "\\'") + '\', \'' + s.role + '\')" style="margin-left:4px;">تعديل الرتبة</button>' +
-                         '<button class="btn-action btn-action-danger" onclick="deleteUserByUidAction(\'' + s.uid + '\')">إلغاء الحساب</button>';
+            actionBtns = '<button class="btn-action btn-action-primary" onclick="openEditStaffRoleModal(\'' + (s.uid || s.id) + '\', \'' + s.fullName.replace(/'/g, "\\'") + '\', \'' + s.role + '\')" style="margin-left:4px;">تعديل الرتبة</button>' +
+                         '<button class="btn-action btn-action-danger" onclick="deleteUserByUidAction(\'' + (s.uid || s.id) + '\')">إلغاء الحساب</button>';
           } else {
             actionBtns = '<span style="color:var(--cyan-accent); font-weight:bold; font-size:12px;">المشرف العام</span>';
           }
@@ -2235,7 +2193,8 @@
       }
 
       tbody.innerHTML = studentsList.map(function(s) {
-        var m = window.calculateStudentMetrics ? window.calculateStudentMetrics(s.uid) : { enrolledCount: (s.enrolledCourses || []).length, completedExams: 0, avgScore: 0, totalHours: 0 };
+        var uidKey = s.uid || s.id;
+        var m = window.calculateStudentMetrics ? window.calculateStudentMetrics(uidKey) : { enrolledCount: (s.enrolledCourses || []).length, completedExams: 0, avgScore: 0, totalHours: 0 };
         return "<tr>" +
           "<td><strong>" + s.fullName + "</strong></td>" +
           "<td>" + s.email + "</td>" +
@@ -2246,9 +2205,9 @@
           "<td><strong>" + m.avgScore + "%</strong></td>" +
           "<td>" + m.totalHours + " ساعة</td>" +
           "<td>" +
-            '<button type="button" class="btn-action btn-action-success" onclick="openStudentCoursePermissionsModal(\'' + s.uid + '\', \'' + s.fullName.replace(/'/g, "\\'") + '\')" style="margin-left:4px;">إدارة الكورسات</button>' +
-            '<button type="button" class="btn-action btn-action-primary" onclick="viewStudentDetails(\'' + s.uid + '\')" style="margin-left:4px;">الملف</button>' +
-            '<button type="button" class="btn-action btn-action-danger" onclick="deleteUserByUidAction(\'' + s.uid + '\')">حذف شامل</button>' +
+            '<button type="button" class="btn-action btn-action-success" onclick="openStudentCoursePermissionsModal(\'' + uidKey + '\', \'' + s.fullName.replace(/'/g, "\\'") + '\')" style="margin-left:4px;">إدارة الكورسات</button>' +
+            '<button type="button" class="btn-action btn-action-primary" onclick="viewStudentDetails(\'' + uidKey + '\')" style="margin-left:4px;">الملف</button>' +
+            '<button type="button" class="btn-action btn-action-danger" onclick="deleteUserByUidAction(\'' + uidKey + '\')">حذف شامل</button>' +
           "</td>" +
         "</tr>";
       }).join("");
@@ -2270,15 +2229,15 @@
     }
 
     function viewStudentDetails(uid) {
-      var student = allStudentsCache.find(function(s) { return s.uid === uid; });
+      var student = allStudentsCache.find(function(s) { return s.uid === uid || s.id === uid; });
       if (!student) return;
 
       var allCourses = JSON.parse(localStorage.getItem("edu_courses")) || [];
       var submissions = JSON.parse(localStorage.getItem("edu_submissions")) || [];
-      var studentSubs = submissions.filter(function(sub) { return sub.userId === uid || sub.userEmail === student.email; });
+      var studentSubs = submissions.filter(function(sub) { return sub.userUid === uid || sub.userId === uid || sub.userEmail === student.email; });
 
       var enrolledCourseTitles = allCourses
-        .filter(function(c) { return student.enrolledCourses && student.enrolledCourses.includes(c.id); })
+        .filter(function(c) { return student.enrolledCourses && student.enrolledCourses.map(String).includes(String(c.id)); })
         .map(function(c) { return c.title; });
 
       var html = 
@@ -2302,7 +2261,7 @@
           (studentSubs.length > 0
             ? '<table class="exams-table" style="font-size:12.5px;">' +
                 '<thead><tr><th>الامتحان</th><th>التاريخ</th><th>الدرجة</th><th>النسبة</th></tr></thead>' +
-                '<tbody>' + studentSubs.map(function(sub) { return '<tr><td>' + sub.examTitle + '</td><td>' + sub.date + '</td><td>' + sub.score + '/' + sub.total + '</td><td><strong>' + sub.percentage + '%</strong></td></tr>'; }).join('') + '</tbody>' +
+                '<tbody>' + studentSubs.map(function(sub) { return '<tr><td>' + sub.examTitle + '</td><td>' + (sub.createdAt ? new Date(sub.createdAt).toLocaleDateString("ar-EG") : (sub.date || "-")) + '</td><td>' + sub.score + '/' + sub.total + '</td><td><strong>' + sub.percentage + '%</strong></td></tr>'; }).join('') + '</tbody>' +
               '</table>'
             : '<p style="font-size:13px; color:var(--text-muted);">لم يتم تسليم امتحانات بعد.</p>') +
         '</div>';

@@ -9,6 +9,7 @@ function sanitizeText(str) {
   return temp.innerHTML;
 }
 
+// نافذة تأكيد مخصصة (Custom Modal)
 function customConfirm(message, title, confirmText, cancelText) {
   title = title || "تأكيد الإجراء";
   confirmText = confirmText || "تأكيد";
@@ -46,19 +47,27 @@ function customConfirm(message, title, confirmText, cancelText) {
 }
 window.customConfirm = customConfirm;
 
-// المحرك الحسابي الموحد لإحصائيات الطالب بناءً على UID
+// فحص اشتراك الطالب في كورس معين بدقة تامة
+function isStudentEnrolledInCourse(user, courseId) {
+  if (!user || !user.enrolledCourses) return false;
+  var targetId = String(courseId);
+  return user.enrolledCourses.some(id => String(id) === targetId);
+}
+window.isStudentEnrolledInCourse = isStudentEnrolledInCourse;
+
+// المحرك الحسابي الموحد لإحصائيات الطالب المعتمد على UID
 function calculateStudentMetrics(userUid) {
   if (!userUid) return { enrolledCount: 0, completedExams: 0, avgScore: 0, totalHours: 0, enrolledList: [] };
 
   var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-  var targetUser = users.find(u => u.uid === userUid);
+  var targetUser = users.find(u => (u.uid && u.uid === userUid) || (u.id && u.id === userUid));
 
   var allCourses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-  var enrolledIds = (targetUser && targetUser.enrolledCourses) ? targetUser.enrolledCourses : [];
-  var enrolledCoursesList = allCourses.filter(c => enrolledIds.includes(c.id));
+  var enrolledIds = (targetUser && targetUser.enrolledCourses) ? targetUser.enrolledCourses.map(String) : [];
+  var enrolledCoursesList = allCourses.filter(c => enrolledIds.includes(String(c.id)));
 
   var submissions = JSON.parse(localStorage.getItem("edu_submissions")) || [];
-  var userSubs = submissions.filter(s => s.userId === userUid || (targetUser && s.userEmail && s.userEmail.toLowerCase() === targetUser.email.toLowerCase()));
+  var userSubs = submissions.filter(s => (s.userUid && s.userUid === userUid) || (s.userEmail && targetUser && s.userEmail.toLowerCase() === targetUser.email.toLowerCase()));
 
   var avgScore = 0;
   if (userSubs.length > 0) {
@@ -88,7 +97,7 @@ function calculateStudentMetrics(userUid) {
 }
 window.calculateStudentMetrics = calculateStudentMetrics;
 
-// المراقبة اللحظية الصارمة لحالة الحساب والطرد الفوري
+// المراقبة اللحظية الصارمة لوثيقة المستخدم
 function monitorCurrentUserStatus() {
   var user = getCurrentUser();
   if (!user || !user.uid) return;
@@ -106,7 +115,7 @@ function monitorCurrentUserStatus() {
             liveDoc.uid = docSnap.id;
 
             var roleChanged = liveDoc.role !== user.role;
-            var coursesChanged = JSON.stringify(liveDoc.enrolledCourses || []) !== JSON.stringify(user.enrolledCourses || []);
+            var coursesChanged = JSON.stringify((liveDoc.enrolledCourses || []).map(String)) !== JSON.stringify((user.enrolledCourses || []).map(String));
 
             if (roleChanged || coursesChanged) {
               localStorage.setItem("current_user", JSON.stringify(liveDoc));
@@ -116,8 +125,12 @@ function monitorCurrentUserStatus() {
                 showToast("تم تحديث رتبتك الإدارية إلى: " + liveDoc.role, "info", "تحديث الصلاحيات");
                 setTimeout(function() { window.location.reload(); }, 600);
               } else if (coursesChanged) {
-                showToast("تم تفعيل الكورس في حسابك بنجاح", "success", "تفعيل المحتوى");
+                showToast("تم تفعيل الكورس بنجاح في حسابك! يمكنك المشاهدة الآن.", "success", "تفعيل المحتوى");
                 if (typeof renderStudentDashboard === "function") renderStudentDashboard();
+                if (typeof renderCoursesSection === "function") {
+                  var allCourses = JSON.parse(localStorage.getItem("edu_courses")) || [];
+                  renderCoursesSection(allCourses);
+                }
               }
               updateNavbarAndAuthGuards();
             }
@@ -134,10 +147,11 @@ function forceLogoutUser() {
   if (window.firebase && firebase.auth) {
     try { firebase.auth().signOut(); } catch(e) {}
   }
-  showToast("تم إنهاء الجلسة أو حذف الحساب.", "error", "تنبيه");
+  showToast("تم إنهاء الجلسة أو حذف الحساب من قِبل الإدارة.", "error", "تنبيه");
   setTimeout(function() { window.location.replace("login.html"); }, 400);
 }
 
+// الإشعارات
 var swRegistration = null;
 function registerDeviceServiceWorker() {
   if ("serviceWorker" in navigator) {
@@ -193,10 +207,10 @@ function initRealtimeNotificationsReceiver() {
           lastKnownNotifId = latest.id;
           localStorage.setItem("hk_last_received_notif_id", latest.id);
 
-          if (user && latest.senderEmail && user.email && user.email.toLowerCase() === latest.senderEmail) return;
+          if (user && latest.senderEmail && user.email.toLowerCase() === latest.senderEmail) return;
 
-          if (!user && latest.targetUserId !== "ALL") return;
-          if (user && (latest.targetUserId === "ALL" || latest.targetUserId === user.uid)) {
+          if (!user && latest.targetUid !== "ALL") return;
+          if (user && (latest.targetUid === "ALL" || latest.targetUid === user.uid)) {
             triggerDeviceNativeNotification(latest.title, latest.body, latest.targetUrl);
             showToast(latest.body, "info", latest.title);
           }
@@ -323,21 +337,22 @@ async function handleEnrollClick(courseId) {
     return;
   }
 
-  if (user.enrolledCourses && user.enrolledCourses.includes(courseId)) {
-    showToast("أنت مشترك بالفعل في هذا الكورس", "success");
+  // فحص موثوق ومرن
+  if (isStudentEnrolledInCourse(user, courseId)) {
+    showToast("أنت مشترك بالفعل في هذا الكورس، جاري فتح المحاضرات...", "success");
     setTimeout(function() { window.location.href = "course-view.html?id=" + courseId; }, 600);
     return;
   }
 
   var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-  var course = courses.find(function(c) { return c.id == courseId; });
+  var course = courses.find(function(c) { return String(c.id) === String(courseId); });
 
   if (course && (course.isFree || Number(course.price) === 0)) {
     var confirmed = await customConfirm("هل تؤكد رغبتك في الاشتراك بالكورس المجاني: " + course.title + "؟", "تأكيد الاشتراك");
     if (!confirmed) return;
 
-    var newEnrolled = user.enrolledCourses || [];
-    if (!newEnrolled.includes(courseId)) newEnrolled.push(courseId);
+    var newEnrolled = (user.enrolledCourses || []).map(String);
+    if (!newEnrolled.includes(String(courseId))) newEnrolled.push(String(courseId));
 
     if (window.FirebaseService && user.uid) {
       await window.FirebaseService.updateUserEnrollmentsByUid(user.uid, newEnrolled, user.customAllowedLessons);
