@@ -6,60 +6,263 @@
   <title>هي كيميا ! - أ/ محمد السعيد</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    /* تنسيقات مخصصة لتأثير كلمة "هي كيميا !" الزجاجية خلف الأستاذ */
-    .teacher-arch-stage {
+    /* =========================================================
+       تحسينات الهيرو الفاخر وتجربة الاستخدام التفاعلية
+       ========================================================= */
+
+    .chem-watermark-bg {
+      opacity: 0.07 !important;
+      filter: blur(0.5px);
+    }
+
+    .hero-editorial-stage {
       position: relative;
+      padding: 110px 20px 40px;
       display: flex;
-      justify-content: center;
-      align-items: flex-end;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
       overflow: hidden;
     }
 
-    .hero-glass-brand-backdrop {
-      position: absolute;
-      top: 22%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100%;
+    .hero-top-text {
+      margin-bottom: 24px;
+      z-index: 5;
+    }
+
+    .hero-main-title {
+      font-size: clamp(32px, 5vw, 54px);
+      font-weight: 900;
+      color: var(--royal-indigo-base);
+      margin: 8px 0 4px;
+      line-height: 1.2;
+    }
+
+    .hero-main-title span {
+      color: #00D2FF;
+      text-shadow: 0 4px 20px rgba(0, 210, 255, 0.35);
+    }
+
+    .hero-sub-title {
+      font-size: clamp(16px, 2.4vw, 22px);
+      font-weight: 800;
+      color: #475569;
+      margin: 0 0 16px;
+    }
+
+    .hero-sub-title span {
+      color: #0284C7;
+    }
+
+    /* شارة التخصص لدفعة 3 ثانوي */
+    .grade-badge-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #ffffff;
+      padding: 6px 18px;
+      border-radius: 30px;
+      border: 1px solid rgba(0, 210, 255, 0.3);
+      box-shadow: 0 4px 15px rgba(14, 19, 56, 0.04);
+      margin-bottom: 18px;
+      color: var(--royal-indigo-base);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .grade-badge-tag span {
+      color: #0284C7;
+    }
+
+    .hero-action-buttons {
       display: flex;
+      gap: 12px;
       justify-content: center;
       align-items: center;
-      z-index: 1;
-      pointer-events: none;
-      user-select: none;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      z-index: 5;
     }
 
-    .glass-chem-word {
-      font-size: clamp(38px, 6vw, 76px);
+    .btn-hero-primary {
+      padding: 12px 28px;
+      background: linear-gradient(135deg, #0E1338 0%, #1D255E 100%);
+      color: #ffffff;
+      border: 1px solid rgba(0, 210, 255, 0.3);
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 14px;
+      text-decoration: none;
+      box-shadow: 0 10px 25px rgba(14, 19, 56, 0.18);
+      transition: all 0.25s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-hero-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 30px rgba(0, 210, 255, 0.25);
+      color: #00D2FF;
+    }
+
+    .btn-hero-secondary {
+      padding: 12px 24px;
+      background: #ffffff;
+      color: var(--royal-indigo-base);
+      border: 1px solid #CBD5E1;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 14px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+
+    .btn-hero-secondary:hover {
+      background: #F8FAFC;
+      border-color: #0284C7;
+      color: #0284C7;
+    }
+
+    .teacher-arch-stage {
+      position: relative;
+      width: 100%;
+      max-width: 520px;
+      min-height: 380px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      border-radius: 260px 260px 30px 30px;
+      background: linear-gradient(180deg, rgba(14, 19, 56, 0.95) 0%, rgba(29, 37, 94, 0.98) 100%);
+      border: 2px solid rgba(0, 210, 255, 0.35);
+      box-shadow: inset 0 0 30px rgba(0, 210, 255, 0.15), 0 20px 45px rgba(14, 19, 56, 0.22);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      overflow: hidden;
+      margin: 0 auto;
+    }
+
+    .orbital-ring {
+      position: absolute;
+      width: 320px;
+      height: 320px;
+      border: 1px dashed rgba(0, 210, 255, 0.25);
+      border-radius: 50%;
+      animation: rotateOrbit 22s linear infinite;
+      pointer-events: none;
+    }
+
+    .orbital-electron {
+      position: absolute;
+      top: -5px;
+      left: 50%;
+      width: 10px;
+      height: 10px;
+      background: #00D2FF;
+      border-radius: 50%;
+      box-shadow: 0 0 14px #00D2FF, 0 0 24px #00D2FF;
+    }
+
+    @keyframes rotateOrbit {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .hero-glass-brand-backdrop {
+      position: relative;
+      z-index: 3;
+      padding: 30px 20px;
+    }
+
+    .glass-chem-word-standalone {
+      font-size: clamp(44px, 7vw, 78px);
       font-weight: 900;
       letter-spacing: 6px;
-      text-align: center;
-      white-space: nowrap;
-      
-      /* تدرج لوني فخم من درجات الأزرق الملكي والسيان الكيميائي */
-      background: linear-gradient(135deg, rgba(0, 210, 255, 0.95) 0%, rgba(2, 132, 199, 0.85) 45%, rgba(14, 19, 56, 0.9) 100%);
+      line-height: 1.15;
+      display: block;
+      background: linear-gradient(135deg, #00D2FF 0%, #E0F2FE 40%, #38BDF8 70%, #FFFFFF 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      
-      /* تأثير زجاجي مع توهج وانعكاس إضاءة */
-      text-shadow: 0 10px 35px rgba(0, 210, 255, 0.4);
-      filter: drop-shadow(0 4px 20px rgba(2, 132, 199, 0.35));
-      opacity: 0.92;
-      transform: scale(1.05);
+      text-shadow: 0 10px 35px rgba(0, 210, 255, 0.45);
+      filter: drop-shadow(0 6px 20px rgba(0, 210, 255, 0.35));
     }
 
-    .teacher-cutout-img {
-      position: relative;
-      z-index: 2;
+    .glass-chem-word-sub {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: #94A3B8;
+      letter-spacing: 2px;
+      margin-top: 12px;
       display: block;
-      max-width: 100%;
-      height: auto;
+    }
+
+    .hero-side-widgets {
+      position: absolute;
+      width: 100%;
+      max-width: 960px;
+      top: 55%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      justify-content: space-between;
+      pointer-events: none;
+      z-index: 4;
+      padding: 0 20px;
+      box-sizing: border-box;
+    }
+
+    .hero-side-widgets .widget-right,
+    .hero-side-widgets .widget-left {
+      pointer-events: auto;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid rgba(0, 210, 255, 0.3);
+      padding: 16px 20px;
+      border-radius: 18px;
+      box-shadow: 0 15px 35px rgba(14, 19, 56, 0.08);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      max-width: 200px;
+      text-align: right;
+      transition: all 0.25s ease;
+    }
+
+    .hero-side-widgets .widget-right:hover,
+    .hero-side-widgets .widget-left:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(0, 210, 255, 0.15);
+      border-color: #00D2FF;
+    }
+
+    @media (max-width: 900px) {
+      .hero-side-widgets {
+        position: static;
+        transform: none;
+        flex-direction: row;
+        gap: 12px;
+        margin-top: 24px;
+        justify-content: center;
+      }
+      .hero-side-widgets .widget-right,
+      .hero-side-widgets .widget-left {
+        max-width: 100%;
+        flex: 1;
+      }
+      .teacher-arch-stage {
+        min-height: 320px;
+        border-radius: 200px 200px 24px 24px;
+      }
+      .orbital-ring {
+        width: 250px;
+        height: 250px;
+      }
     }
   </style>
 </head>
 <body>
 
-  <!-- النافبار الكبسولي المتجاوب -->
+  <!-- النافبار الكبسولي المتجاوب[cite: 3, 4] -->
   <div class="navbar-capsule-wrapper anim-fade-up">
     <nav class="navbar-capsule">
       <a href="index.html" class="capsule-brand">
@@ -82,7 +285,7 @@
     </nav>
   </div>
 
-  <!-- الهيرو الملكي المحدث بصورة الأستاذ والعبارة الزجاجية المتداخلة -->
+  <!-- الهيرو الملكي المخصص للثانوية العامة[cite: 3, 4] -->
   <section id="hero" class="hero-editorial-stage anim-fade-up">
     <div class="chem-watermark-bg">
       <span>Fe</span> <span>H₂SO₄</span> <span>⬡</span> <span>KMnO₄</span> <span>C₆H₆</span> <span>Cu</span> <span>Δ</span> <span>NaCl</span>
@@ -95,41 +298,55 @@
     <div class="hero-top-text">
       <div class="welcome-pill-wrapper">
         <span class="welcome-sparks">///</span>
-        <span class="welcome-pill">مرحباً!</span>
+        <span class="welcome-pill">دفعة 2026 • الصف الثالث الثانوي</span>
       </div>
 
       <h1 class="hero-main-title">منصة هي كيميا<span>!</span></h1>
-      <h2 class="hero-sub-title">أستاذ/ <span>محمد السعيد</span></h2>
+      <h2 class="hero-sub-title">إشراف وتدريس: أستاذ/ <span>محمد السعيد</span></h2>
+
+      <div class="grade-badge-tag">
+        🧪 مخصصة لكيمياء <span>الصف الثالث الثانوي (عام وأزهر)</span>
+      </div>
+    </div>
+
+    <!-- أزرار الإجراء السريع (تتغير ديناميكياً عند تسجيل الدخول) -->
+    <div class="hero-action-buttons" id="heroActionButtons">
+      <a href="#courses" class="btn-hero-primary">
+        <span>ابدأ مشاهدة الكورسات</span>
+        <span>←</span>
+      </a>
+      <a href="register.html" id="heroRegisterBtn" class="btn-hero-secondary">إنشاء حساب جديد</a>
+    </div>
+
+    <div class="teacher-arch-wrapper">
+      <div class="teacher-arch-stage" id="heroArchStage">
+        <div class="orbital-ring">
+          <div class="orbital-electron"></div>
+        </div>
+
+        <div class="hero-glass-brand-backdrop" id="heroScrollBrandBox">
+          <span class="glass-chem-word-standalone" id="scrollChemTitle">هــي كــيــمــيــا !</span>
+          <span class="glass-chem-word-sub" id="scrollChemSub">شرح مفصل • بنك تدريبات • متابعة مستمرة</span>
+        </div>
+      </div>
     </div>
 
     <div class="hero-side-widgets">
       <div class="widget-right">
         <div class="rating-stars">★★★★★</div>
-        <div class="exp-years">أكثر من</div>
-        <div class="exp-years" style="color:var(--cyan-accent);">10 سنين</div>
-        <div class="exp-label">خبرة وتدريس كيمياء الثانوية</div>
+        <div class="exp-years" style="font-size:12px; color:#64748B;">خبرة تدريس 3 ثانوي</div>
+        <div class="exp-years" style="color:#0284C7; font-weight:900; font-size:16px;">+10 سنوات</div>
+        <div class="exp-label" style="font-size:11.5px; color:#64748B;">كيمياء الثانوية العامة والأزهر</div>
       </div>
 
       <div class="widget-left">
-        <div class="quote-symbol">“</div>
-        <div class="quote-text">منصة متخصصة في كيمياء الثانوية العامة والأزهر</div>
-      </div>
-    </div>
-
-    <div class="teacher-arch-wrapper">
-      <div class="teacher-arch-stage">
-        <!-- كلمة هي كيميا الزجاجية المتداخلة خلف الأستاذ -->
-        <div class="hero-glass-brand-backdrop">
-          <span class="glass-chem-word">هــي كــيــمــيــا !</span>
-        </div>
-        
-        <!-- صورة الأستاذ -->
-        <img id="heroTeacherImg" src="teacher.jpg" alt="أستاذ محمد السعيد" class="teacher-cutout-img" onerror="this.src='teacher_clean_cutout.png'">
+        <div class="quote-symbol" style="color:#00D2FF; font-size:24px; font-weight:900; line-height:1;">“</div>
+        <div class="quote-text" style="font-size:12.5px; font-weight:800; color:var(--royal-indigo-base); line-height:1.5;">طريقك الأضمن للدرجة النهائية في الكيمياء</div>
       </div>
     </div>
   </section>
 
-  <!-- شريط الإحصائيات -->
+  <!-- شريط الإحصائيات[cite: 3, 4] -->
   <section class="container anim-fade-up">
     <div class="stats-counter-strip">
       <div class="stat-strip-box">
@@ -151,7 +368,7 @@
     </div>
   </section>
 
-  <!-- قسم لوحة شرف أوائل الشهر -->
+  <!-- قسم لوحة شرف أوائل الشهر[cite: 3, 4] -->
   <section id="honorRoll" class="honor-roll-section container anim-fade-up">
     <div style="text-align:center; margin-bottom:10px;">
       <span style="color:var(--cyan-accent); font-size:12px; font-weight:800; background:rgba(0, 210, 255, 0.1); padding:4px 14px; border-radius:20px;">لوحة التميز الأكاديمي</span>
@@ -161,19 +378,19 @@
     <div id="honorPodiumContainer" class="honor-podium-grid"></div>
   </section>
 
-  <!-- الكورسات المتاحة -->
+  <!-- الكورسات المتاحة[cite: 3, 4] -->
   <section id="courses" style="padding: 30px 0 40px;">
     <div class="container anim-fade-up">
       <div style="margin-bottom: 24px; text-align:right;">
         <span style="color:var(--cyan-accent); font-size:12px; font-weight:800; background:rgba(0, 210, 255, 0.1); padding:4px 14px; border-radius:20px;">المحتوى التدريبي</span>
-        <h2 style="font-size: 26px; font-weight: 900; color: var(--royal-indigo-base); margin-top:6px;">المناهج والكورسات المتاحة</h2>
+        <h2 style="font-size: 26px; font-weight: 900; color: var(--royal-indigo-base); margin-top:6px;">مناهج وكورسات الصف الثالث الثانوي</h2>
         <p style="color: var(--text-muted); font-size: 14px;">اختر الكورس وابدأ فوراً في مشاهدة المحاضرات وحل الاختبارات</p>
       </div>
       <div class="courses-grid-layout" id="coursesListContainer"></div>
     </div>
   </section>
 
-  <!-- قسم الامتحانات الشاملة -->
+  <!-- قسم الامتحانات الشاملة[cite: 3, 4] -->
   <section id="generalExamsSection" class="container anim-fade-up" style="display: none; padding: 20px 0 40px;">
     <div style="margin-bottom: 24px; text-align:right;">
       <span style="color:var(--cyan-accent); font-size:12px; font-weight:800; background:rgba(0, 210, 255, 0.1); padding:4px 14px; border-radius:20px;">تقييمات المستوى الشاملة</span>
@@ -183,7 +400,7 @@
     <div class="courses-grid-layout" id="generalExamsGridContainer"></div>
   </section>
 
-  <!-- الأسئلة الشائعة -->
+  <!-- الأسئلة الشائعة[cite: 3, 4] -->
   <section id="faq" style="padding: 20px 0 40px;">
     <div class="container anim-fade-up">
       <div style="margin-bottom: 20px; text-align:right;">
@@ -194,7 +411,7 @@
     </div>
   </section>
 
-  <!-- بانر التسجيل -->
+  <!-- بانر التسجيل (يختفي للمسجلين)[cite: 3, 4] -->
   <div class="container anim-fade-up" id="bottomCtaContainer">
     <section id="bottomCtaSection" class="cta-banner-bottom">
       <h2>جاهز تقفل الكيمياء مع أ/ محمد السعيد؟</h2>
@@ -203,7 +420,7 @@
     </section>
   </div>
 
-  <!-- الفوتر -->
+  <!-- الفوتر[cite: 3, 4] -->
   <footer class="platform-footer anim-fade-up">
     <div class="container">
       <div class="footer-grid">
@@ -214,13 +431,14 @@
 
         <div class="footer-links-col">
           <h4>روابط هامة</h4>
-          <ul class="footer-links-list">
+          <ul class="footer-links-list" id="footerLinksList">
             <li><a href="#hero">الرئيسية</a></li>
             <li><a href="#courses">الكورسات المتاحة</a></li>
             <li><a href="#honorRoll">لوحة الشرف</a></li>
             <li><a href="#faq">الأسئلة الشائعة</a></li>
-            <li><a href="login.html">تسجيل الدخول</a></li>
-            <li><a href="register.html">إنشاء حساب جديد</a></li>
+            <li class="guest-only-link"><a href="login.html">تسجيل الدخول</a></li>
+            <li class="guest-only-link"><a href="register.html">إنشاء حساب جديد</a></li>
+            <li class="auth-only-link" style="display:none;"><a href="dashboard.html">لوحة تحكم الطالب</a></li>
           </ul>
         </div>
 
@@ -273,6 +491,33 @@
       el.classList.toggle("active");
       var icon = el.querySelector(".faq-question span:last-child");
       if (icon) icon.innerText = el.classList.contains("active") ? "−" : "+";
+    }
+
+    function updatePageAuthState() {
+      var user = getCurrentUser();
+      
+      var ctaContainer = document.getElementById("bottomCtaContainer");
+      var heroRegBtn = document.getElementById("heroRegisterBtn");
+
+      if (user) {
+        if (ctaContainer) ctaContainer.style.display = "none";
+        
+        if (heroRegBtn) {
+          heroRegBtn.innerText = "لوحة التحكم الخاصة بك";
+          heroRegBtn.href = (user.role === "SUPER_ADMIN" || user.role === "ADMIN") ? "admin.html" : "dashboard.html";
+        }
+
+        document.querySelectorAll(".guest-only-link").forEach(function(el) { el.style.display = "none"; });
+        document.querySelectorAll(".auth-only-link").forEach(function(el) { el.style.display = "list-item"; });
+      } else {
+        if (ctaContainer) ctaContainer.style.display = "block";
+        if (heroRegBtn) {
+          heroRegBtn.innerText = "إنشاء حساب جديد";
+          heroRegBtn.href = "register.html";
+        }
+        document.querySelectorAll(".guest-only-link").forEach(function(el) { el.style.display = "list-item"; });
+        document.querySelectorAll(".auth-only-link").forEach(function(el) { el.style.display = "none"; });
+      }
     }
 
     function renderHonorRoll() {
@@ -424,12 +669,7 @@
     }
 
     document.addEventListener("DOMContentLoaded", function() {
-      var user = getCurrentUser();
-      var ctaContainer = document.getElementById("bottomCtaContainer");
-      if (user && ctaContainer) {
-        ctaContainer.style.display = "none";
-      }
-
+      updatePageAuthState();
       renderHonorRoll();
 
       var faqs = JSON.parse(localStorage.getItem("edu_faqs")) || [
