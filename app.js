@@ -8,6 +8,7 @@ function sanitizeText(str) {
   temp.textContent = str;
   return temp.innerHTML;
 }
+window.sanitizeText = sanitizeText;
 
 function customConfirm(message, title, confirmText, cancelText) {
   title = title || "تأكيد الإجراء";
@@ -49,7 +50,7 @@ window.customConfirm = customConfirm;
 function isStudentEnrolledInCourse(user, courseId) {
   if (!user || !user.enrolledCourses) return false;
   var targetId = String(courseId);
-  return user.enrolledCourses.some(id => String(id) === targetId);
+  return user.enrolledCourses.some(function(id) { return String(id) === targetId; });
 }
 window.isStudentEnrolledInCourse = isStudentEnrolledInCourse;
 
@@ -87,7 +88,7 @@ function calculateStudentMetrics(userUid) {
   Object.keys(tracking).forEach(cId => {
     if (tracking[cId] && tracking[cId][userUid]) {
       totalSec += tracking[cId][userUid].totalSeconds || 0;
-    } else if (targetUser && tracking[cId][targetUser.email]) {
+    } else if (targetUser && tracking[cId] && tracking[cId][targetUser.email]) {
       totalSec += tracking[cId][targetUser.email].totalSeconds || 0;
     }
   });
@@ -253,6 +254,7 @@ function showToast(message, type, title) {
     setTimeout(function() { toast.remove(); }, 300);
   }, 4000);
 }
+window.showToast = showToast;
 
 function logAdminAction(actionType, details) {
   var user = getCurrentUser() || { fullName: "غير مسجل", role: "GUEST" };
@@ -277,6 +279,7 @@ function logout() {
     window.location.href = "login.html";
   }
 }
+window.logout = logout;
 
 function updateNavbarAndAuthGuards() {
   var user = getCurrentUser();
@@ -318,7 +321,7 @@ function updateNavbarAndAuthGuards() {
       } else if (user.role === "SUPPORT") {
         authBox.innerHTML = '<a href="support.html" class="nav-btn-primary">شات الدعم</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
       } else {
-        authBox.innerHTML = '<a href="dashboard.html" class="nav-btn-primary">لوحة الطالب (' + sanitizeText(user.fullName.split(" ")[0]) + ')</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
+        authBox.innerHTML = '<a href="dashboard.html" class="nav-btn-primary">لوحة الطالب (' + sanitizeText(user.fullName ? user.fullName.split(" ")[0] : "") + ')</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
       }
     } else {
       authBox.innerHTML = '<a href="login.html" class="nav-btn-link">تسجيل الدخول</a><a href="register.html" class="nav-btn-primary">حساب جديد</a>';
@@ -385,7 +388,6 @@ window.handleHeroEnroll = function() {
 };
 
 window.handleEnrollClick = handleEnrollClick;
-window.logout = logout;
 
 function injectChemicalPreloader() {
   if (document.getElementById("chemicalPreloader")) return;

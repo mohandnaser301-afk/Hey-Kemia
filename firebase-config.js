@@ -222,7 +222,6 @@ window.FirebaseService = {
   async updateUserEnrollmentsByUid(uid, enrolledCourses, customLessons) {
     const fb = getFirebase();
     if (fb && fb.firestore && uid) {
-      // توحيد جميع المعرفات كـ String لتفادي أخطاء المقارنة
       const normalizedCourses = (enrolledCourses || []).map(String);
       const updateData = { enrolledCourses: normalizedCourses };
       if (customLessons) updateData.customAllowedLessons = customLessons;
@@ -247,11 +246,7 @@ window.FirebaseService = {
       await batch.commit();
 
       try {
-        const chatMsgs = await fb.firestore().collection("support_threads").doc(uid).collection("messages").get();
-        const chatBatch = fb.firestore().batch();
-        chatMsgs.forEach(d => chatBatch.delete(d.ref));
-        chatBatch.delete(fb.firestore().collection("support_threads").doc(uid));
-        await chatBatch.commit();
+        await fb.firestore().collection("support_threads").doc(uid).delete();
       } catch (e) {}
     }
   },
@@ -350,7 +345,7 @@ window.FirebaseService = {
     }
   },
 
-  // 5. المدفوعات وتفعيل الكورسات الفوري والمؤكد
+  // 5. المدفوعات وتفعيل الكورسات
   subscribePayments(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -383,7 +378,6 @@ window.FirebaseService = {
       const stringCourseId = String(courseId);
       let targetUid = userUid;
 
-      // في حال كان الـ UID مفقوداً في سجل دفع قديم، يتم البحث عنه بالبريد
       if (!targetUid && userEmail) {
         const cleanEmail = userEmail.toLowerCase().trim();
         const qSnap = await fb.firestore().collection("users").where("email", "==", cleanEmail).get();
@@ -407,7 +401,6 @@ window.FirebaseService = {
 
       await batch.commit();
 
-      // تحديث فوري لكاش المستخدم محلياً إذا كان الأدمن نفسه أو نفس الجلسة
       const currentUser = JSON.parse(localStorage.getItem("current_user"));
       if (currentUser && currentUser.uid === targetUid) {
         if (!currentUser.enrolledCourses) currentUser.enrolledCourses = [];
@@ -452,17 +445,31 @@ window.FirebaseService = {
     }
   },
 
-  // 7. الدعم الفني
+  // 7. الدعم الفني والشات الموحد
   subscribeStudentChat(studentUid, callback) {
     const fb = getFirebase();
+    const key = String(studentUid);
+
     if (fb && fb.firestore && studentUid) {
-      return fb.firestore().collection("support_threads").doc(studentUid).collection("messages")
-        .orderBy("createdAt", "asc")
-        .onSnapshot(snap => {
-          const list = [];
-          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-          if (callback) callback(list);
+      return fb.firestore().collection("support_threads").doc(key)
+        .onSnapshot(doc => {
+          if (doc.exists) {
+            const data = doc.data() || {};
+            const list = data.messages || [];
+            localStorage.setItem("edu_chat_" + key, JSON.stringify(list));
+            if (callback) callback(list);
+          } else {
+            if (callback) callback([]);
+          }
+        }, err => {
+          console.error("Student Chat Error:", err);
+          const local = JSON.parse(localStorage.getItem("edu_chat_" + key) || "[]");
+          if (callback) callback(local);
         });
+    } else {
+      const local = JSON.parse(localStorage.getItem("edu_chat_" + key) || "[]");
+      if (callback) callback(local);
+      return () => {};
     }
   },
 
@@ -470,48 +477,62 @@ window.FirebaseService = {
     const fb = getFirebase();
     if (fb && fb.firestore) {
       return fb.firestore().collection("support_threads")
-        .orderBy("lastMessageTime", "desc")
         .onSnapshot(snap => {
           const list = [];
-          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+          snap.forEach(doc => {
+            const d = doc.data();
+            if (d && d.studentUid) {
+              list.push({ id: doc.id, ...d });
+            }
+          });
+          list.sort((a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime());
           if (callback) callback(list);
+        }, err => {
+          console.error("All Threads Error:", err);
         });
     }
   },
 
   async sendSupportMessage(msgData) {
     const fb = getFirebase();
+    const targetUid = String(msgData.studentUid);
+    const now = new Date().toISOString();
+
+    const localKey = "edu_chat_" + targetUid;
+    const localMsgs = JSON.parse(localStorage.getItem(localKey) || "[]");
+    localMsgs.push(msgData);
+    localStorage.setItem(localKey, JSON.stringify(localMsgs));
+
     if (fb && fb.firestore) {
-      const studentUid = msgData.studentUid;
-      const now = new Date().toISOString();
-
-      const messageDoc = {
-        text: msgData.text,
-        senderUid: msgData.senderUid,
-        senderName: msgData.senderName,
-        senderRole: msgData.senderRole || "STUDENT",
-        createdAt: now
-      };
-
-      await fb.firestore().collection("support_threads").doc(studentUid).collection("messages").add(messageDoc);
-
-      const threadUpdate = {
-        studentUid: studentUid,
+      await fb.firestore().collection("support_threads").doc(targetUid).set({
+        studentUid: targetUid,
         studentName: msgData.studentName || "طالب",
         studentPhone: msgData.studentPhone || "",
         studentEmail: msgData.studentEmail || "",
         lastMessage: msgData.text,
         lastMessageTime: now,
-        lastSenderRole: msgData.senderRole || "STUDENT"
-      };
+        lastSenderRole: msgData.senderRole || "STUDENT",
+        unreadCount: (msgData.senderRole === "STUDENT") ? firebase.firestore.FieldValue.increment(1) : 0,
+        messages: firebase.firestore.FieldValue.arrayUnion(msgData)
+      }, { merge: true });
+    }
+  },
 
-      if (msgData.senderRole === "STUDENT") {
-        threadUpdate.unreadCount = firebase.firestore.FieldValue.increment(1);
-      } else {
-        threadUpdate.unreadCount = 0;
-      }
+  async deleteSupportThread(studentUid, studentName) {
+    const fb = getFirebase();
+    const targetKey = String(studentUid);
 
-      await fb.firestore().collection("support_threads").doc(studentUid).set(threadUpdate, { merge: true });
+    localStorage.removeItem("edu_chat_" + targetKey);
+
+    if (fb && fb.firestore) {
+      await fb.firestore().collection("support_threads").doc(targetKey).set({
+        studentUid: targetKey,
+        studentName: studentName || "طالب",
+        messages: [],
+        lastMessage: "",
+        lastMessageTime: new Date().toISOString(),
+        unreadCount: 0
+      }, { merge: true });
     }
   }
 };
