@@ -2,12 +2,13 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
   <title>شات الدعم والأسئلة - هي كيميا !</title>
   <link rel="stylesheet" href="style.css">
   <style>
     html, body {
-      height: 100vh;
+      height: 100%;
+      height: 100dvh;
       margin: 0;
       padding: 0;
       overflow: hidden;
@@ -17,12 +18,13 @@
     .support-chat-container {
       max-width: 1140px;
       width: 100%;
-      height: calc(100vh - 85px);
+      height: calc(100dvh - 85px);
       margin: 75px auto 10px;
       padding: 0 16px;
       display: flex;
       flex-direction: column;
       box-sizing: border-box;
+      min-height: 0;
     }
 
     .support-chat-card {
@@ -45,6 +47,7 @@
       flex-direction: column;
       height: 100%;
       min-height: 0;
+      overflow: hidden;
     }
 
     .threads-header {
@@ -146,10 +149,11 @@
       min-height: 0;
       background: #ffffff;
       position: relative;
+      overflow: hidden;
     }
 
     .chat-convo-header {
-      padding: 12px 20px;
+      padding: 10px 16px;
       background: var(--royal-indigo-base);
       color: #ffffff;
       display: flex;
@@ -157,9 +161,9 @@
       align-items: center;
       border-bottom: 1px solid rgba(255,255,255,0.1);
       flex-shrink: 0;
-      height: 60px;
+      height: 56px;
       box-sizing: border-box;
-      z-index: 2;
+      z-index: 5;
     }
 
     .chat-convo-header h3 {
@@ -211,8 +215,8 @@
     .chat-back-btn {
       display: none;
       padding: 6px 12px;
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.25);
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
       color: #ffffff;
       border-radius: 8px;
       font-size: 12px;
@@ -223,19 +227,20 @@
     .messages-stream-box {
       flex: 1;
       min-height: 0;
-      padding: 18px 16px;
+      padding: 16px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
       gap: 12px;
       background: radial-gradient(circle at center, #FFFFFF 0%, #F8FAFC 100%);
       scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
     }
 
     .chat-bubble {
-      max-width: 76%;
+      max-width: 80%;
       width: fit-content;
-      padding: 10px 14px;
+      padding: 9px 13px;
       border-radius: 14px;
       font-size: 13.5px;
       line-height: 1.5;
@@ -278,22 +283,23 @@
       text-align: left;
     }
 
+    /* بار الإدخال المثبت */
     .chat-input-bar-form {
-      padding: 12px 16px;
+      padding: 10px 14px;
       border-top: 1px solid #EEF2F6;
       background: #ffffff;
-      display: flex;
-      gap: 10px;
+      display: flex !important;
+      gap: 8px;
       align-items: center;
       flex-shrink: 0;
-      height: 68px;
+      height: 64px;
       box-sizing: border-box;
-      z-index: 2;
+      z-index: 10;
     }
 
     .chat-input-bar-form input {
       flex: 1;
-      height: 44px;
+      height: 42px;
       padding: 0 14px;
       background: #F8FAFC;
       border: 1.5px solid #E2E8F0;
@@ -309,8 +315,8 @@
     }
 
     .chat-input-bar-form button {
-      padding: 0 22px;
-      height: 44px;
+      padding: 0 20px;
+      height: 42px;
       background: var(--royal-indigo-base);
       color: #ffffff;
       border: none;
@@ -318,10 +324,9 @@
       font-weight: 800;
       font-size: 13.5px;
       cursor: pointer;
-      transition: all 0.2s ease;
       display: flex;
       align-items: center;
-      gap: 6px;
+      justify-content: center;
       flex-shrink: 0;
     }
 
@@ -341,31 +346,51 @@
       gap: 10px;
     }
 
+    /* تحسينات الموبايل */
     @media (max-width: 768px) {
       .support-chat-container {
-        height: calc(100vh - 75px);
-        margin-top: 65px;
-        margin-bottom: 6px;
-        padding: 0 8px;
+        height: calc(100dvh - 65px);
+        margin-top: 58px;
+        margin-bottom: 4px;
+        padding: 0 6px;
       }
 
       .support-chat-card {
-        grid-template-columns: 1fr;
+        display: flex;
+        flex-direction: column;
         border-radius: 14px;
+      }
+
+      .support-threads-sidebar {
+        width: 100%;
+        height: 100%;
       }
 
       .support-threads-sidebar.hide-mobile {
         display: none !important;
       }
 
-      .chat-conversation-area.active-mobile {
-        display: flex !important;
+      .chat-conversation-area {
+        display: none;
         width: 100%;
         height: 100%;
       }
 
+      .chat-conversation-area.active-mobile {
+        display: flex !important;
+      }
+
       .chat-back-btn {
         display: inline-flex;
+      }
+
+      .chat-bubble {
+        max-width: 88%;
+      }
+
+      .chat-input-bar-form {
+        height: 60px;
+        padding: 8px 10px;
       }
     }
   </style>
@@ -429,8 +454,8 @@
     var cachedThreads = [];
 
     function getAppUser() {
-      if (typeof window.getCurrentUser === "function") {
-        return window.getCurrentUser();
+      if (typeof window["getCurrentUser"] === "function") {
+        return window["getCurrentUser"]();
       }
       try {
         var raw = localStorage.getItem("current_user") || localStorage.getItem("edu_currentUser");
@@ -627,6 +652,7 @@
 
       var isStaff = user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "SUPPORT";
       var sidebar = document.getElementById("supportThreadsSidebar");
+      var convo = document.getElementById("chatConvoArea");
 
       var searchInput = document.getElementById("threadsSearchInput");
       if (searchInput) {
@@ -654,7 +680,6 @@
       if (backBtn) {
         backBtn.addEventListener("click", function() {
           if (sidebar) sidebar.classList.remove("hide-mobile");
-          var convo = document.getElementById("chatConvoArea");
           if (convo) convo.classList.remove("active-mobile");
         });
       }
@@ -720,6 +745,11 @@
         var subDisplayEl = document.getElementById("chatTargetSubDisplay");
         if (nameDisplayEl) nameDisplayEl.innerText = "أ/ محمد السعيد والدعم الأكاديمي";
         if (subDisplayEl) subDisplayEl.innerText = "متصل الآن للمساعدة";
+
+        if (convo) {
+          convo.style.display = "flex";
+          convo.classList.add("active-mobile");
+        }
 
         var timerStudent = setInterval(function() {
           if (window.FirebaseService && typeof window.FirebaseService.subscribeStudentChat === "function") {
