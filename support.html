@@ -408,7 +408,6 @@
     var currentSelectedStudentUid = null;
     var unsubscribeMessages = null;
     var cachedThreads = [];
-    var localRenderedMessages = [];
 
     function formatChatTime(dateStr) {
       if (!dateStr) return "";
@@ -424,7 +423,6 @@
     }
 
     function renderMessages(messages) {
-      localRenderedMessages = messages || [];
       var box = document.getElementById("messagesStreamBox");
       if (!box) return;
 
@@ -432,14 +430,12 @@
       var myUid = currentUser ? (currentUser.uid || currentUser.id) : "";
       var isStaff = currentUser && (currentUser.role === "SUPER_ADMIN" || currentUser.role === "ADMIN" || currentUser.role === "SUPPORT");
 
-      // لو إداري ومش محدد أي محادثة، إخفاء بار الكتابة وعرض تنبيه
       if (isStaff && !currentSelectedStudentUid) {
         toggleChatInputForm(false);
         box.innerHTML = '<div class="empty-select-chat-notice"><div style="font-size:32px;">💬</div><strong>لا توجد محادثة مفتوحة حالياً</strong><span>اختر طالباً من القائمة الجانبية لبدء المحادثة</span></div>';
         return;
       }
 
-      // إظهار بار الكتابة في حالة الطالب أو عند اختيار الإداري لطالب
       toggleChatInputForm(true);
 
       if (!messages || messages.length === 0) {
@@ -469,36 +465,14 @@
         unsubscribeMessages = null;
       }
 
-      if (window.firebase && firebase.firestore) {
-        var db = firebase.firestore();
-
-        unsubscribeMessages = db.collection("support_messages")
-          .where("studentUid", "==", studentUid)
-          .onSnapshot(function(snap) {
-            var list = [];
-            snap.forEach(function(doc) {
-              var data = doc.data();
-              data.id = doc.id;
-              list.push(data);
-            });
-
-            list.sort(function(a, b) {
-              return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
-            });
-
-            renderMessages(list);
-          }, function(error) {
-            console.error("Chat listener error:", error);
-            fallbackLocalChat(studentUid);
-          });
+      if (window.FirebaseService && typeof window.FirebaseService.subscribeStudentChat === "function") {
+        unsubscribeMessages = window.FirebaseService.subscribeStudentChat(studentUid, function(msgs) {
+          renderMessages(msgs);
+        });
       } else {
-        fallbackLocalChat(studentUid);
+        var localMsgs = JSON.parse(localStorage.getItem("edu_chat_" + studentUid)) || [];
+        renderMessages(localMsgs);
       }
-    }
-
-    function fallbackLocalChat(studentUid) {
-      var localMsgs = JSON.parse(localStorage.getItem("edu_chat_" + studentUid)) || [];
-      renderMessages(localMsgs);
     }
 
     function selectStudentThread(studentUid, studentName, studentPhone) {
@@ -595,7 +569,6 @@
       try {
         if (window.firebase && firebase.firestore) {
           var db = firebase.firestore();
-          
           var msgsSnap = await db.collection("support_messages").where("studentUid", "==", studentUid).get();
           var batch = db.batch();
           msgsSnap.forEach(function(doc) {
@@ -628,7 +601,6 @@
       await deleteThreadByUid(currentSelectedStudentUid, targetName);
     }
 
-    // إرسال الرسالة
     document.getElementById("chatSendMessageForm").addEventListener("submit", async function(e) {
       e.preventDefault();
       var input = document.getElementById("chatMessageInput");
@@ -659,41 +631,14 @@
 
       input.value = "";
 
-      // تحديث فوري مرئي
-      var optimisticList = localRenderedMessages.slice();
-      optimisticList.push(msgData);
-      renderMessages(optimisticList);
-
-      try {
-        if (window.firebase && firebase.firestore) {
-          var db = firebase.firestore();
-          
-          await db.collection("support_messages").add(msgData);
-
-          var threadData = {
-            studentUid: targetUid,
-            studentName: msgData.studentName,
-            studentPhone: msgData.studentPhone,
-            lastMessage: text,
-            lastMessageTime: nowTime,
-            updatedAt: nowTime
-          };
-
-          if (user.role === "STUDENT") {
-            threadData.unreadCount = firebase.firestore.FieldValue.increment(1);
-          } else {
-            threadData.unreadCount = 0;
-          }
-
-          await db.collection("support_threads").doc(targetUid).set(threadData, { merge: true });
-        } else {
-          var key = "edu_chat_" + targetUid;
-          var list = JSON.parse(localStorage.getItem(key)) || [];
-          list.push(msgData);
-          localStorage.setItem(key, JSON.stringify(list));
-        }
-      } catch (err) {
-        console.error("Error sending message:", err);
+      if (window.FirebaseService && typeof window.FirebaseService.sendSupportMessage === "function") {
+        await window.FirebaseService.sendSupportMessage(msgData);
+      } else {
+        var key = "edu_chat_" + targetUid;
+        var list = JSON.parse(localStorage.getItem(key)) || [];
+        list.push(msgData);
+        localStorage.setItem(key, JSON.stringify(list));
+        renderMessages(list);
       }
     });
 
@@ -709,38 +654,25 @@
 
       if (isStaff) {
         if (sidebar) sidebar.style.display = "flex";
-        
-        // إخفاء بار الكتابة افتراضياً حتى يختار الإداري طالباً
         toggleChatInputForm(false);
         renderMessages([]);
 
-        var interval = setInterval(function() {
-          if (window.firebase && firebase.firestore) {
-            clearInterval(interval);
-            firebase.firestore().collection("support_threads")
-              .onSnapshot(function(snap) {
-                cachedThreads = [];
-                snap.forEach(function(doc) {
-                  var data = doc.data();
-                  if (data && data.studentUid) {
-                    data.id = doc.id;
-                    cachedThreads.push(data);
-                  }
-                });
-                cachedThreads.sort(function(a, b) {
-                  return new Date(b.lastMessageTime || 0) - new Date(a.lastMessageTime || 0);
-                });
-                renderThreadsDom(cachedThreads);
+        var checkService = setInterval(function() {
+          if (window.FirebaseService && typeof window.FirebaseService.subscribeAllSupportThreads === "function") {
+            clearInterval(checkService);
+            window.FirebaseService.subscribeAllSupportThreads(function(threads) {
+              cachedThreads = threads || [];
+              renderThreadsDom(cachedThreads);
 
-                if (!currentSelectedStudentUid && cachedThreads.length > 0) {
-                  selectStudentThread(cachedThreads[0].studentUid, cachedThreads[0].studentName, cachedThreads[0].studentPhone);
-                } else if (cachedThreads.length === 0) {
-                  currentSelectedStudentUid = null;
-                  renderMessages([]);
-                }
-              });
+              if (!currentSelectedStudentUid && cachedThreads.length > 0) {
+                selectStudentThread(cachedThreads[0].studentUid, cachedThreads[0].studentName, cachedThreads[0].studentPhone);
+              } else if (cachedThreads.length === 0) {
+                currentSelectedStudentUid = null;
+                renderMessages([]);
+              }
+            });
           }
-        }, 200);
+        }, 150);
       } else {
         var userUid = user.uid || user.id;
         currentSelectedStudentUid = userUid;
@@ -748,7 +680,13 @@
         document.getElementById("chatTargetSubDisplay").innerText = "متصل الآن للمساعدة";
 
         toggleChatInputForm(true);
-        subscribeToStudentChatRealtime(userUid);
+
+        var checkStudent = setInterval(function() {
+          if (window.FirebaseService && typeof window.FirebaseService.subscribeStudentChat === "function") {
+            clearInterval(checkStudent);
+            subscribeToStudentChatRealtime(userUid);
+          }
+        }, 150);
       }
     });
   </script>
