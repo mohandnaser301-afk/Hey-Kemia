@@ -315,6 +315,18 @@
       background: var(--royal-indigo-light);
     }
 
+    .empty-select-chat-notice {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #64748B;
+      text-align: center;
+      padding: 20px;
+      gap: 10px;
+    }
+
     @media (max-width: 768px) {
       .support-chat-card {
         grid-template-columns: 1fr;
@@ -353,6 +365,7 @@
   <main class="support-chat-container">
     <div class="support-chat-card">
       
+      <!-- القائمة الجانبية للإدارة -->
       <div class="support-threads-sidebar" id="supportThreadsSidebar" style="display:none;">
         <div class="threads-header">
           <h3>استفسارات الطلاب</h3>
@@ -361,6 +374,7 @@
         <div class="threads-list" id="supportThreadsListContainer"></div>
       </div>
 
+      <!-- نافذة المحادثة -->
       <div class="chat-conversation-area" id="chatConvoArea">
         <div class="chat-convo-header">
           <div>
@@ -402,6 +416,13 @@
       return isNaN(d.getTime()) ? "" : d.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" });
     }
 
+    function toggleChatInputForm(show) {
+      var form = document.getElementById("chatSendMessageForm");
+      if (form) {
+        form.style.display = show ? "flex" : "none";
+      }
+    }
+
     function renderMessages(messages) {
       localRenderedMessages = messages || [];
       var box = document.getElementById("messagesStreamBox");
@@ -409,17 +430,28 @@
 
       var currentUser = getCurrentUser();
       var myUid = currentUser ? (currentUser.uid || currentUser.id) : "";
+      var isStaff = currentUser && (currentUser.role === "SUPER_ADMIN" || currentUser.role === "ADMIN" || currentUser.role === "SUPPORT");
+
+      // لو إداري ومش محدد أي محادثة، إخفاء بار الكتابة وعرض تنبيه
+      if (isStaff && !currentSelectedStudentUid) {
+        toggleChatInputForm(false);
+        box.innerHTML = '<div class="empty-select-chat-notice"><div style="font-size:32px;">💬</div><strong>لا توجد محادثة مفتوحة حالياً</strong><span>اختر طالباً من القائمة الجانبية لبدء المحادثة</span></div>';
+        return;
+      }
+
+      // إظهار بار الكتابة في حالة الطالب أو عند اختيار الإداري لطالب
+      toggleChatInputForm(true);
 
       if (!messages || messages.length === 0) {
-        box.innerHTML = '<div style="text-align:center; color:#64748B; font-size:13px; margin:auto;">أهلاً بك! اكتب سؤالك أو مشكلتك هنا وسيقوم الفريق الأكاديمي بالرد عليك فوراً. 🧪</div>';
+        box.innerHTML = '<div style="text-align:center; color:#64748B; font-size:13px; margin:auto;">أهلاً بك! اكتب سؤالك هنا وسيقوم الفريق بالرد عليك فوراً. 🧪</div>';
         return;
       }
 
       box.innerHTML = messages.map(function(m) {
-        var isMe = (myUid && (m.senderUid === myUid)) || (currentUser && currentUser.email && m.senderEmail && m.senderEmail.toLowerCase() === currentUser.email.toLowerCase());
-        var isStaff = m.senderRole === "SUPER_ADMIN" || m.senderRole === "ADMIN" || m.senderRole === "SUPPORT";
+        var isMe = (myUid && m.senderUid === myUid) || (currentUser && currentUser.email && m.senderEmail && m.senderEmail.toLowerCase() === currentUser.email.toLowerCase());
+        var isSenderStaff = m.senderRole === "SUPER_ADMIN" || m.senderRole === "ADMIN" || m.senderRole === "SUPPORT";
         var bubbleClass = isMe ? "staff" : "student";
-        var senderLabel = isMe ? "أنت" : sanitizeText(m.senderName || (isStaff ? "فريق أ/ محمد السعيد" : "الطالب"));
+        var senderLabel = isMe ? "أنت" : sanitizeText(m.senderName || (isSenderStaff ? "فريق أ/ محمد السعيد" : "الطالب"));
 
         return '<div class="chat-bubble ' + bubbleClass + '">' +
           '<div class="bubble-sender">' + senderLabel + '</div>' +
@@ -439,10 +471,9 @@
 
       if (window.firebase && firebase.firestore) {
         var db = firebase.firestore();
-        
-        unsubscribeMessages = db.collection("support_chats")
-          .doc(studentUid)
-          .collection("messages")
+
+        unsubscribeMessages = db.collection("support_messages")
+          .where("studentUid", "==", studentUid)
           .onSnapshot(function(snap) {
             var list = [];
             snap.forEach(function(doc) {
@@ -522,6 +553,9 @@
 
       if (!threads || threads.length === 0) {
         container.innerHTML = '<div style="padding:20px; font-size:12.5px; color:#64748B; text-align:center;">لا توجد رسائل واردة حالياً.</div>';
+        if (isStaff && !currentSelectedStudentUid) {
+          renderMessages([]);
+        }
         return;
       }
 
@@ -555,25 +589,29 @@
     }
 
     async function deleteThreadByUid(studentUid, studentName) {
-      var confirmed = await customConfirm("هل أنت متأكد من مسح محادثة الطالب (" + studentName + ") بالكامل؟ سيتم تصفير الرسائل لدى الطالب والإدارة بشكل نهائي.", "مسح المحادثة", "مسح نهائي", "إلغاء");
+      var confirmed = await customConfirm("هل أنت متأكد من مسح محادثة الطالب (" + studentName + ") بالكامل؟ سيتم تصفير الرسائل لدى الطرفين.", "مسح المحادثة", "مسح نهائي", "إلغاء");
       if (!confirmed) return;
 
       try {
         if (window.firebase && firebase.firestore) {
           var db = firebase.firestore();
           
-          var msgsSnap = await db.collection("support_chats").doc(studentUid).collection("messages").get();
+          var msgsSnap = await db.collection("support_messages").where("studentUid", "==", studentUid).get();
           var batch = db.batch();
           msgsSnap.forEach(function(doc) {
             batch.delete(doc.ref);
           });
-          batch.delete(db.collection("support_chats").doc(studentUid));
+          batch.delete(db.collection("support_threads").doc(studentUid));
           await batch.commit();
         }
 
         localStorage.removeItem("edu_chat_" + studentUid);
 
         if (currentSelectedStudentUid === studentUid) {
+          currentSelectedStudentUid = null;
+          document.getElementById("chatTargetNameDisplay").innerText = "الدعم الفني والأكاديمي";
+          document.getElementById("chatTargetSubDisplay").innerText = "فريق الأستاذ محمد السعيد";
+          document.getElementById("btnClearCurrentChat").style.display = "none";
           renderMessages([]);
         }
 
@@ -590,6 +628,7 @@
       await deleteThreadByUid(currentSelectedStudentUid, targetName);
     }
 
+    // إرسال الرسالة
     document.getElementById("chatSendMessageForm").addEventListener("submit", async function(e) {
       e.preventDefault();
       var input = document.getElementById("chatMessageInput");
@@ -620,6 +659,7 @@
 
       input.value = "";
 
+      // تحديث فوري مرئي
       var optimisticList = localRenderedMessages.slice();
       optimisticList.push(msgData);
       renderMessages(optimisticList);
@@ -628,7 +668,7 @@
         if (window.firebase && firebase.firestore) {
           var db = firebase.firestore();
           
-          await db.collection("support_chats").doc(targetUid).collection("messages").add(msgData);
+          await db.collection("support_messages").add(msgData);
 
           var threadData = {
             studentUid: targetUid,
@@ -645,7 +685,7 @@
             threadData.unreadCount = 0;
           }
 
-          await db.collection("support_chats").doc(targetUid).set(threadData, { merge: true });
+          await db.collection("support_threads").doc(targetUid).set(threadData, { merge: true });
         } else {
           var key = "edu_chat_" + targetUid;
           var list = JSON.parse(localStorage.getItem(key)) || [];
@@ -670,10 +710,14 @@
       if (isStaff) {
         if (sidebar) sidebar.style.display = "flex";
         
+        // إخفاء بار الكتابة افتراضياً حتى يختار الإداري طالباً
+        toggleChatInputForm(false);
+        renderMessages([]);
+
         var interval = setInterval(function() {
           if (window.firebase && firebase.firestore) {
             clearInterval(interval);
-            firebase.firestore().collection("support_chats")
+            firebase.firestore().collection("support_threads")
               .onSnapshot(function(snap) {
                 cachedThreads = [];
                 snap.forEach(function(doc) {
@@ -688,8 +732,11 @@
                 });
                 renderThreadsDom(cachedThreads);
 
-                if (!currentSelectedStudentUid && cachedThreads[0]) {
+                if (!currentSelectedStudentUid && cachedThreads.length > 0) {
                   selectStudentThread(cachedThreads[0].studentUid, cachedThreads[0].studentName, cachedThreads[0].studentPhone);
+                } else if (cachedThreads.length === 0) {
+                  currentSelectedStudentUid = null;
+                  renderMessages([]);
                 }
               });
           }
@@ -700,6 +747,7 @@
         document.getElementById("chatTargetNameDisplay").innerText = "أ/ محمد السعيد والدعم الأكاديمي";
         document.getElementById("chatTargetSubDisplay").innerText = "متصل الآن للمساعدة";
 
+        toggleChatInputForm(true);
         subscribeToStudentChatRealtime(userUid);
       }
     });
