@@ -195,27 +195,6 @@
       gap: 6px;
     }
 
-    .btn-enable-notif {
-      background: rgba(0, 210, 255, 0.2);
-      border: 1px solid var(--cyan-accent);
-      color: #ffffff;
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 800;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      transition: all 0.2s ease;
-    }
-
-    .btn-enable-notif:hover {
-      background: var(--cyan-accent);
-      color: #0E1338;
-      transform: scale(1.03);
-    }
-
     .btn-clear-chat-history {
       background: rgba(239, 68, 68, 0.15);
       border: 1px solid rgba(239, 68, 68, 0.35);
@@ -447,10 +426,6 @@
           </div>
 
           <div class="chat-header-actions">
-            <button type="button" class="btn-enable-notif" id="btnTestNotifications" title="تفعيل واختبار التنبيهات">
-              <span>🔔</span>
-              <span>تفعيل التنبيهات</span>
-            </button>
             <button type="button" id="btnClearCurrentChat" class="btn-clear-chat-history" style="display:none;">مسح المحادثة</button>
             <button type="button" id="btnBackToThreadsList" class="chat-back-btn">المحادثات</button>
           </div>
@@ -504,7 +479,6 @@
       }
     }
 
-    // تشغيل نغمة رنين فورية
     function playBeepSound() {
       try {
         var ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -514,57 +488,15 @@
         var osc = ctx.createOscillator();
         var gain = ctx.createGain();
         osc.type = "sine";
-        osc.frequency.setValueAtTime(659.25, ctx.currentTime); // E5
-        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12); // A5
+        osc.frequency.setValueAtTime(659.25, ctx.currentTime);
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12);
         gain.gain.setValueAtTime(0.35, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start();
         osc.stop(ctx.currentTime + 0.4);
-      } catch (e) {
-        console.log("Audio Error:", e);
-      }
-    }
-
-    // طلب إذن واختبار الإشعار فوراً
-    async function activateAndTestNotifications() {
-      playBeepSound();
-
-      if (!("Notification" in window)) {
-        alert("متصفحك الحالي لا يدعم إشعارات النظام المباشرة، ولكن سيتم تنبيهك بالصوت وتحديث التبويب.");
-        return;
-      }
-
-      var permission = Notification.permission;
-      if (permission === "default") {
-        permission = await Notification.requestPermission();
-      }
-
-      if (permission === "granted") {
-        if (typeof window.showToast === "function") {
-          window.showToast("تم تفعيل الإشعارات بنجاح! 🔔", "success");
-        }
-        try {
-          if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({
-              type: "TRIGGER_NATIVE_NOTIFICATION",
-              title: "منصة هي كيميا ! 🧪",
-              body: "الإشعارات تعمل بنجاح على جهازك الآن!",
-              url: "support.html"
-            });
-          } else {
-            new Notification("منصة هي كيميا ! 🧪", {
-              body: "الإشعارات تعمل بنجاح على جهازك الآن!",
-              icon: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=192&q=80"
-            });
-          }
-        } catch (err) {
-          console.log("Notification Dispatch:", err);
-        }
-      } else if (permission === "denied") {
-        alert("الإشعارات محظورة من إعدادات المتصفح لموقعك. يرجى الضغط على علامة القفل بجانب الرابط والسماح بالإشعارات (Allow Notifications).");
-      }
+      } catch (e) {}
     }
 
     function renderChatMessages(list) {
@@ -623,7 +555,6 @@
           var user = getAppUser();
           var myUid = user ? String(user.uid || user.id || "") : "";
 
-          // إذا وصلت رسالة جديدة واردة من الطرف الآخر
           if (msgs && msgs.length > lastKnownMsgCount) {
             var latest = msgs[msgs.length - 1];
             if (latest && String(latest.senderUid) !== myUid) {
@@ -756,12 +687,6 @@
       var isStaff = user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "SUPPORT";
       var sidebar = document.getElementById("supportThreadsSidebar");
       var convo = document.getElementById("chatConvoArea");
-
-      // زر تفعيل واختبار الإشعارات
-      var notifBtn = document.getElementById("btnTestNotifications");
-      if (notifBtn) {
-        notifBtn.addEventListener("click", activateAndTestNotifications);
-      }
 
       var searchInput = document.getElementById("threadsSearchInput");
       if (searchInput) {

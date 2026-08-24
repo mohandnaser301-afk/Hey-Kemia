@@ -246,7 +246,11 @@ window.FirebaseService = {
       await batch.commit();
 
       try {
-        await fb.firestore().collection("support_threads").doc(uid).delete();
+        const msgsSnap = await fb.firestore().collection("support_threads").doc(uid).collection("messages").get();
+        const mBatch = fb.firestore().batch();
+        msgsSnap.forEach(mDoc => mBatch.delete(mDoc.ref));
+        mBatch.delete(fb.firestore().collection("support_threads").doc(uid));
+        await mBatch.commit();
       } catch (e) {}
     }
   },
@@ -419,7 +423,7 @@ window.FirebaseService = {
     }
   },
 
-  // 6. الإشعارات السحابية المحدثة
+  // 6. الإشعارات السحابية
   subscribeNotifications(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -445,22 +449,21 @@ window.FirebaseService = {
     }
   },
 
-  // 7. الدعم الفني المباشر
+  // 7. منظومة الدعم المباشر (Subcollection Architecture)
   subscribeStudentChat(studentUid, callback) {
     const fb = getFirebase();
     const key = String(studentUid);
 
     if (fb && fb.firestore && studentUid) {
-      return fb.firestore().collection("support_threads").doc(key)
-        .onSnapshot(doc => {
-          if (doc.exists) {
-            const data = doc.data() || {};
-            const list = data.messages || [];
-            localStorage.setItem("edu_chat_" + key, JSON.stringify(list));
-            if (callback) callback(list);
-          } else {
-            if (callback) callback([]);
-          }
+      return fb.firestore().collection("support_threads").doc(key).collection("messages")
+        .orderBy("createdAt", "asc")
+        .onSnapshot(snap => {
+          const list = [];
+          snap.forEach(doc => {
+            list.push({ id: doc.id, ...doc.data() });
+          });
+          localStorage.setItem("edu_chat_" + key, JSON.stringify(list));
+          if (callback) callback(list);
         }, err => {
           console.error("Student Chat Error:", err);
           const local = JSON.parse(localStorage.getItem("edu_chat_" + key) || "[]");
@@ -504,6 +507,19 @@ window.FirebaseService = {
     localStorage.setItem(localKey, JSON.stringify(localMsgs));
 
     if (fb && fb.firestore) {
+      // 1. إضافة الرسالة في Subcollection الخاص بالطالب
+      await fb.firestore().collection("support_threads").doc(targetUid).collection("messages").add({
+        text: msgData.text,
+        senderUid: String(msgData.senderUid),
+        senderName: msgData.senderName || "مستخدم",
+        senderRole: msgData.senderRole || "STUDENT",
+        senderEmail: msgData.senderEmail || "",
+        createdAt: now
+      });
+
+      // 2. تحديث وثيقة الثريد الرئيسية
+      const isStaff = msgData.senderRole === "SUPER_ADMIN" || msgData.senderRole === "ADMIN" || msgData.senderRole === "SUPPORT";
+      
       await fb.firestore().collection("support_threads").doc(targetUid).set({
         studentUid: targetUid,
         studentName: msgData.studentName || "طالب",
@@ -512,15 +528,8 @@ window.FirebaseService = {
         lastMessage: msgData.text,
         lastMessageTime: now,
         lastSenderRole: msgData.senderRole || "STUDENT",
-        unreadCount: (msgData.senderRole === "STUDENT") ? firebase.firestore.FieldValue.increment(1) : 0,
-        messages: firebase.firestore.FieldValue.arrayUnion(msgData)
+        unreadCount: isStaff ? 0 : firebase.firestore.FieldValue.increment(1)
       }, { merge: true });
-
-      const isStaff = msgData.senderRole === "SUPER_ADMIN" || msgData.senderRole === "ADMIN" || msgData.senderRole === "SUPPORT";
-      const notifTargetUid = isStaff ? targetUid : "ALL";
-      const notifTitle = isStaff ? "رد جديد من الدعم الأكاديمي 🧪" : "استفسار جديد من: " + (msgData.studentName || "طالب");
-
-      await this.pushNotificationToCloud(notifTitle, msgData.text, notifTargetUid, "support.html", msgData.studentEmail || "");
     }
   },
 
@@ -531,14 +540,11 @@ window.FirebaseService = {
     localStorage.removeItem("edu_chat_" + targetKey);
 
     if (fb && fb.firestore) {
-      await fb.firestore().collection("support_threads").doc(targetKey).set({
-        studentUid: targetKey,
-        studentName: studentName || "طالب",
-        messages: [],
-        lastMessage: "",
-        lastMessageTime: new Date().toISOString(),
-        unreadCount: 0
-      }, { merge: true });
+      const msgsSnap = await fb.firestore().collection("support_threads").doc(targetKey).collection("messages").get();
+      const batch = fb.firestore().batch();
+      msgsSnap.forEach(d => batch.delete(d.ref));
+      batch.delete(fb.firestore().collection("support_threads").doc(targetKey));
+      await batch.commit();
     }
   }
 };
