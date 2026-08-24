@@ -8,7 +8,6 @@ function sanitizeText(str) {
   temp.textContent = str;
   return temp.innerHTML;
 }
-window.sanitizeText = sanitizeText;
 
 function customConfirm(message, title, confirmText, cancelText) {
   title = title || "تأكيد الإجراء";
@@ -50,7 +49,7 @@ window.customConfirm = customConfirm;
 function isStudentEnrolledInCourse(user, courseId) {
   if (!user || !user.enrolledCourses) return false;
   var targetId = String(courseId);
-  return user.enrolledCourses.some(function(id) { return String(id) === targetId; });
+  return user.enrolledCourses.some(id => String(id) === targetId);
 }
 window.isStudentEnrolledInCourse = isStudentEnrolledInCourse;
 
@@ -160,100 +159,24 @@ function forceLogoutUser() {
   setTimeout(function() { window.location.replace("login.html"); }, 400);
 }
 
-// -------------------------------------------------------------
-// نظام الصوت وتنبيهات المتصفح الحية
-// -------------------------------------------------------------
 var swRegistration = null;
-
-function playNotificationSound() {
-  try {
-    var ctx = new (window.AudioContext || window.webkitAudioContext)();
-    var osc = ctx.createOscillator();
-    var gain = ctx.createGain();
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.35);
-  } catch (e) {}
-}
-
-function flashPageTitle(message) {
-  var originalTitle = document.title;
-  var count = 0;
-  var interval = setInterval(function() {
-    document.title = (count % 2 === 0) ? "🔔 " + message : originalTitle;
-    count++;
-    if (count > 10) {
-      clearInterval(interval);
-      document.title = originalTitle;
-    }
-  }, 700);
-
-  window.addEventListener("focus", function onFocus() {
-    clearInterval(interval);
-    document.title = originalTitle;
-    window.removeEventListener("focus", onFocus);
-  });
-}
-
 function registerDeviceServiceWorker() {
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js")
-      .then(function(reg) {
-        swRegistration = reg;
-      })
-      .catch(function(err) {
-        console.log("SW Reg Error:", err);
-      });
+      .then(reg => { swRegistration = reg; })
+      .catch(err => console.log("SW Reg:", err));
   }
 }
-window.registerDeviceServiceWorker = registerDeviceServiceWorker;
-
-function requestNotificationPermission() {
-  if (!("Notification" in window)) {
-    showToast("متصفحك لا يدعم الإشعارات المباشرة", "info");
-    return Promise.resolve(false);
-  }
-
-  return Notification.requestPermission().then(function(perm) {
-    if (perm === "granted") {
-      playNotificationSound();
-      showToast("تم تفعيل إشعارات الردود الفورية بنجاح 🔔", "success");
-      triggerDeviceNativeNotification("تم تفعيل الإشعارات بنجاح! 🧪", "ستصلك الآن تنبيهات الردود مباشرة.", "support.html");
-      return true;
-    } else {
-      showToast("تم رفض إذن الإشعارات من إعدادات المتصفح", "error");
-      return false;
-    }
-  });
-}
-window.requestNotificationPermission = requestNotificationPermission;
 
 function triggerDeviceNativeNotification(title, body, targetUrl) {
-  playNotificationSound();
-  flashPageTitle(title);
-
   if (!("Notification" in window) || Notification.permission !== "granted") return;
-
-  var url = targetUrl || "support.html";
 
   if (navigator.serviceWorker && navigator.serviceWorker.controller) {
     navigator.serviceWorker.controller.postMessage({
       type: "TRIGGER_NATIVE_NOTIFICATION",
       title: title,
       body: body,
-      url: url
-    });
-  } else if (swRegistration && swRegistration.showNotification) {
-    swRegistration.showNotification(title, {
-      body: body,
-      icon: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=192&q=80",
-      data: { url: url }
+      url: targetUrl || "dashboard.html"
     });
   } else {
     try {
@@ -263,52 +186,43 @@ function triggerDeviceNativeNotification(title, body, targetUrl) {
       });
       n.onclick = function() {
         window.focus();
-        window.location.href = url;
+        window.location.href = targetUrl || "dashboard.html";
       };
     } catch (e) {}
   }
 }
-window.triggerDeviceNativeNotification = triggerDeviceNativeNotification;
 
-// مراقبة الشات في الخلفية وإطلاق التنبيهات فوراً
-function initSupportChatRealtimeWatcher() {
-  var user = getCurrentUser();
-  if (!user) return;
+function initRealtimeNotificationsReceiver() {
+  var lastKnownNotifId = localStorage.getItem("hk_last_received_notif_id") || "";
+  var isFirstLoad = true;
 
-  var userUid = String(user.uid || user.id || "");
-  var isStaff = user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "SUPPORT";
-  var lastSeenMsgTime = localStorage.getItem("hk_last_seen_chat_time") || new Date().toISOString();
+  var interval = setInterval(function() {
+    if (window.FirebaseService && window.firebase && firebase.firestore) {
+      clearInterval(interval);
+      window.FirebaseService.subscribeNotifications(function(notifs) {
+        if (!notifs || notifs.length === 0) return;
+        var user = getCurrentUser();
 
-  var timer = setInterval(function() {
-    if (window.firebase && firebase.firestore) {
-      clearInterval(timer);
-      var db = firebase.firestore();
+        if (isFirstLoad) {
+          isFirstLoad = false;
+          if (notifs[0]) localStorage.setItem("hk_last_received_notif_id", notifs[0].id);
+          return;
+        }
 
-      if (isStaff) {
-        db.collection("support_threads").onSnapshot(function(snap) {
-          snap.docChanges().forEach(function(change) {
-            if (change.type === "added" || change.type === "modified") {
-              var data = change.doc.data();
-              if (data && data.lastSenderRole === "STUDENT" && data.lastMessageTime > lastSeenMsgTime) {
-                lastSeenMsgTime = data.lastMessageTime;
-                localStorage.setItem("hk_last_seen_chat_time", lastSeenMsgTime);
-                triggerDeviceNativeNotification("سؤال جديد من " + (data.studentName || "طالب") + " 🧪", data.lastMessage || "استفسار جديد", "support.html");
-              }
-            }
-          });
-        });
-      } else {
-        db.collection("support_threads").doc(userUid).onSnapshot(function(doc) {
-          if (doc.exists) {
-            var data = doc.data();
-            if (data && data.lastSenderRole !== "STUDENT" && data.lastMessageTime > lastSeenMsgTime) {
-              lastSeenMsgTime = data.lastMessageTime;
-              localStorage.setItem("hk_last_seen_chat_time", lastSeenMsgTime);
-              triggerDeviceNativeNotification("رد جديد من أ/ محمد السعيد 🧪", data.lastMessage || "رسالة جديدة", "support.html");
-            }
+        var latest = notifs[0];
+        if (latest && latest.id !== lastKnownNotifId) {
+          lastKnownNotifId = latest.id;
+          localStorage.setItem("hk_last_received_notif_id", latest.id);
+
+          if (user && latest.senderEmail && user.email.toLowerCase() === latest.senderEmail) return;
+
+          if (!user && latest.targetUid !== "ALL") return;
+          if (user && (latest.targetUid === "ALL" || latest.targetUid === user.uid)) {
+            triggerDeviceNativeNotification(latest.title, latest.body, latest.targetUrl);
+            showToast(latest.body, "info", latest.title);
           }
-        });
-      }
+        }
+      });
     }
   }, 250);
 }
@@ -339,7 +253,6 @@ function showToast(message, type, title) {
     setTimeout(function() { toast.remove(); }, 300);
   }, 4000);
 }
-window.showToast = showToast;
 
 function logAdminAction(actionType, details) {
   var user = getCurrentUser() || { fullName: "غير مسجل", role: "GUEST" };
@@ -364,7 +277,6 @@ function logout() {
     window.location.href = "login.html";
   }
 }
-window.logout = logout;
 
 function updateNavbarAndAuthGuards() {
   var user = getCurrentUser();
@@ -406,7 +318,7 @@ function updateNavbarAndAuthGuards() {
       } else if (user.role === "SUPPORT") {
         authBox.innerHTML = '<a href="support.html" class="nav-btn-primary">شات الدعم</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
       } else {
-        authBox.innerHTML = '<a href="dashboard.html" class="nav-btn-primary">لوحة الطالب (' + sanitizeText(user.fullName ? user.fullName.split(" ")[0] : "") + ')</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
+        authBox.innerHTML = '<a href="dashboard.html" class="nav-btn-primary">لوحة الطالب (' + sanitizeText(user.fullName.split(" ")[0]) + ')</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
       }
     } else {
       authBox.innerHTML = '<a href="login.html" class="nav-btn-link">تسجيل الدخول</a><a href="register.html" class="nav-btn-primary">حساب جديد</a>';
@@ -473,6 +385,7 @@ window.handleHeroEnroll = function() {
 };
 
 window.handleEnrollClick = handleEnrollClick;
+window.logout = logout;
 
 function injectChemicalPreloader() {
   if (document.getElementById("chemicalPreloader")) return;
@@ -548,6 +461,7 @@ function initGlobalRealtimeSync() {
       });
       window.FirebaseService.subscribeUsers();
       window.FirebaseService.subscribeSubmissions();
+      window.FirebaseService.subscribePayments();
     }
   }, 250);
 }
@@ -558,5 +472,5 @@ document.addEventListener("DOMContentLoaded", function() {
   updateNavbarAndAuthGuards();
   monitorCurrentUserStatus();
   initGlobalRealtimeSync();
-  initSupportChatRealtimeWatcher();
+  initRealtimeNotificationsReceiver();
 });

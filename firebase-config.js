@@ -34,6 +34,11 @@ function getFirebase() {
   return firebase;
 }
 
+// تهيئة فورية
+if (typeof firebase !== "undefined" && !firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+
 function formatYouTubeEmbedUrl(url) {
   if (!url) return "";
   url = url.trim();
@@ -246,16 +251,16 @@ window.FirebaseService = {
       await batch.commit();
 
       try {
-        const msgsSnap = await fb.firestore().collection("support_threads").doc(uid).collection("messages").get();
-        const mBatch = fb.firestore().batch();
-        msgsSnap.forEach(mDoc => mBatch.delete(mDoc.ref));
-        mBatch.delete(fb.firestore().collection("support_threads").doc(uid));
-        await mBatch.commit();
+        const chatMsgs = await fb.firestore().collection("support_threads").doc(uid).collection("messages").get();
+        const chatBatch = fb.firestore().batch();
+        chatMsgs.forEach(d => chatBatch.delete(d.ref));
+        chatBatch.delete(fb.firestore().collection("support_threads").doc(uid));
+        await chatBatch.commit();
       } catch (e) {}
     }
   },
 
-  // 3. الكورسات
+  // 3. الكورسات وقراءة المناهج
   subscribeCourses(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -349,7 +354,7 @@ window.FirebaseService = {
     }
   },
 
-  // 5. المدفوعات
+  // 5. المدفوعات وتفعيل الكورسات
   subscribePayments(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -427,7 +432,7 @@ window.FirebaseService = {
   subscribeNotifications(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
-      return fb.firestore().collection("notifications").orderBy("createdAt", "desc").limit(20).onSnapshot(snap => {
+      return fb.firestore().collection("notifications").orderBy("createdAt", "desc").limit(25).onSnapshot(snap => {
         const list = [];
         snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
         if (callback) callback(list);
@@ -441,7 +446,7 @@ window.FirebaseService = {
       await fb.firestore().collection("notifications").add({
         title: title,
         body: body,
-        targetUid: String(targetUid || "ALL"),
+        targetUid: targetUid || "ALL",
         targetUrl: targetUrl || "support.html",
         senderEmail: (senderEmail || "").toLowerCase().trim(),
         createdAt: new Date().toISOString()
@@ -449,30 +454,17 @@ window.FirebaseService = {
     }
   },
 
-  // 7. منظومة الدعم المباشر (Subcollection Architecture)
+  // 7. الدعم الفني
   subscribeStudentChat(studentUid, callback) {
     const fb = getFirebase();
-    const key = String(studentUid);
-
     if (fb && fb.firestore && studentUid) {
-      return fb.firestore().collection("support_threads").doc(key).collection("messages")
+      return fb.firestore().collection("support_threads").doc(studentUid).collection("messages")
         .orderBy("createdAt", "asc")
         .onSnapshot(snap => {
           const list = [];
-          snap.forEach(doc => {
-            list.push({ id: doc.id, ...doc.data() });
-          });
-          localStorage.setItem("edu_chat_" + key, JSON.stringify(list));
+          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
           if (callback) callback(list);
-        }, err => {
-          console.error("Student Chat Error:", err);
-          const local = JSON.parse(localStorage.getItem("edu_chat_" + key) || "[]");
-          if (callback) callback(local);
         });
-    } else {
-      const local = JSON.parse(localStorage.getItem("edu_chat_" + key) || "[]");
-      if (callback) callback(local);
-      return () => {};
     }
   },
 
@@ -480,71 +472,48 @@ window.FirebaseService = {
     const fb = getFirebase();
     if (fb && fb.firestore) {
       return fb.firestore().collection("support_threads")
+        .orderBy("lastMessageTime", "desc")
         .onSnapshot(snap => {
           const list = [];
-          snap.forEach(doc => {
-            const d = doc.data();
-            if (d && d.studentUid) {
-              list.push({ id: doc.id, ...d });
-            }
-          });
-          list.sort((a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime());
+          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
           if (callback) callback(list);
-        }, err => {
-          console.error("All Threads Error:", err);
         });
     }
   },
 
   async sendSupportMessage(msgData) {
     const fb = getFirebase();
-    const targetUid = String(msgData.studentUid);
-    const now = new Date().toISOString();
-
-    const localKey = "edu_chat_" + targetUid;
-    const localMsgs = JSON.parse(localStorage.getItem(localKey) || "[]");
-    localMsgs.push(msgData);
-    localStorage.setItem(localKey, JSON.stringify(localMsgs));
-
     if (fb && fb.firestore) {
-      // 1. إضافة الرسالة في Subcollection الخاص بالطالب
-      await fb.firestore().collection("support_threads").doc(targetUid).collection("messages").add({
-        text: msgData.text,
-        senderUid: String(msgData.senderUid),
-        senderName: msgData.senderName || "مستخدم",
-        senderRole: msgData.senderRole || "STUDENT",
-        senderEmail: msgData.senderEmail || "",
-        createdAt: now
-      });
+      const studentUid = msgData.studentUid;
+      const now = new Date().toISOString();
 
-      // 2. تحديث وثيقة الثريد الرئيسية
-      const isStaff = msgData.senderRole === "SUPER_ADMIN" || msgData.senderRole === "ADMIN" || msgData.senderRole === "SUPPORT";
-      
-      await fb.firestore().collection("support_threads").doc(targetUid).set({
-        studentUid: targetUid,
+      const messageDoc = {
+        text: msgData.text,
+        senderUid: msgData.senderUid,
+        senderName: msgData.senderName,
+        senderRole: msgData.senderRole || "STUDENT",
+        createdAt: now
+      };
+
+      await fb.firestore().collection("support_threads").doc(studentUid).collection("messages").add(messageDoc);
+
+      const threadUpdate = {
+        studentUid: studentUid,
         studentName: msgData.studentName || "طالب",
         studentPhone: msgData.studentPhone || "",
         studentEmail: msgData.studentEmail || "",
         lastMessage: msgData.text,
         lastMessageTime: now,
-        lastSenderRole: msgData.senderRole || "STUDENT",
-        unreadCount: isStaff ? 0 : firebase.firestore.FieldValue.increment(1)
-      }, { merge: true });
-    }
-  },
+        lastSenderRole: msgData.senderRole || "STUDENT"
+      };
 
-  async deleteSupportThread(studentUid, studentName) {
-    const fb = getFirebase();
-    const targetKey = String(studentUid);
+      if (msgData.senderRole === "STUDENT") {
+        threadUpdate.unreadCount = firebase.firestore.FieldValue.increment(1);
+      } else {
+        threadUpdate.unreadCount = 0;
+      }
 
-    localStorage.removeItem("edu_chat_" + targetKey);
-
-    if (fb && fb.firestore) {
-      const msgsSnap = await fb.firestore().collection("support_threads").doc(targetKey).collection("messages").get();
-      const batch = fb.firestore().batch();
-      msgsSnap.forEach(d => batch.delete(d.ref));
-      batch.delete(fb.firestore().collection("support_threads").doc(targetKey));
-      await batch.commit();
+      await fb.firestore().collection("support_threads").doc(studentUid).set(threadUpdate, { merge: true });
     }
   }
 };
