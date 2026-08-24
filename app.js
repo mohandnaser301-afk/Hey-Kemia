@@ -9,7 +9,6 @@ function sanitizeText(str) {
   return temp.innerHTML;
 }
 
-// نافذة تأكيد مخصصة (Custom Modal)
 function customConfirm(message, title, confirmText, cancelText) {
   title = title || "تأكيد الإجراء";
   confirmText = confirmText || "تأكيد";
@@ -47,7 +46,6 @@ function customConfirm(message, title, confirmText, cancelText) {
 }
 window.customConfirm = customConfirm;
 
-// فحص اشتراك الطالب في كورس معين بدقة تامة
 function isStudentEnrolledInCourse(user, courseId) {
   if (!user || !user.enrolledCourses) return false;
   var targetId = String(courseId);
@@ -55,7 +53,16 @@ function isStudentEnrolledInCourse(user, courseId) {
 }
 window.isStudentEnrolledInCourse = isStudentEnrolledInCourse;
 
-// المحرك الحسابي الموحد لإحصائيات الطالب المعتمد على UID
+function getCurrentUser() {
+  try {
+    var data = localStorage.getItem("current_user") || localStorage.getItem("edu_currentUser");
+    return data ? JSON.parse(data) : null;
+  } catch (e) {
+    return null;
+  }
+}
+window.getCurrentUser = getCurrentUser;
+
 function calculateStudentMetrics(userUid) {
   if (!userUid) return { enrolledCount: 0, completedExams: 0, avgScore: 0, totalHours: 0, enrolledList: [] };
 
@@ -80,7 +87,7 @@ function calculateStudentMetrics(userUid) {
   Object.keys(tracking).forEach(cId => {
     if (tracking[cId] && tracking[cId][userUid]) {
       totalSec += tracking[cId][userUid].totalSeconds || 0;
-    } else if (targetUser && tracking[cId] && tracking[cId][targetUser.email]) {
+    } else if (targetUser && tracking[cId][targetUser.email]) {
       totalSec += tracking[cId][targetUser.email].totalSeconds || 0;
     }
   });
@@ -97,7 +104,6 @@ function calculateStudentMetrics(userUid) {
 }
 window.calculateStudentMetrics = calculateStudentMetrics;
 
-// المراقبة اللحظية لوثيقة المستخدم
 function monitorCurrentUserStatus() {
   var user = getCurrentUser();
   if (!user || !user.uid) return;
@@ -119,13 +125,14 @@ function monitorCurrentUserStatus() {
 
             if (roleChanged || coursesChanged) {
               localStorage.setItem("current_user", JSON.stringify(liveDoc));
+              localStorage.setItem("edu_currentUser", JSON.stringify(liveDoc));
               user = liveDoc;
 
               if (roleChanged) {
                 showToast("تم تحديث رتبتك الإدارية إلى: " + liveDoc.role, "info", "تحديث الصلاحيات");
                 setTimeout(function() { window.location.reload(); }, 600);
               } else if (coursesChanged) {
-                showToast("تم تفعيل الكورس بنجاح في حسابك! يمكنك المشاهدة الآن.", "success", "تفعيل المحتوى");
+                showToast("تم تفعيل الكورس بنجاح في حسابك!", "success", "تفعيل المحتوى");
                 if (typeof renderStudentDashboard === "function") renderStudentDashboard();
                 if (typeof renderCoursesSection === "function") {
                   var allCourses = JSON.parse(localStorage.getItem("edu_courses")) || [];
@@ -144,14 +151,14 @@ function monitorCurrentUserStatus() {
 
 function forceLogoutUser() {
   localStorage.removeItem("current_user");
+  localStorage.removeItem("edu_currentUser");
   if (window.firebase && firebase.auth) {
     try { firebase.auth().signOut(); } catch(e) {}
   }
-  showToast("تم إنهاء الجلسة أو حذف الحساب من قِبل الإدارة.", "error", "تنبيه");
+  showToast("تم إنهاء الجلسة أو حذف الحساب.", "error", "تنبيه");
   setTimeout(function() { window.location.replace("login.html"); }, 400);
 }
 
-// الإشعارات
 var swRegistration = null;
 function registerDeviceServiceWorker() {
   if ("serviceWorker" in navigator) {
@@ -261,16 +268,12 @@ function logAdminAction(actionType, details) {
   localStorage.setItem("edu_activity_logs", JSON.stringify(logs));
 }
 
-function getCurrentUser() {
-  var data = localStorage.getItem("current_user");
-  return data ? JSON.parse(data) : null;
-}
-
 function logout() {
   if (window.FirebaseService) {
     window.FirebaseService.logoutUser();
   } else {
     localStorage.removeItem("current_user");
+    localStorage.removeItem("edu_currentUser");
     window.location.href = "login.html";
   }
 }
@@ -359,6 +362,7 @@ async function handleEnrollClick(courseId) {
 
     user.enrolledCourses = newEnrolled;
     localStorage.setItem("current_user", JSON.stringify(user));
+    localStorage.setItem("edu_currentUser", JSON.stringify(user));
     showToast("تم تفعيل الكورس في حسابك بنجاح", "success");
     setTimeout(function() { window.location.href = "course-view.html?id=" + courseId; }, 800);
     return;
@@ -383,7 +387,6 @@ window.handleHeroEnroll = function() {
 window.handleEnrollClick = handleEnrollClick;
 window.logout = logout;
 
-// شاشة اللودينج الكيميائية - مدة ممتدة مع عبارات كيميائية ديناميكية واقعية
 function injectChemicalPreloader() {
   if (document.getElementById("chemicalPreloader")) return;
   var preloader = document.createElement("div");
@@ -417,7 +420,7 @@ function injectChemicalPreloader() {
   ];
 
   var startTime = Date.now();
-  var duration = 2800; // تم تمديدها إلى 2.8 ثانية لتكون واضحة وفخمة
+  var duration = 2600;
   var barFill = document.getElementById("loaderBarFill");
   var counterNum = document.getElementById("loaderCounterNum");
   var phraseEl = document.getElementById("loaderDynamicPhrase");
@@ -429,7 +432,6 @@ function injectChemicalPreloader() {
     if (barFill) barFill.style.width = progress + "%";
     if (counterNum) counterNum.innerText = progress + "%";
 
-    // تغيير العبارات الكيميائية بشكل ذكي بحسب نسبة التحميل
     if (phraseEl) {
       if (progress < 25) phraseEl.innerText = phrases[0];
       else if (progress < 60) phraseEl.innerText = phrases[1];
@@ -442,7 +444,7 @@ function injectChemicalPreloader() {
       setTimeout(function() {
         preloader.classList.add("hide-preloader");
         setTimeout(function() { preloader.remove(); }, 500);
-      }, 150);
+      }, 120);
     }
   }, 30);
 }
