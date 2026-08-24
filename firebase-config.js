@@ -419,7 +419,7 @@ window.FirebaseService = {
     }
   },
 
-  // 6. الإشعارات السحابية
+  // 6. الإشعارات السحابية المحدثة
   subscribeNotifications(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -445,7 +445,7 @@ window.FirebaseService = {
     }
   },
 
-  // 7. الدعم الفني والشات
+  // 7. الدعم الفني المباشر
   subscribeStudentChat(studentUid, callback) {
     const fb = getFirebase();
     const key = String(studentUid);
@@ -516,10 +516,9 @@ window.FirebaseService = {
         messages: firebase.firestore.FieldValue.arrayUnion(msgData)
       }, { merge: true });
 
-      // إرسال تنبيه سحابي فوري
       const isStaff = msgData.senderRole === "SUPER_ADMIN" || msgData.senderRole === "ADMIN" || msgData.senderRole === "SUPPORT";
       const notifTargetUid = isStaff ? targetUid : "ALL";
-      const notifTitle = isStaff ? "رد جديد من الدعم الأكاديمي 🧪" : "سؤال جديد من: " + (msgData.studentName || "طالب");
+      const notifTitle = isStaff ? "رد جديد من الدعم الأكاديمي 🧪" : "استفسار جديد من: " + (msgData.studentName || "طالب");
 
       await this.pushNotificationToCloud(notifTitle, msgData.text, notifTargetUid, "support.html", msgData.studentEmail || "");
     }

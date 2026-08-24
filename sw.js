@@ -22,8 +22,8 @@ self.addEventListener("message", function(event) {
       badge: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=96&q=80",
       dir: "rtl",
       lang: "ar",
-      vibrate: [300, 100, 300, 100, 300],
-      tag: "hk-msg-" + Date.now(),
+      vibrate: [300, 150, 300, 150, 300],
+      tag: "hk-chat-alert",
       renotify: true,
       requireInteraction: true,
       data: {
