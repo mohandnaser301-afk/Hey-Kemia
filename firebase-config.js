@@ -423,7 +423,7 @@ window.FirebaseService = {
   subscribeNotifications(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
-      return fb.firestore().collection("notifications").orderBy("createdAt", "desc").limit(25).onSnapshot(snap => {
+      return fb.firestore().collection("notifications").orderBy("createdAt", "desc").limit(20).onSnapshot(snap => {
         const list = [];
         snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
         if (callback) callback(list);
@@ -437,7 +437,7 @@ window.FirebaseService = {
       await fb.firestore().collection("notifications").add({
         title: title,
         body: body,
-        targetUid: targetUid || "ALL",
+        targetUid: String(targetUid || "ALL"),
         targetUrl: targetUrl || "support.html",
         senderEmail: (senderEmail || "").toLowerCase().trim(),
         createdAt: new Date().toISOString()
@@ -445,7 +445,7 @@ window.FirebaseService = {
     }
   },
 
-  // 7. الدعم الفني والشات الموحد مع إرسال إشعارات التنبيه
+  // 7. الدعم الفني والشات
   subscribeStudentChat(studentUid, callback) {
     const fb = getFirebase();
     const key = String(studentUid);
@@ -516,12 +516,12 @@ window.FirebaseService = {
         messages: firebase.firestore.FieldValue.arrayUnion(msgData)
       }, { merge: true });
 
-      // دفع إشعار تلقائي للطرف المستلم (إذا كان الدعم يرد على الطالب أو العكس)
+      // إرسال تنبيه سحابي فوري
       const isStaff = msgData.senderRole === "SUPER_ADMIN" || msgData.senderRole === "ADMIN" || msgData.senderRole === "SUPPORT";
       const notifTargetUid = isStaff ? targetUid : "ALL";
-      const notifTitle = isStaff ? "رد جديد من الدعم الأكاديمي 🧪" : "استفسار جديد من: " + (msgData.studentName || "طالب");
+      const notifTitle = isStaff ? "رد جديد من الدعم الأكاديمي 🧪" : "سؤال جديد من: " + (msgData.studentName || "طالب");
 
-      this.pushNotificationToCloud(notifTitle, msgData.text, notifTargetUid, "support.html", msgData.studentEmail);
+      await this.pushNotificationToCloud(notifTitle, msgData.text, notifTargetUid, "support.html", msgData.studentEmail || "");
     }
   },
 
