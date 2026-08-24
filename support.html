@@ -6,21 +6,28 @@
   <title>شات الدعم والأسئلة - هي كيميا !</title>
   <link rel="stylesheet" href="style.css">
   <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
       background: #F0F4FC;
-      min-height: 100vh;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
 
     .support-chat-container {
       max-width: 1100px;
       width: 100%;
-      margin: 85px auto 20px;
+      margin: 75px auto 12px;
       padding: 0 16px;
       flex: 1;
       display: flex;
       flex-direction: column;
+      min-height: 0;
       box-sizing: border-box;
     }
 
@@ -32,8 +39,8 @@
       display: grid;
       grid-template-columns: 320px 1fr;
       flex: 1;
-      min-height: 560px;
-      max-height: calc(100vh - 125px);
+      height: 100%;
+      min-height: 0;
       overflow: hidden;
       position: relative;
     }
@@ -43,20 +50,22 @@
       border-left: 1px solid var(--border-subtle);
       display: flex;
       flex-direction: column;
-      overflow-y: auto;
+      height: 100%;
+      min-height: 0;
     }
 
     .threads-header {
-      padding: 16px;
+      padding: 14px 16px;
       border-bottom: 1px solid var(--border-subtle);
       background: #ffffff;
+      flex-shrink: 0;
     }
 
     .threads-header h3 {
       font-size: 15px;
       font-weight: 900;
       color: var(--royal-indigo-base);
-      margin-bottom: 8px;
+      margin: 0 0 8px;
     }
 
     .threads-search-input {
@@ -87,7 +96,6 @@
       justify-content: space-between;
       align-items: center;
       gap: 8px;
-      position: relative;
     }
 
     .thread-item-row:hover, .thread-item-row.active {
@@ -142,6 +150,7 @@
       display: flex;
       flex-direction: column;
       height: 100%;
+      min-height: 0;
       background: #ffffff;
       position: relative;
     }
@@ -154,6 +163,8 @@
       justify-content: space-between;
       align-items: center;
       border-bottom: 1px solid rgba(255,255,255,0.1);
+      flex-shrink: 0;
+      z-index: 2;
     }
 
     .chat-convo-header h3 {
@@ -216,16 +227,18 @@
 
     .messages-stream-box {
       flex: 1;
+      min-height: 0;
       padding: 20px 16px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
       gap: 12px;
       background: radial-gradient(circle at center, #FFFFFF 0%, #F8FAFC 100%);
+      scroll-behavior: smooth;
     }
 
     .chat-bubble {
-      max-width: 78%;
+      max-width: 76%;
       width: fit-content;
       padding: 10px 14px;
       border-radius: 14px;
@@ -277,6 +290,8 @@
       display: flex;
       gap: 10px;
       align-items: center;
+      flex-shrink: 0;
+      z-index: 2;
     }
 
     .chat-input-bar-form input {
@@ -328,9 +343,14 @@
     }
 
     @media (max-width: 768px) {
+      .support-chat-container {
+        margin-top: 65px;
+        margin-bottom: 6px;
+        padding: 0 8px;
+      }
+
       .support-chat-card {
         grid-template-columns: 1fr;
-        height: calc(100vh - 105px);
         border-radius: 14px;
       }
 
@@ -369,7 +389,7 @@
       <div class="support-threads-sidebar" id="supportThreadsSidebar" style="display:none;">
         <div class="threads-header">
           <h3>استفسارات الطلاب</h3>
-          <input type="text" id="threadsSearchInput" class="threads-search-input" placeholder="بحث باسم الطالب أو الهاتف..." oninput="filterThreadsList(this.value)">
+          <input type="text" id="threadsSearchInput" class="threads-search-input" placeholder="بحث باسم الطالب أو الهاتف...">
         </div>
         <div class="threads-list" id="supportThreadsListContainer"></div>
       </div>
@@ -383,8 +403,8 @@
           </div>
 
           <div class="chat-header-actions">
-            <button type="button" id="btnClearCurrentChat" class="btn-clear-chat-history" style="display:none;" onclick="deleteCurrentOpenChat()">مسح المحادثة 🗑️</button>
-            <button type="button" class="chat-back-btn" onclick="closeThreadOnMobile()">← المحادثات</button>
+            <button type="button" id="btnClearCurrentChat" class="btn-clear-chat-history" style="display:none;">مسح المحادثة</button>
+            <button type="button" id="btnBackToThreadsList" class="chat-back-btn">المحادثات</button>
           </div>
         </div>
 
@@ -394,7 +414,6 @@
           <input type="text" id="chatMessageInput" placeholder="اكتب سؤالك أو استفسارك هنا..." required autocomplete="off">
           <button type="submit" id="chatSendBtn">
             <span>إرسال</span>
-            <span>✉️</span>
           </button>
         </form>
       </div>
@@ -407,9 +426,19 @@
   <script>
     var currentSelectedStudentUid = null;
     var unsubscribeMessages = null;
-    var unsubscribeThreads = null;
     var cachedThreads = [];
-    var localRenderedMessages = [];
+
+    function getAppCurrentUser() {
+      if (typeof window.getCurrentUser === "function") {
+        return window.getCurrentUser();
+      }
+      try {
+        var raw = localStorage.getItem("current_user") || localStorage.getItem("edu_currentUser");
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) {
+        return null;
+      }
+    }
 
     function formatChatTime(dateStr) {
       if (!dateStr) return "";
@@ -424,13 +453,21 @@
       }
     }
 
+    function scrollToBottom() {
+      var box = document.getElementById("messagesStreamBox");
+      if (box) {
+        window.requestAnimationFrame(function() {
+          box.scrollTop = box.scrollHeight;
+        });
+      }
+    }
+
     function renderMessages(messages) {
-      localRenderedMessages = messages || [];
       var box = document.getElementById("messagesStreamBox");
       if (!box) return;
 
-      var currentUser = getCurrentUser();
-      var myUid = currentUser ? (currentUser.uid || currentUser.id) : "";
+      var currentUser = getAppCurrentUser();
+      var myUid = currentUser ? String(currentUser.uid || currentUser.id || "") : "";
       var isStaff = currentUser && (currentUser.role === "SUPER_ADMIN" || currentUser.role === "ADMIN" || currentUser.role === "SUPPORT");
 
       if (isStaff && !currentSelectedStudentUid) {
@@ -442,74 +479,75 @@
       toggleChatInputForm(true);
 
       if (!messages || messages.length === 0) {
-        box.innerHTML = '<div style="text-align:center; color:#64748B; font-size:13px; margin:auto;">أهلاً بك! اكتب سؤالك هنا وسيقوم الفريق بالرد عليك فوراً. 🧪</div>';
+        box.innerHTML = '<div style="text-align:center; color:#64748B; font-size:13px; margin:auto;">أهلاً بك! اكتب سؤالك هنا وسيقوم الفريق بالرد عليك فوراً.</div>';
         return;
       }
 
+      var sanitize = typeof window.sanitizeText === "function" ? window.sanitizeText : function(str) { return str || ""; };
+
       box.innerHTML = messages.map(function(m) {
-        var isMe = (myUid && m.senderUid === myUid) || (currentUser && currentUser.email && m.senderEmail && m.senderEmail.toLowerCase() === currentUser.email.toLowerCase());
+        var isMe = (myUid && String(m.senderUid) === myUid) || (currentUser && currentUser.email && m.senderEmail && m.senderEmail.toLowerCase() === currentUser.email.toLowerCase());
         var isSenderStaff = m.senderRole === "SUPER_ADMIN" || m.senderRole === "ADMIN" || m.senderRole === "SUPPORT";
         var bubbleClass = isMe ? "staff" : "student";
-        var senderLabel = isMe ? "أنت" : sanitizeText(m.senderName || (isSenderStaff ? "فريق أ/ محمد السعيد" : "الطالب"));
+        var senderLabel = isMe ? "أنت" : sanitize(m.senderName || (isSenderStaff ? "فريق أ/ محمد السعيد" : "الطالب"));
 
         return '<div class="chat-bubble ' + bubbleClass + '">' +
           '<div class="bubble-sender">' + senderLabel + '</div>' +
-          '<div>' + sanitizeText(m.text) + '</div>' +
+          '<div>' + sanitize(m.text) + '</div>' +
           '<span class="bubble-time">' + formatChatTime(m.createdAt) + '</span>' +
         '</div>';
       }).join("");
 
-      box.scrollTop = box.scrollHeight;
+      scrollToBottom();
     }
 
-    // قناة الاستماع المباشرة لرسائل الطالب المحددة
-    function subscribeToStudentChatRealtime(studentUid) {
+    function listenToChat(targetStudentUid) {
       if (unsubscribeMessages) {
         unsubscribeMessages();
         unsubscribeMessages = null;
       }
 
-      if (window.firebase && firebase.firestore) {
-        var db = firebase.firestore();
+      var studentKey = String(targetStudentUid);
 
-        // استماع فوري لكولكشن support_messages المباشر
+      if (window["FirebaseService"] && typeof window["FirebaseService"].subscribeStudentChat === "function") {
+        unsubscribeMessages = window["FirebaseService"].subscribeStudentChat(studentKey, function(msgs) {
+          renderMessages(msgs);
+        });
+      } else if (window["firebase"] && window["firebase"].firestore) {
+        var db = window["firebase"].firestore();
         unsubscribeMessages = db.collection("support_messages")
-          .where("studentUid", "==", String(studentUid))
+          .where("studentUid", "==", studentKey)
           .onSnapshot(function(snap) {
             var list = [];
             snap.forEach(function(doc) {
               var data = doc.data();
-              data.id = doc.id;
-              list.push(data);
+              if (data) {
+                data.id = doc.id;
+                list.push(data);
+              }
             });
-
             list.sort(function(a, b) {
               return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
             });
-
-            // حفظ نسخة احتياطية محلية
-            localStorage.setItem("edu_chat_" + studentUid, JSON.stringify(list));
             renderMessages(list);
-          }, function(error) {
-            console.error("Firestore Listen Error:", error);
-            fallbackLocalChat(studentUid);
+          }, function() {
+            var fallback = JSON.parse(localStorage.getItem("edu_chat_" + studentKey) || "[]");
+            renderMessages(fallback);
           });
       } else {
-        fallbackLocalChat(studentUid);
+        var localMsgs = JSON.parse(localStorage.getItem("edu_chat_" + studentKey) || "[]");
+        renderMessages(localMsgs);
       }
-    }
-
-    function fallbackLocalChat(studentUid) {
-      var localMsgs = JSON.parse(localStorage.getItem("edu_chat_" + studentUid)) || [];
-      renderMessages(localMsgs);
     }
 
     function selectStudentThread(studentUid, studentName, studentPhone) {
       currentSelectedStudentUid = String(studentUid);
-      document.getElementById("chatTargetNameDisplay").innerText = studentName;
-      document.getElementById("chatTargetSubDisplay").innerText = studentPhone || "طالب مسجل";
+      var nameEl = document.getElementById("chatTargetNameDisplay");
+      var subEl = document.getElementById("chatTargetSubDisplay");
+      if (nameEl) nameEl.innerText = studentName;
+      if (subEl) subEl.innerText = studentPhone || "طالب مسجل";
 
-      var user = getCurrentUser();
+      var user = getAppCurrentUser();
       var isStaff = user && (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "SUPPORT");
       var clearBtn = document.getElementById("btnClearCurrentChat");
       if (clearBtn) clearBtn.style.display = isStaff ? "inline-flex" : "none";
@@ -525,7 +563,7 @@
         convo.classList.add("active-mobile");
       }
 
-      subscribeToStudentChatRealtime(studentUid);
+      listenToChat(currentSelectedStudentUid);
     }
 
     function closeThreadOnMobile() {
@@ -540,9 +578,9 @@
     function filterThreadsList(query) {
       var q = (query || "").trim().toLowerCase();
       var filtered = cachedThreads.filter(function(t) {
-        return (t.studentName && t.studentName.toLowerCase().includes(q)) || 
-               (t.studentPhone && t.studentPhone.includes(q)) || 
-               (t.lastMessage && t.lastMessage.toLowerCase().includes(q));
+        return (t.studentName && t.studentName.toLowerCase().indexOf(q) !== -1) || 
+               (t.studentPhone && t.studentPhone.indexOf(q) !== -1) || 
+               (t.lastMessage && t.lastMessage.toLowerCase().indexOf(q) !== -1);
       });
       renderThreadsDom(filtered);
     }
@@ -551,7 +589,7 @@
       var container = document.getElementById("supportThreadsListContainer");
       if (!container) return;
 
-      var user = getCurrentUser();
+      var user = getAppCurrentUser();
       var isStaff = user && (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "SUPPORT");
 
       if (!threads || threads.length === 0) {
@@ -562,19 +600,21 @@
         return;
       }
 
+      var sanitize = typeof window.sanitizeText === "function" ? window.sanitizeText : function(str) { return str || ""; };
+
       container.innerHTML = threads.map(function(t) {
         var unreadBadge = (t.unreadCount && t.unreadCount > 0) 
           ? '<span style="background:#ef4444; color:#fff; font-size:10px; font-weight:900; padding:2px 6px; border-radius:10px;">' + t.unreadCount + '</span>' 
           : '';
         var isActive = currentSelectedStudentUid === String(t.studentUid) ? "active" : "";
         var deleteIconHtml = isStaff 
-          ? '<button type="button" class="btn-delete-thread" title="حذف المحادثة" onclick="handleDeleteThreadClick(event, \'' + t.studentUid + '\')">🗑️</button>' 
+          ? '<button type="button" class="btn-delete-thread" data-uid="' + t.studentUid + '" data-name="' + sanitize(t.studentName) + '">🗑️</button>' 
           : '';
 
-        return '<div id="threadRow_' + t.studentUid + '" class="thread-item-row ' + isActive + '" onclick="selectStudentThread(\'' + t.studentUid + '\', \'' + sanitizeText(t.studentName) + '\', \'' + sanitizeText(t.studentPhone) + '\')">' +
+        return '<div id="threadRow_' + t.studentUid + '" class="thread-item-row ' + isActive + '" data-uid="' + t.studentUid + '" data-name="' + sanitize(t.studentName) + '" data-phone="' + sanitize(t.studentPhone) + '">' +
           '<div class="thread-info-box">' +
-            '<div class="thread-name-title">' + sanitizeText(t.studentName) + '</div>' +
-            '<div class="thread-preview-msg">' + sanitizeText(t.lastMessage || "بدء محادثة جديدة...") + '</div>' +
+            '<div class="thread-name-title">' + sanitize(t.studentName) + '</div>' +
+            '<div class="thread-preview-msg">' + sanitize(t.lastMessage || "بدء محادثة...") + '</div>' +
           '</div>' +
           '<div class="thread-actions-box">' +
             unreadBadge +
@@ -582,130 +622,89 @@
           '</div>' +
         '</div>';
       }).join("");
+
+      container.querySelectorAll(".thread-item-row").forEach(function(row) {
+        row.addEventListener("click", function() {
+          selectStudentThread(this.getAttribute("data-uid") || "", this.getAttribute("data-name") || "", this.getAttribute("data-phone") || "");
+        });
+      });
+
+      container.querySelectorAll(".btn-delete-thread").forEach(function(btn) {
+        btn.addEventListener("click", function(e) {
+          e.stopPropagation();
+          deleteThreadByUid(this.getAttribute("data-uid") || "", this.getAttribute("data-name") || "");
+        });
+      });
     }
 
-    function handleDeleteThreadClick(e, studentUid) {
-      e.stopPropagation();
-      var target = cachedThreads.find(function(t) { return String(t.studentUid) === String(studentUid); });
-      var studentName = target ? target.studentName : "الطالب";
-      deleteThreadByUid(studentUid, studentName);
+    function triggerCustomConfirm(msg, title) {
+      if (typeof window.customConfirm === "function") {
+        return window.customConfirm(msg, title, "مسح نهائي", "إلغاء");
+      }
+      return Promise.resolve(window.confirm(msg));
     }
 
-    async function deleteThreadByUid(studentUid, studentName) {
-      var confirmed = await customConfirm("هل أنت متأكد من مسح محادثة الطالب (" + studentName + ") بالكامل؟ سيتم مسح الرسائل لدى الطرفين.", "مسح المحادثة", "مسح نهائي", "إلغاء");
-      if (!confirmed) return;
-
-      try {
-        if (window.firebase && firebase.firestore) {
-          var db = firebase.firestore();
-          var snap = await db.collection("support_messages").where("studentUid", "==", String(studentUid)).get();
-          
-          if (!snap.empty) {
-            var batch = db.batch();
-            snap.docs.forEach(function(doc) {
-              batch.delete(doc.ref);
-            });
-            await batch.commit();
-          }
-
-          await db.collection("support_threads").doc(String(studentUid)).delete();
-        }
-
-        localStorage.removeItem("edu_chat_" + studentUid);
-
-        if (currentSelectedStudentUid === String(studentUid)) {
-          currentSelectedStudentUid = null;
-          document.getElementById("chatTargetNameDisplay").innerText = "الدعم الفني والأكاديمي";
-          document.getElementById("chatTargetSubDisplay").innerText = "فريق الأستاذ محمد السعيد";
-          document.getElementById("btnClearCurrentChat").style.display = "none";
-          renderMessages([]);
-        }
-
-        showToast("تم مسح محادثة الطالب بنجاح", "success");
-      } catch (err) {
-        console.error("Delete Thread Error:", err);
-        showToast("حدث خطأ أثناء محاولة مسح المحادثة", "error");
+    function triggerToast(msg, type) {
+      if (typeof window.showToast === "function") {
+        window.showToast(msg, type);
+      } else {
+        window.alert(msg);
       }
     }
 
-    async function deleteCurrentOpenChat() {
+    function deleteThreadByUid(studentUid, studentName) {
+      var targetKey = String(studentUid);
+      triggerCustomConfirm("هل أنت متأكد من مسح محادثة الطالب (" + studentName + ") بالكامل؟ سيتم مسح الرسائل لدى الطرفين.", "مسح المحادثة").then(function(confirmed) {
+        if (!confirmed) return;
+
+        var deletePromise = Promise.resolve();
+
+        if (window["firebase"] && window["firebase"].firestore) {
+          var db = window["firebase"].firestore();
+          deletePromise = db.collection("support_messages").where("studentUid", "==", targetKey).get().then(function(snap) {
+            if (!snap.empty) {
+              var batch = db.batch();
+              snap.docs.forEach(function(doc) {
+                batch.delete(doc.ref);
+              });
+              return batch.commit();
+            }
+          }).then(function() {
+            return db.collection("support_threads").doc(targetKey).delete();
+          });
+        }
+
+        deletePromise.then(function() {
+          localStorage.removeItem("edu_chat_" + targetKey);
+
+          if (currentSelectedStudentUid === targetKey) {
+            currentSelectedStudentUid = null;
+            var nameEl = document.getElementById("chatTargetNameDisplay");
+            var subEl = document.getElementById("chatTargetSubDisplay");
+            if (nameEl) nameEl.innerText = "الدعم الفني والأكاديمي";
+            if (subEl) subEl.innerText = "فريق الأستاذ محمد السعيد";
+            var clearBtn = document.getElementById("btnClearCurrentChat");
+            if (clearBtn) clearBtn.style.display = "none";
+            renderMessages([]);
+          }
+
+          triggerToast("تم مسح محادثة الطالب بنجاح", "success");
+        }).catch(function(err) {
+          console.error("Delete Error:", err);
+          triggerToast("حدث خطأ أثناء محاولة مسح المحادثة", "error");
+        });
+      });
+    }
+
+    function deleteCurrentOpenChat() {
       if (!currentSelectedStudentUid) return;
-      var targetName = document.getElementById("chatTargetNameDisplay").innerText;
-      await deleteThreadByUid(currentSelectedStudentUid, targetName);
+      var nameEl = document.getElementById("chatTargetNameDisplay");
+      var targetName = nameEl ? nameEl.innerText : "الطالب";
+      deleteThreadByUid(currentSelectedStudentUid, targetName);
     }
-
-    // إرسال الرسالة
-    document.getElementById("chatSendMessageForm").addEventListener("submit", async function(e) {
-      e.preventDefault();
-      var input = document.getElementById("chatMessageInput");
-      var text = input.value.trim();
-      if (!text) return;
-
-      var user = getCurrentUser();
-      if (!user) {
-        showToast("يرجى تسجيل الدخول أولاً للمراسلة", "error");
-        return;
-      }
-
-      var userUid = String(user.uid || user.id);
-      var targetUid = currentSelectedStudentUid ? String(currentSelectedStudentUid) : userUid;
-      var nowTime = new Date().toISOString();
-
-      var msgData = {
-        studentUid: targetUid,
-        senderUid: userUid,
-        senderName: user.fullName || "مستخدم",
-        senderRole: user.role || "STUDENT",
-        studentName: (currentSelectedStudentUid && user.role !== "STUDENT") ? document.getElementById("chatTargetNameDisplay").innerText : (user.fullName || "طالب"),
-        studentPhone: user.studentPhone || user.phone || "",
-        studentEmail: user.email || "",
-        text: text,
-        createdAt: nowTime
-      };
-
-      input.value = "";
-
-      // تحديث فوري مباشر على الشاشة
-      var optimisticList = localRenderedMessages.slice();
-      optimisticList.push(msgData);
-      renderMessages(optimisticList);
-
-      // حفظ محلي مباشر
-      var localKey = "edu_chat_" + targetUid;
-      var currentLocal = JSON.parse(localStorage.getItem(localKey)) || [];
-      currentLocal.push(msgData);
-      localStorage.setItem(localKey, JSON.stringify(currentLocal));
-
-      try {
-        if (window.firebase && firebase.firestore) {
-          var db = firebase.firestore();
-          
-          await db.collection("support_messages").add(msgData);
-
-          var threadData = {
-            studentUid: targetUid,
-            studentName: msgData.studentName,
-            studentPhone: msgData.studentPhone,
-            lastMessage: text,
-            lastMessageTime: nowTime,
-            updatedAt: nowTime
-          };
-
-          if (user.role === "STUDENT") {
-            threadData.unreadCount = firebase.firestore.FieldValue.increment(1);
-          } else {
-            threadData.unreadCount = 0;
-          }
-
-          await db.collection("support_threads").doc(targetUid).set(threadData, { merge: true });
-        }
-      } catch (err) {
-        console.error("Send Error:", err);
-      }
-    });
 
     document.addEventListener("DOMContentLoaded", function() {
-      var user = getCurrentUser();
+      var user = getAppCurrentUser();
       if (!user) {
         window.location.href = "login.html";
         return;
@@ -714,50 +713,147 @@
       var isStaff = user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "SUPPORT";
       var sidebar = document.getElementById("supportThreadsSidebar");
 
+      var searchInput = document.getElementById("threadsSearchInput");
+      if (searchInput) {
+        searchInput.addEventListener("input", function() {
+          filterThreadsList(this.value);
+        });
+      }
+
+      var clearChatBtn = document.getElementById("btnClearCurrentChat");
+      if (clearChatBtn) {
+        clearChatBtn.addEventListener("click", deleteCurrentOpenChat);
+      }
+
+      var backBtn = document.getElementById("btnBackToThreadsList");
+      if (backBtn) {
+        backBtn.addEventListener("click", closeThreadOnMobile);
+      }
+
+      var chatForm = document.getElementById("chatSendMessageForm");
+      if (chatForm) {
+        chatForm.addEventListener("submit", function(e) {
+          e.preventDefault();
+          var input = document.getElementById("chatMessageInput");
+          var text = input ? input.value.trim() : "";
+          if (!text) return;
+
+          var currentUserData = getAppCurrentUser();
+          if (!currentUserData) {
+            triggerToast("يرجى تسجيل الدخول أولاً للمراسلة", "error");
+            return;
+          }
+
+          var userUid = String(currentUserData.uid || currentUserData.id || "");
+          var targetUid = currentSelectedStudentUid ? String(currentSelectedStudentUid) : userUid;
+          var nowTime = new Date().toISOString();
+
+          var nameDisplay = document.getElementById("chatTargetNameDisplay");
+
+          var msgData = {
+            studentUid: targetUid,
+            senderUid: userUid,
+            senderName: currentUserData.fullName || "مستخدم",
+            senderRole: currentUserData.role || "STUDENT",
+            studentName: (currentSelectedStudentUid && currentUserData.role !== "STUDENT") ? (nameDisplay ? nameDisplay.innerText : "طالب") : (currentUserData.fullName || "طالب"),
+            studentPhone: currentUserData.studentPhone || currentUserData.phone || "",
+            studentEmail: currentUserData.email || "",
+            text: text,
+            createdAt: nowTime
+          };
+
+          if (input) input.value = "";
+
+          if (window["FirebaseService"] && typeof window["FirebaseService"].sendSupportMessage === "function") {
+            window["FirebaseService"].sendSupportMessage(msgData).then(function() {
+              scrollToBottom();
+            });
+          } else if (window["firebase"] && window["firebase"].firestore) {
+            var db = window["firebase"].firestore();
+            db.collection("support_messages").add(msgData).then(function() {
+              return db.collection("support_threads").doc(targetUid).set({
+                studentUid: targetUid,
+                studentName: msgData.studentName,
+                studentPhone: msgData.studentPhone,
+                lastMessage: text,
+                lastMessageTime: nowTime,
+                updatedAt: nowTime,
+                unreadCount: (currentUserData.role === "STUDENT") ? window["firebase"].firestore.FieldValue.increment(1) : 0
+              }, { merge: true });
+            }).then(function() {
+              scrollToBottom();
+            }).catch(function(err) {
+              console.error("Send Error:", err);
+            });
+          } else {
+            var localKey = "edu_chat_" + targetUid;
+            var localMsgs = JSON.parse(localStorage.getItem(localKey) || "[]");
+            localMsgs.push(msgData);
+            localStorage.setItem(localKey, JSON.stringify(localMsgs));
+            renderMessages(localMsgs);
+            scrollToBottom();
+          }
+        });
+      }
+
       if (isStaff) {
         if (sidebar) sidebar.style.display = "flex";
         toggleChatInputForm(false);
         renderMessages([]);
 
-        var interval = setInterval(function() {
-          if (window.firebase && firebase.firestore) {
-            clearInterval(interval);
-            unsubscribeThreads = firebase.firestore().collection("support_threads")
-              .onSnapshot(function(snap) {
-                cachedThreads = [];
-                snap.forEach(function(doc) {
-                  var data = doc.data();
-                  if (data && data.studentUid) {
-                    data.id = doc.id;
-                    cachedThreads.push(data);
-                  }
-                });
-                cachedThreads.sort(function(a, b) {
-                  return new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime();
-                });
-                renderThreadsDom(cachedThreads);
+        var checkThreadsInterval = window.setInterval(function() {
+          if (window["FirebaseService"] && typeof window["FirebaseService"].subscribeAllSupportThreads === "function") {
+            window.clearInterval(checkThreadsInterval);
+            window["FirebaseService"].subscribeAllSupportThreads(function(threads) {
+              cachedThreads = threads || [];
+              renderThreadsDom(cachedThreads);
 
-                if (!currentSelectedStudentUid && cachedThreads.length > 0) {
-                  selectStudentThread(cachedThreads[0].studentUid, cachedThreads[0].studentName, cachedThreads[0].studentPhone);
-                } else if (cachedThreads.length === 0) {
-                  currentSelectedStudentUid = null;
-                  renderMessages([]);
+              if (!currentSelectedStudentUid && cachedThreads.length > 0) {
+                selectStudentThread(cachedThreads[0].studentUid, cachedThreads[0].studentName, cachedThreads[0].studentPhone);
+              } else if (cachedThreads.length === 0) {
+                currentSelectedStudentUid = null;
+                renderMessages([]);
+              }
+            });
+          } else if (window["firebase"] && window["firebase"].firestore) {
+            window.clearInterval(checkThreadsInterval);
+            window["firebase"].firestore().collection("support_threads").onSnapshot(function(snap) {
+              cachedThreads = [];
+              snap.forEach(function(doc) {
+                var d = doc.data();
+                if (d && d.studentUid) {
+                  d.id = doc.id;
+                  cachedThreads.push(d);
                 }
               });
+              cachedThreads.sort(function(a, b) {
+                return new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime();
+              });
+              renderThreadsDom(cachedThreads);
+
+              if (!currentSelectedStudentUid && cachedThreads.length > 0) {
+                selectStudentThread(cachedThreads[0].studentUid, cachedThreads[0].studentName, cachedThreads[0].studentPhone);
+              } else if (cachedThreads.length === 0) {
+                currentSelectedStudentUid = null;
+                renderMessages([]);
+              }
+            });
           }
         }, 150);
       } else {
-        var userUid = String(user.uid || user.id);
+        var userUid = String(user.uid || user.id || "");
         currentSelectedStudentUid = userUid;
-        document.getElementById("chatTargetNameDisplay").innerText = "أ/ محمد السعيد والدعم الأكاديمي";
-        document.getElementById("chatTargetSubDisplay").innerText = "متصل الآن للمساعدة";
+        var nameDisplayEl = document.getElementById("chatTargetNameDisplay");
+        var subDisplayEl = document.getElementById("chatTargetSubDisplay");
+        if (nameDisplayEl) nameDisplayEl.innerText = "أ/ محمد السعيد والدعم الأكاديمي";
+        if (subDisplayEl) subDisplayEl.innerText = "متصل الآن للمساعدة";
 
         toggleChatInputForm(true);
 
-        var intervalStudent = setInterval(function() {
-          if (window.firebase && firebase.firestore) {
-            clearInterval(intervalStudent);
-            subscribeToStudentChatRealtime(userUid);
+        var checkChatInterval = window.setInterval(function() {
+          if (window["FirebaseService"] || (window["firebase"] && window["firebase"].firestore)) {
+            window.clearInterval(checkChatInterval);
+            listenToChat(userUid);
           }
         }, 150);
       }
