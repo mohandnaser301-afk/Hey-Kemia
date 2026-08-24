@@ -171,8 +171,8 @@ function playNotificationSound() {
     var osc = ctx.createOscillator();
     var gain = ctx.createGain();
     osc.type = "sine";
-    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1); // A5
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
     gain.gain.setValueAtTime(0.3, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
     osc.connect(gain);
@@ -184,7 +184,6 @@ function playNotificationSound() {
 
 function flashPageTitle(message) {
   var originalTitle = document.title;
-  var isFlashing = true;
   var count = 0;
   var interval = setInterval(function() {
     document.title = (count % 2 === 0) ? "🔔 " + message : originalTitle;
@@ -209,7 +208,7 @@ function registerDeviceServiceWorker() {
         swRegistration = reg;
       })
       .catch(function(err) {
-        console.log("SW Reg:", err);
+        console.log("SW Reg Error:", err);
       });
   }
 }
@@ -271,39 +270,45 @@ function triggerDeviceNativeNotification(title, body, targetUrl) {
 }
 window.triggerDeviceNativeNotification = triggerDeviceNativeNotification;
 
-function initRealtimeNotificationsReceiver() {
-  var lastKnownNotifId = localStorage.getItem("hk_last_received_notif_id") || "";
-  var isFirstLoad = true;
+// مراقبة الشات في الخلفية وإطلاق التنبيهات فوراً
+function initSupportChatRealtimeWatcher() {
+  var user = getCurrentUser();
+  if (!user) return;
 
-  var interval = setInterval(function() {
-    if (window.FirebaseService && typeof window.FirebaseService.subscribeNotifications === "function") {
-      clearInterval(interval);
-      window.FirebaseService.subscribeNotifications(function(notifs) {
-        if (!notifs || notifs.length === 0) return;
-        var user = getCurrentUser();
+  var userUid = String(user.uid || user.id || "");
+  var isStaff = user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "SUPPORT";
+  var lastSeenMsgTime = localStorage.getItem("hk_last_seen_chat_time") || new Date().toISOString();
 
-        if (isFirstLoad) {
-          isFirstLoad = false;
-          if (notifs[0]) localStorage.setItem("hk_last_received_notif_id", notifs[0].id);
-          return;
-        }
+  var timer = setInterval(function() {
+    if (window.firebase && firebase.firestore) {
+      clearInterval(timer);
+      var db = firebase.firestore();
 
-        var latest = notifs[0];
-        if (latest && latest.id !== lastKnownNotifId) {
-          lastKnownNotifId = latest.id;
-          localStorage.setItem("hk_last_received_notif_id", latest.id);
-
-          if (user && latest.senderEmail && user.email && user.email.toLowerCase() === latest.senderEmail.toLowerCase()) return;
-
-          var userUid = user ? String(user.uid || user.id || "") : "";
-          var isStaff = user && (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "SUPPORT");
-
-          if ((latest.targetUid === "ALL" && isStaff) || (userUid && String(latest.targetUid) === userUid)) {
-            triggerDeviceNativeNotification(latest.title, latest.body, latest.targetUrl);
-            showToast(latest.body, "info", latest.title);
+      if (isStaff) {
+        db.collection("support_threads").onSnapshot(function(snap) {
+          snap.docChanges().forEach(function(change) {
+            if (change.type === "added" || change.type === "modified") {
+              var data = change.doc.data();
+              if (data && data.lastSenderRole === "STUDENT" && data.lastMessageTime > lastSeenMsgTime) {
+                lastSeenMsgTime = data.lastMessageTime;
+                localStorage.setItem("hk_last_seen_chat_time", lastSeenMsgTime);
+                triggerDeviceNativeNotification("سؤال جديد من " + (data.studentName || "طالب") + " 🧪", data.lastMessage || "استفسار جديد", "support.html");
+              }
+            }
+          });
+        });
+      } else {
+        db.collection("support_threads").doc(userUid).onSnapshot(function(doc) {
+          if (doc.exists) {
+            var data = doc.data();
+            if (data && data.lastSenderRole !== "STUDENT" && data.lastMessageTime > lastSeenMsgTime) {
+              lastSeenMsgTime = data.lastMessageTime;
+              localStorage.setItem("hk_last_seen_chat_time", lastSeenMsgTime);
+              triggerDeviceNativeNotification("رد جديد من أ/ محمد السعيد 🧪", data.lastMessage || "رسالة جديدة", "support.html");
+            }
           }
-        }
-      });
+        });
+      }
     }
   }, 250);
 }
@@ -363,6 +368,36 @@ window.logout = logout;
 
 function updateNavbarAndAuthGuards() {
   var user = getCurrentUser();
+  var currentPath = window.location.pathname.toLowerCase();
+
+  if (currentPath.includes("admin.html")) {
+    if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN")) {
+      window.location.replace("login.html");
+      return;
+    }
+  }
+
+  if (currentPath.includes("dashboard.html")) {
+    if (!user) { window.location.replace("login.html"); return; }
+    if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") { window.location.replace("admin.html"); return; }
+    if (user.role === "SUPPORT") { window.location.replace("support.html"); return; }
+  }
+
+  if (currentPath.includes("course-view.html") || currentPath.includes("exam.html")) {
+    if (!user) { window.location.replace("login.html"); return; }
+  }
+
+  if (user && (currentPath.includes("login.html") || currentPath.includes("register.html"))) {
+    if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") {
+      window.location.replace("admin.html");
+    } else if (user.role === "SUPPORT") {
+      window.location.replace("support.html");
+    } else {
+      window.location.replace("dashboard.html");
+    }
+    return;
+  }
+
   var authBox = document.getElementById("navAuthBox");
   if (authBox) {
     if (user) {
@@ -523,5 +558,5 @@ document.addEventListener("DOMContentLoaded", function() {
   updateNavbarAndAuthGuards();
   monitorCurrentUserStatus();
   initGlobalRealtimeSync();
-  initRealtimeNotificationsReceiver();
+  initSupportChatRealtimeWatcher();
 });
