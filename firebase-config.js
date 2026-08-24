@@ -34,11 +34,6 @@ function getFirebase() {
   return firebase;
 }
 
-// تهيئة فورية
-if (typeof firebase !== "undefined" && !firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
-
 function formatYouTubeEmbedUrl(url) {
   if (!url) return "";
   url = url.trim();
@@ -260,7 +255,7 @@ window.FirebaseService = {
     }
   },
 
-  // 3. الكورسات وقراءة المناهج
+  // 3. الكورسات
   subscribeCourses(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -447,7 +442,7 @@ window.FirebaseService = {
         title: title,
         body: body,
         targetUid: targetUid || "ALL",
-        targetUrl: targetUrl || "support.html",
+        targetUrl: targetUrl || "dashboard.html",
         senderEmail: (senderEmail || "").toLowerCase().trim(),
         createdAt: new Date().toISOString()
       });

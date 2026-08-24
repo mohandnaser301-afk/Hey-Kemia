@@ -461,7 +461,6 @@ function initGlobalRealtimeSync() {
       });
       window.FirebaseService.subscribeUsers();
       window.FirebaseService.subscribeSubmissions();
-      window.FirebaseService.subscribePayments();
     }
   }, 250);
 }
