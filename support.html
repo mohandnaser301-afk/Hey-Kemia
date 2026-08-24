@@ -407,7 +407,9 @@
   <script>
     var currentSelectedStudentUid = null;
     var unsubscribeMessages = null;
+    var unsubscribeThreadInfo = null;
     var cachedThreads = [];
+    var localRenderedMessages = [];
 
     function formatChatTime(dateStr) {
       if (!dateStr) return "";
@@ -423,6 +425,7 @@
     }
 
     function renderMessages(messages) {
+      localRenderedMessages = messages || [];
       var box = document.getElementById("messagesStreamBox");
       if (!box) return;
 
@@ -464,15 +467,64 @@
         unsubscribeMessages();
         unsubscribeMessages = null;
       }
+      if (unsubscribeThreadInfo) {
+        unsubscribeThreadInfo();
+        unsubscribeThreadInfo = null;
+      }
 
-      if (window.FirebaseService && typeof window.FirebaseService.subscribeStudentChat === "function") {
-        unsubscribeMessages = window.FirebaseService.subscribeStudentChat(studentUid, function(msgs) {
-          renderMessages(msgs);
+      if (window.firebase && firebase.firestore) {
+        var db = firebase.firestore();
+
+        // مراقبة وثيقة الثريد لمعرفة تاريخ التصفير clearedAt لحظياً عند الطرفين
+        unsubscribeThreadInfo = db.collection("support_threads").doc(studentUid).onSnapshot(function(threadDoc) {
+          var clearedTime = 0;
+          if (threadDoc.exists && threadDoc.data() && threadDoc.data().clearedAt) {
+            clearedTime = new Date(threadDoc.data().clearedAt).getTime() || 0;
+          }
+
+          // تنظيف اللوكال ستورج لو كان تم المسح
+          if (clearedTime > 0) {
+            var localMsgs = JSON.parse(localStorage.getItem("edu_chat_" + studentUid)) || [];
+            localMsgs = localMsgs.filter(function(m) {
+              return new Date(m.createdAt || 0).getTime() >= clearedTime;
+            });
+            localStorage.setItem("edu_chat_" + studentUid, JSON.stringify(localMsgs));
+          }
+
+          // الاستماع المباشر للرسائل
+          if (unsubscribeMessages) unsubscribeMessages();
+
+          unsubscribeMessages = db.collection("support_messages")
+            .where("studentUid", "==", studentUid)
+            .onSnapshot(function(snap) {
+              var list = [];
+              snap.forEach(function(doc) {
+                var data = doc.data();
+                data.id = doc.id;
+                var msgTime = new Date(data.createdAt || 0).getTime();
+                if (msgTime >= clearedTime) {
+                  list.push(data);
+                }
+              });
+
+              list.sort(function(a, b) {
+                return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+              });
+
+              renderMessages(list);
+            }, function(error) {
+              console.error("Chat listener error:", error);
+              fallbackLocalChat(studentUid);
+            });
         });
       } else {
-        var localMsgs = JSON.parse(localStorage.getItem("edu_chat_" + studentUid)) || [];
-        renderMessages(localMsgs);
+        fallbackLocalChat(studentUid);
       }
+    }
+
+    function fallbackLocalChat(studentUid) {
+      var localMsgs = JSON.parse(localStorage.getItem("edu_chat_" + studentUid)) || [];
+      renderMessages(localMsgs);
     }
 
     function selectStudentThread(studentUid, studentName, studentPhone) {
@@ -525,15 +577,20 @@
       var user = getCurrentUser();
       var isStaff = user && (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "SUPPORT");
 
-      if (!threads || threads.length === 0) {
-        container.innerHTML = '<div style="padding:20px; font-size:12.5px; color:#64748B; text-align:center;">لا توجد رسائل واردة حالياً.</div>';
+      // إظهار المحادثات التي تحتوي على رسائل حقيقية نشطة
+      var activeThreads = (threads || []).filter(function(t) {
+        return t && t.lastMessage && t.lastMessage !== "تم مسح المحادثة السابقة";
+      });
+
+      if (activeThreads.length === 0) {
+        container.innerHTML = '<div style="padding:20px; font-size:12.5px; color:#64748B; text-align:center;">لا توجد استفسارات جديدة حالياً.</div>';
         if (isStaff && !currentSelectedStudentUid) {
           renderMessages([]);
         }
         return;
       }
 
-      container.innerHTML = threads.map(function(t) {
+      container.innerHTML = activeThreads.map(function(t) {
         var unreadBadge = (t.unreadCount && t.unreadCount > 0) 
           ? '<span style="background:#ef4444; color:#fff; font-size:10px; font-weight:900; padding:2px 6px; border-radius:10px;">' + t.unreadCount + '</span>' 
           : '';
@@ -562,22 +619,39 @@
       deleteThreadByUid(studentUid, studentName);
     }
 
+    // دالة حذف الشات وتصفيره مع الحفاظ على قدرة الطالب على إرسال رسائل جديدة فوراً
     async function deleteThreadByUid(studentUid, studentName) {
-      var confirmed = await customConfirm("هل أنت متأكد من مسح محادثة الطالب (" + studentName + ") بالكامل؟ سيتم تصفير الرسائل لدى الطرفين.", "مسح المحادثة", "مسح نهائي", "إلغاء");
+      var confirmed = await customConfirm("هل أنت متأكد من مسح محادثة الطالب (" + studentName + ") بالكامل؟ سيتم مسحها عند الطالب والإدارة فوراً.", "مسح المحادثة", "مسح نهائي", "إلغاء");
       if (!confirmed) return;
+
+      var currentTimestamp = new Date().toISOString();
 
       try {
         if (window.firebase && firebase.firestore) {
           var db = firebase.firestore();
+          
+          // 1. حذف جميع الرسائل السابقة الفعلية
           var msgsSnap = await db.collection("support_messages").where("studentUid", "==", studentUid).get();
-          var batch = db.batch();
-          msgsSnap.forEach(function(doc) {
-            batch.delete(doc.ref);
-          });
-          batch.delete(db.collection("support_threads").doc(studentUid));
-          await batch.commit();
+          if (!msgsSnap.empty) {
+            var batch = db.batch();
+            msgsSnap.forEach(function(doc) {
+              batch.delete(doc.ref);
+            });
+            await batch.commit();
+          }
+
+          // 2. تحديث وثيقة المحادثة بتوقيت التصفير وتصفير العداد دون حذف الوثيقة لكي لا يتعطل الطالب
+          await db.collection("support_threads").doc(studentUid).set({
+            studentUid: studentUid,
+            studentName: studentName,
+            lastMessage: "تم مسح المحادثة السابقة",
+            lastMessageTime: currentTimestamp,
+            clearedAt: currentTimestamp,
+            unreadCount: 0
+          }, { merge: true });
         }
 
+        // 3. مسح الكاش المحلي
         localStorage.removeItem("edu_chat_" + studentUid);
 
         if (currentSelectedStudentUid === studentUid) {
@@ -588,7 +662,7 @@
           renderMessages([]);
         }
 
-        showToast("تم مسح محادثة الطالب بنجاح", "success");
+        showToast("تم مسح المحادثة لدى الطرفين بنجاح", "success");
       } catch (err) {
         console.error("Delete Thread Error:", err);
         showToast("حدث خطأ أثناء محاولة مسح المحادثة", "error");
@@ -601,6 +675,7 @@
       await deleteThreadByUid(currentSelectedStudentUid, targetName);
     }
 
+    // إرسال الرسالة
     document.getElementById("chatSendMessageForm").addEventListener("submit", async function(e) {
       e.preventDefault();
       var input = document.getElementById("chatMessageInput");
@@ -631,14 +706,44 @@
 
       input.value = "";
 
-      if (window.FirebaseService && typeof window.FirebaseService.sendSupportMessage === "function") {
-        await window.FirebaseService.sendSupportMessage(msgData);
-      } else {
-        var key = "edu_chat_" + targetUid;
-        var list = JSON.parse(localStorage.getItem(key)) || [];
-        list.push(msgData);
-        localStorage.setItem(key, JSON.stringify(list));
-        renderMessages(list);
+      // إضافة الرسالة في المتصفح فورياً
+      var optimisticList = localRenderedMessages.slice();
+      optimisticList.push(msgData);
+      renderMessages(optimisticList);
+
+      try {
+        if (window.firebase && firebase.firestore) {
+          var db = firebase.firestore();
+          
+          // حفظ الرسالة في الكولكشن الأساسي
+          await db.collection("support_messages").add(msgData);
+
+          // تحديث ثريد المحادثة
+          var threadData = {
+            studentUid: targetUid,
+            studentName: msgData.studentName,
+            studentPhone: msgData.studentPhone,
+            lastMessage: text,
+            lastMessageTime: nowTime,
+            updatedAt: nowTime
+          };
+
+          if (user.role === "STUDENT") {
+            threadData.unreadCount = firebase.firestore.FieldValue.increment(1);
+          } else {
+            threadData.unreadCount = 0;
+          }
+
+          await db.collection("support_threads").doc(targetUid).set(threadData, { merge: true });
+        } else {
+          var key = "edu_chat_" + targetUid;
+          var list = JSON.parse(localStorage.getItem(key)) || [];
+          list.push(msgData);
+          localStorage.setItem(key, JSON.stringify(list));
+        }
+      } catch (err) {
+        console.error("Error sending message:", err);
+        showToast("فشل إرسال الرسالة، يرجى المحاولة ثانية", "error");
       }
     });
 
@@ -657,22 +762,37 @@
         toggleChatInputForm(false);
         renderMessages([]);
 
-        var checkService = setInterval(function() {
-          if (window.FirebaseService && typeof window.FirebaseService.subscribeAllSupportThreads === "function") {
-            clearInterval(checkService);
-            window.FirebaseService.subscribeAllSupportThreads(function(threads) {
-              cachedThreads = threads || [];
-              renderThreadsDom(cachedThreads);
+        var interval = setInterval(function() {
+          if (window.firebase && firebase.firestore) {
+            clearInterval(interval);
+            firebase.firestore().collection("support_threads")
+              .onSnapshot(function(snap) {
+                cachedThreads = [];
+                snap.forEach(function(doc) {
+                  var data = doc.data();
+                  if (data && data.studentUid) {
+                    data.id = doc.id;
+                    cachedThreads.push(data);
+                  }
+                });
+                cachedThreads.sort(function(a, b) {
+                  return new Date(b.lastMessageTime || 0) - new Date(a.lastMessageTime || 0);
+                });
+                renderThreadsDom(cachedThreads);
 
-              if (!currentSelectedStudentUid && cachedThreads.length > 0) {
-                selectStudentThread(cachedThreads[0].studentUid, cachedThreads[0].studentName, cachedThreads[0].studentPhone);
-              } else if (cachedThreads.length === 0) {
-                currentSelectedStudentUid = null;
-                renderMessages([]);
-              }
-            });
+                var validActiveThreads = cachedThreads.filter(function(t) {
+                  return t.lastMessage && t.lastMessage !== "تم مسح المحادثة السابقة";
+                });
+
+                if (!currentSelectedStudentUid && validActiveThreads.length > 0) {
+                  selectStudentThread(validActiveThreads[0].studentUid, validActiveThreads[0].studentName, validActiveThreads[0].studentPhone);
+                } else if (validActiveThreads.length === 0) {
+                  currentSelectedStudentUid = null;
+                  renderMessages([]);
+                }
+              });
           }
-        }, 150);
+        }, 200);
       } else {
         var userUid = user.uid || user.id;
         currentSelectedStudentUid = userUid;
@@ -680,13 +800,7 @@
         document.getElementById("chatTargetSubDisplay").innerText = "متصل الآن للمساعدة";
 
         toggleChatInputForm(true);
-
-        var checkStudent = setInterval(function() {
-          if (window.FirebaseService && typeof window.FirebaseService.subscribeStudentChat === "function") {
-            clearInterval(checkStudent);
-            subscribeToStudentChatRealtime(userUid);
-          }
-        }, 150);
+        subscribeToStudentChatRealtime(userUid);
       }
     });
   </script>
