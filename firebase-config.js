@@ -345,7 +345,7 @@ window.FirebaseService = {
     }
   },
 
-  // 5. المدفوعات وتفعيل الكورسات
+  // 5. المدفوعات
   subscribePayments(callback) {
     const fb = getFirebase();
     if (fb && fb.firestore) {
@@ -438,14 +438,14 @@ window.FirebaseService = {
         title: title,
         body: body,
         targetUid: targetUid || "ALL",
-        targetUrl: targetUrl || "dashboard.html",
+        targetUrl: targetUrl || "support.html",
         senderEmail: (senderEmail || "").toLowerCase().trim(),
         createdAt: new Date().toISOString()
       });
     }
   },
 
-  // 7. الدعم الفني والشات الموحد
+  // 7. الدعم الفني والشات الموحد مع إرسال إشعارات التنبيه
   subscribeStudentChat(studentUid, callback) {
     const fb = getFirebase();
     const key = String(studentUid);
@@ -515,6 +515,13 @@ window.FirebaseService = {
         unreadCount: (msgData.senderRole === "STUDENT") ? firebase.firestore.FieldValue.increment(1) : 0,
         messages: firebase.firestore.FieldValue.arrayUnion(msgData)
       }, { merge: true });
+
+      // دفع إشعار تلقائي للطرف المستلم (إذا كان الدعم يرد على الطالب أو العكس)
+      const isStaff = msgData.senderRole === "SUPER_ADMIN" || msgData.senderRole === "ADMIN" || msgData.senderRole === "SUPPORT";
+      const notifTargetUid = isStaff ? targetUid : "ALL";
+      const notifTitle = isStaff ? "رد جديد من الدعم الأكاديمي 🧪" : "استفسار جديد من: " + (msgData.studentName || "طالب");
+
+      this.pushNotificationToCloud(notifTitle, msgData.text, notifTargetUid, "support.html", msgData.studentEmail);
     }
   },
 

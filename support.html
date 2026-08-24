@@ -192,7 +192,26 @@
     .chat-header-actions {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+    }
+
+    .btn-enable-notif {
+      background: rgba(0, 210, 255, 0.15);
+      border: 1px solid rgba(0, 210, 255, 0.4);
+      color: var(--cyan-accent);
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-enable-notif:hover {
+      background: var(--cyan-accent);
+      color: #0E1338;
     }
 
     .btn-clear-chat-history {
@@ -283,7 +302,7 @@
       text-align: left;
     }
 
-    /* بار الإدخال المثبت */
+    /* بار الإدخال المثبت في الأسفل */
     .chat-input-bar-form {
       padding: 10px 14px;
       border-top: 1px solid #EEF2F6;
@@ -346,7 +365,6 @@
       gap: 10px;
     }
 
-    /* تحسينات الموبايل */
     @media (max-width: 768px) {
       .support-chat-container {
         height: calc(100dvh - 65px);
@@ -428,6 +446,10 @@
           </div>
 
           <div class="chat-header-actions">
+            <button type="button" class="btn-enable-notif" onclick="requestNotificationPermission()" title="تفعيل التنبيهات">
+              <span>🔔</span>
+              <span>تفعيل الإشعارات</span>
+            </button>
             <button type="button" id="btnClearCurrentChat" class="btn-clear-chat-history" style="display:none;">مسح المحادثة</button>
             <button type="button" id="btnBackToThreadsList" class="chat-back-btn">المحادثات</button>
           </div>

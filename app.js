@@ -160,24 +160,60 @@ function forceLogoutUser() {
   setTimeout(function() { window.location.replace("login.html"); }, 400);
 }
 
+// -------------------------------------------------------------
+// إدارة الإشعارات السحابية الموثوقة للمتصفح والموبايل
+// -------------------------------------------------------------
 var swRegistration = null;
+
 function registerDeviceServiceWorker() {
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js")
-      .then(reg => { swRegistration = reg; })
-      .catch(err => console.log("SW Reg:", err));
+      .then(function(reg) {
+        swRegistration = reg;
+      })
+      .catch(function(err) {
+        console.log("SW Register Error:", err);
+      });
   }
 }
+window.registerDeviceServiceWorker = registerDeviceServiceWorker;
+
+// دالة طلب إذن الإشعارات بنقرة المستخدم الصريحة
+function requestNotificationPermission() {
+  if (!("Notification" in window)) {
+    showToast("متصفحك لا يدعم الإشعارات المباشرة", "info");
+    return Promise.resolve(false);
+  }
+
+  return Notification.requestPermission().then(function(perm) {
+    if (perm === "granted") {
+      showToast("تم تفعيل إشعارات الردود الفورية بنجاح 🔔", "success");
+      return true;
+    } else {
+      showToast("تم رفض إذن الإشعارات من إعدادات المتصفح", "error");
+      return false;
+    }
+  });
+}
+window.requestNotificationPermission = requestNotificationPermission;
 
 function triggerDeviceNativeNotification(title, body, targetUrl) {
   if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+  var url = targetUrl || "support.html";
 
   if (navigator.serviceWorker && navigator.serviceWorker.controller) {
     navigator.serviceWorker.controller.postMessage({
       type: "TRIGGER_NATIVE_NOTIFICATION",
       title: title,
       body: body,
-      url: targetUrl || "dashboard.html"
+      url: url
+    });
+  } else if (swRegistration && swRegistration.showNotification) {
+    swRegistration.showNotification(title, {
+      body: body,
+      icon: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=192&q=80",
+      data: { url: url }
     });
   } else {
     try {
@@ -187,18 +223,19 @@ function triggerDeviceNativeNotification(title, body, targetUrl) {
       });
       n.onclick = function() {
         window.focus();
-        window.location.href = targetUrl || "dashboard.html";
+        window.location.href = url;
       };
     } catch (e) {}
   }
 }
+window.triggerDeviceNativeNotification = triggerDeviceNativeNotification;
 
 function initRealtimeNotificationsReceiver() {
   var lastKnownNotifId = localStorage.getItem("hk_last_received_notif_id") || "";
   var isFirstLoad = true;
 
   var interval = setInterval(function() {
-    if (window.FirebaseService && window.firebase && firebase.firestore) {
+    if (window.FirebaseService && typeof window.FirebaseService.subscribeNotifications === "function") {
       clearInterval(interval);
       window.FirebaseService.subscribeNotifications(function(notifs) {
         if (!notifs || notifs.length === 0) return;
@@ -215,10 +252,12 @@ function initRealtimeNotificationsReceiver() {
           lastKnownNotifId = latest.id;
           localStorage.setItem("hk_last_received_notif_id", latest.id);
 
-          if (user && latest.senderEmail && user.email.toLowerCase() === latest.senderEmail) return;
+          if (user && latest.senderEmail && user.email && user.email.toLowerCase() === latest.senderEmail) return;
 
-          if (!user && latest.targetUid !== "ALL") return;
-          if (user && (latest.targetUid === "ALL" || latest.targetUid === user.uid)) {
+          var userUid = user ? String(user.uid || user.id || "") : "";
+          var isStaff = user && (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "SUPPORT");
+
+          if ((latest.targetUid === "ALL" && isStaff) || (userUid && String(latest.targetUid) === userUid)) {
             triggerDeviceNativeNotification(latest.title, latest.body, latest.targetUrl);
             showToast(latest.body, "info", latest.title);
           }
@@ -283,36 +322,6 @@ window.logout = logout;
 
 function updateNavbarAndAuthGuards() {
   var user = getCurrentUser();
-  var currentPath = window.location.pathname.toLowerCase();
-
-  if (currentPath.includes("admin.html")) {
-    if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN")) {
-      window.location.replace("login.html");
-      return;
-    }
-  }
-
-  if (currentPath.includes("dashboard.html")) {
-    if (!user) { window.location.replace("login.html"); return; }
-    if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") { window.location.replace("admin.html"); return; }
-    if (user.role === "SUPPORT") { window.location.replace("support.html"); return; }
-  }
-
-  if (currentPath.includes("course-view.html") || currentPath.includes("exam.html")) {
-    if (!user) { window.location.replace("login.html"); return; }
-  }
-
-  if (user && (currentPath.includes("login.html") || currentPath.includes("register.html"))) {
-    if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") {
-      window.location.replace("admin.html");
-    } else if (user.role === "SUPPORT") {
-      window.location.replace("support.html");
-    } else {
-      window.location.replace("dashboard.html");
-    }
-    return;
-  }
-
   var authBox = document.getElementById("navAuthBox");
   if (authBox) {
     if (user) {
@@ -353,7 +362,7 @@ async function handleEnrollClick(courseId) {
   var course = courses.find(function(c) { return String(c.id) === String(courseId); });
 
   if (course && (course.isFree || Number(course.price) === 0)) {
-    var confirmed = await customConfirm("هل تؤكد رغبتك في الاشتراك بالكورس المجاني: " + course.title + "؟", "تأكيد الاشتراك");
+    var confirmed = await customConfirm("هل تؤكد رغبتك في الاشتراك بالكورس المجاني: " + course.title + "؟", "تأكيد الاشتراك")[cite: 3];
     if (!confirmed) return;
 
     var newEnrolled = (user.enrolledCourses || []).map(String);
@@ -371,7 +380,7 @@ async function handleEnrollClick(courseId) {
     return;
   }
 
-  var proceed = await customConfirm("هل تريد الانتقال لصفحة تأكيد ودفع رسوم الكورس: " + (course ? course.title : "") + "؟", "الاشتراك بالكورس");
+  var proceed = await customConfirm("هل تريد الانتقال لصفحة تأكيد ودفع رسوم الكورس: " + (course ? course.title : "") + "؟", "الاشتراك بالكورس")[cite: 3];
   if (proceed) {
     window.location.href = "checkout.html?course=" + courseId;
   }
