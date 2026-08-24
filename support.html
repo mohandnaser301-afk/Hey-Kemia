@@ -323,7 +323,6 @@
       background: var(--royal-indigo-light);
     }
 
-    /* التجاوب للموبايل */
     @media (max-width: 768px) {
       .support-chat-card {
         grid-template-columns: 1fr;
@@ -349,7 +348,6 @@
 </head>
 <body>
 
-  <!-- النافبار العلوي -->
   <div class="navbar-capsule-wrapper">
     <nav class="navbar-capsule">
       <a href="index.html" class="capsule-brand">
@@ -381,7 +379,6 @@
           </div>
 
           <div class="chat-header-actions">
-            <!-- زر مسح المحادثة الحالية (يظهر للإدارة) -->
             <button type="button" id="btnClearCurrentChat" class="btn-clear-chat-history" style="display:none;" onclick="deleteCurrentOpenChat()">مسح المحادثة 🗑️</button>
             <button type="button" class="chat-back-btn" onclick="closeThreadOnMobile()">← المحادثات</button>
           </div>
@@ -414,7 +411,6 @@
       return d.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" });
     }
 
-    // عرض الرسائل
     function renderMessages(messages) {
       var box = document.getElementById("messagesStreamBox");
       if (!box) return;
@@ -442,7 +438,43 @@
       box.scrollTop = box.scrollHeight;
     }
 
-    // تحديد محادثة طالب
+    // استرجاع رسائل الشات مع تصفية الرسائل السابقة لتاريخ التصفير (clearedAt)
+    function subscribeToStudentChatRealtime(studentUid) {
+      if (unsubscribeMessages) unsubscribeMessages();
+
+      if (window.FirebaseService && window.firebase && firebase.firestore) {
+        var db = firebase.firestore();
+        
+        // التحقق من تاريخ التصفير إن وجد
+        db.collection("support_threads").doc(studentUid).get().then(function(threadDoc) {
+          var clearedAt = (threadDoc.exists && threadDoc.data().clearedAt) ? threadDoc.data().clearedAt : null;
+
+          unsubscribeMessages = db.collection("support_messages")
+            .where("studentUid", "==", studentUid)
+            .onSnapshot(function(snap) {
+              var list = [];
+              snap.forEach(function(doc) {
+                var data = doc.data();
+                data.id = doc.id;
+                // حجب أي رسالة قديمة سبقت عملية الحذف
+                if (!clearedAt || (data.createdAt && data.createdAt > clearedAt)) {
+                  list.push(data);
+                }
+              });
+
+              list.sort(function(a, b) {
+                return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+              });
+
+              renderMessages(list);
+            });
+        });
+      } else {
+        var localMsgs = JSON.parse(localStorage.getItem("edu_chat_" + studentUid)) || [];
+        renderMessages(localMsgs);
+      }
+    }
+
     function selectStudentThread(studentUid, studentName, studentPhone) {
       currentSelectedStudentUid = studentUid;
       document.getElementById("chatTargetNameDisplay").innerText = studentName;
@@ -464,16 +496,7 @@
         convo.classList.add("active-mobile");
       }
 
-      if (unsubscribeMessages) unsubscribeMessages();
-
-      if (window.FirebaseService) {
-        unsubscribeMessages = window.FirebaseService.subscribeStudentChat(studentUid, function(msgs) {
-          renderMessages(msgs);
-        });
-      } else {
-        var localMsgs = JSON.parse(localStorage.getItem("edu_chat_" + studentUid)) || [];
-        renderMessages(localMsgs);
-      }
+      subscribeToStudentChatRealtime(studentUid);
     }
 
     function closeThreadOnMobile() {
@@ -519,7 +542,7 @@
         return '<div id="threadRow_' + t.studentUid + '" class="thread-item-row ' + isActive + '" onclick="selectStudentThread(\'' + t.studentUid + '\', \'' + sanitizeText(t.studentName) + '\', \'' + sanitizeText(t.studentPhone) + '\')">' +
           '<div class="thread-info-box">' +
             '<div class="thread-name-title">' + sanitizeText(t.studentName) + '</div>' +
-            '<div class="thread-preview-msg">' + sanitizeText(t.lastMessage || "بدء محادثة...") + '</div>' +
+            '<div class="thread-preview-msg">' + sanitizeText(t.lastMessage || "بدء محادثة جديدة...") + '</div>' +
           '</div>' +
           '<div class="thread-actions-box">' +
             unreadBadge +
@@ -529,46 +552,63 @@
       }).join("");
     }
 
-    // دالة حذف محادثة طالب بالكامل
+    // دالة حذف الشات وتطهيره بشكل كامل وشامل لدى الطالب والإدارة
     async function deleteThreadByUid(studentUid, studentName) {
-      var confirmed = await customConfirm("هل أنت متأكد من رغبتك في حذف محادثة الطالب: (" + studentName + ") بالكامل؟ لا يمكن التراجع عن هذا الإجراء.", "حذف المحادثة", "حذف نهائي", "إلغاء");
+      var confirmed = await customConfirm("هل أنت متأكد من مسح محادثة الطالب (" + studentName + ") بالكامل؟ سيتم تصفير الرسائل لدى الطالب والإدارة بشكل نهائي.", "مسح المحادثة", "مسح نهائي", "إلغاء");
       if (!confirmed) return;
 
+      var currentTimestamp = new Date().toISOString();
+
       try {
-        // حذف من فايربيس
         if (window.firebase && firebase.firestore) {
           var db = firebase.firestore();
           
-          // حذف رسائل الشات
-          var msgsSnap = await db.collection("support_messages").where("studentUid", "==", studentUid).get();
-          var batch = db.batch();
-          msgsSnap.forEach(doc => batch.delete(doc.ref));
-          await batch.commit();
+          // 1. جلب وحذف جميع الرسائل السابقة للطالب
+          var snap = await db.collection("support_messages").where("studentUid", "==", studentUid).get();
+          if (!snap.empty) {
+            var batches = [];
+            var batch = db.batch();
+            var count = 0;
 
-          // حذف سجل المحادثة
-          await db.collection("support_threads").doc(studentUid).delete();
+            snap.docs.forEach(function(doc) {
+              batch.delete(doc.ref);
+              count++;
+              if (count === 400) {
+                batches.push(batch.commit());
+                batch = db.batch();
+                count = 0;
+              }
+            });
+            if (count > 0) batches.push(batch.commit());
+            await Promise.all(batches);
+          }
+
+          // 2. تحديث سجل المحادثة وتعيين clearedAt لمنع إحياء الرسائل السابقة
+          await db.collection("support_threads").doc(studentUid).set({
+            studentUid: studentUid,
+            studentName: studentName,
+            lastMessage: "تم مسح المحادثة السابقة",
+            lastMessageTime: currentTimestamp,
+            clearedAt: currentTimestamp,
+            unreadCount: 0
+          }, { merge: true });
         }
 
-        // حذف من التخزين المحلي
+        // 3. تنظيف التخزين المحلي
         localStorage.removeItem("edu_chat_" + studentUid);
-        cachedThreads = cachedThreads.filter(t => t.studentUid !== studentUid);
-        renderThreadsDom(cachedThreads);
 
+        // إفراغ الشاشة الحالية
         if (currentSelectedStudentUid === studentUid) {
-          currentSelectedStudentUid = null;
           renderMessages([]);
-          document.getElementById("chatTargetNameDisplay").innerText = "الدعم الفني والأكاديمي";
-          document.getElementById("chatTargetSubDisplay").innerText = "اختر محادثة";
-          document.getElementById("btnClearCurrentChat").style.display = "none";
         }
 
-        showToast("تم حذف محادثة الطالب بنجاح", "success");
+        showToast("تم مسح محادثة الطالب بنجاح ولن تعود الرسائل القديمة مجدداً", "success");
       } catch (err) {
-        showToast("حدث خطأ أثناء محاولة حذف المحادثة", "error");
+        console.error("Delete Thread Error:", err);
+        showToast("حدث خطأ أثناء محاولة مسح المحادثة", "error");
       }
     }
 
-    // دالة مسح رسائل المحادثة المفتوحة حالياً
     async function deleteCurrentOpenChat() {
       if (!currentSelectedStudentUid) return;
       var targetName = document.getElementById("chatTargetNameDisplay").innerText;
@@ -589,6 +629,7 @@
       }
 
       var targetUid = currentSelectedStudentUid || user.uid;
+      var nowTime = new Date().toISOString();
 
       var msgData = {
         studentUid: targetUid,
@@ -599,7 +640,7 @@
         studentPhone: user.studentPhone || user.phone || "",
         studentEmail: user.email || "",
         text: text,
-        createdAt: new Date().toISOString()
+        createdAt: nowTime
       };
 
       input.value = "";
@@ -646,14 +687,7 @@
         document.getElementById("chatTargetNameDisplay").innerText = "أ/ محمد السعيد والدعم الأكاديمي";
         document.getElementById("chatTargetSubDisplay").innerText = "متصل الآن للمساعدة";
 
-        var intervalStudent = setInterval(function() {
-          if (window.FirebaseService && window.firebase && firebase.firestore) {
-            clearInterval(intervalStudent);
-            window.FirebaseService.subscribeStudentChat(user.uid, function(msgs) {
-              renderMessages(msgs);
-            });
-          }
-        }, 200);
+        subscribeToStudentChatRealtime(user.uid);
       }
     });
   </script>
