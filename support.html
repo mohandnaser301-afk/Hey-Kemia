@@ -15,16 +15,102 @@
       background: #F0F4FC;
     }
 
+    /* ضبط مكان الـ Navbar ليظل بالأعلى دون إخفاء أي أزرار */
+    .navbar-capsule-wrapper {
+      position: fixed;
+      top: 10px;
+      left: 0;
+      right: 0;
+      z-index: 9999;
+      padding: 0 16px;
+      pointer-events: none;
+    }
+
+    .navbar-capsule {
+      max-width: 1140px;
+      margin: 0 auto;
+      background: var(--royal-indigo-base);
+      border-radius: 50px;
+      padding: 8px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 8px 25px rgba(14, 19, 56, 0.25);
+      border: 1px solid rgba(0, 210, 255, 0.25);
+      pointer-events: auto;
+    }
+
+    .capsule-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      color: #ffffff;
+    }
+
+    .capsule-logo {
+      width: 34px;
+      height: 34px;
+      background: var(--cyan-accent);
+      color: #0E1338;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 13px;
+    }
+
+    .brand-text {
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .brand-text span {
+      color: var(--cyan-accent);
+    }
+
+    .capsule-auth {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .capsule-auth a, .capsule-auth button {
+      font-size: 12.5px;
+      font-weight: 800;
+      text-decoration: none;
+      border-radius: 20px;
+      padding: 6px 14px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .nav-btn-primary {
+      background: var(--cyan-accent);
+      color: #0E1338 !important;
+      border: none;
+    }
+
+    .nav-btn-link {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff !important;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    /* حاوية الشات - إزاحة كافية تمنع نزول الـ Navbar فوق الشات */
     .support-chat-container {
       max-width: 1140px;
       width: 100%;
-      height: calc(100dvh - 85px);
-      margin: 75px auto 10px;
+      height: calc(100dvh - 95px);
+      margin: 85px auto 10px;
       padding: 0 16px;
       display: flex;
       flex-direction: column;
       box-sizing: border-box;
       min-height: 0;
+      position: relative;
+      z-index: 1;
     }
 
     .support-chat-card {
@@ -345,10 +431,35 @@
       gap: 10px;
     }
 
+    /* التجاوب الكامل مع الموبايل */
     @media (max-width: 768px) {
+      .navbar-capsule-wrapper {
+        top: 6px;
+        padding: 0 8px;
+      }
+
+      .navbar-capsule {
+        padding: 6px 12px;
+      }
+
+      .capsule-logo {
+        width: 28px;
+        height: 28px;
+        font-size: 11px;
+      }
+
+      .brand-text {
+        font-size: 13.5px;
+      }
+
+      .capsule-auth a, .capsule-auth button {
+        font-size: 11px;
+        padding: 4px 10px;
+      }
+
       .support-chat-container {
-        height: calc(100dvh - 65px);
-        margin-top: 58px;
+        height: calc(100dvh - 78px);
+        margin-top: 68px; /* مسافة أمان كاملة لمنع تداخل الهيدر */
         margin-bottom: 4px;
         padding: 0 6px;
       }
@@ -387,21 +498,25 @@
       }
 
       .chat-input-bar-form {
-        height: 60px;
-        padding: 8px 10px;
+        height: 58px;
+        padding: 6px 8px;
       }
     }
   </style>
 </head>
 <body>
 
+  <!-- شريط الـ Navbar متضمن الأزرار وشعار المنصة -->
   <div class="navbar-capsule-wrapper">
     <nav class="navbar-capsule">
       <a href="index.html" class="capsule-brand">
         <div class="capsule-logo">HK</div>
         <span class="brand-text">هي كيميا<span>!</span></span>
       </a>
-      <div class="capsule-auth" id="navAuthBox"></div>
+      <div class="capsule-auth" id="navAuthBox">
+        <a href="dashboard.html" class="nav-btn-primary" id="btnNavRole">لوحة الطالب</a>
+        <button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>
+      </div>
     </nav>
   </div>
 
@@ -479,24 +594,21 @@
       }
     }
 
-    function playBeepSound() {
-      try {
-        var ctx = new (window.AudioContext || window.webkitAudioContext)();
-        if (ctx.state === "suspended") {
-          ctx.resume();
+    function syncNavButtons() {
+      var user = getAppUser();
+      var btnRole = document.getElementById("btnNavRole");
+      if (btnRole && user) {
+        if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") {
+          btnRole.innerText = "لوحة الإدارة";
+          btnRole.href = "admin.html";
+        } else if (user.role === "SUPPORT") {
+          btnRole.innerText = "شات الدعم";
+          btnRole.href = "support.html";
+        } else {
+          btnRole.innerText = "لوحة الطالب";
+          btnRole.href = "dashboard.html";
         }
-        var osc = ctx.createOscillator();
-        var gain = ctx.createGain();
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(659.25, ctx.currentTime);
-        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12);
-        gain.gain.setValueAtTime(0.35, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.4);
-      } catch (e) {}
+      }
     }
 
     function renderChatMessages(list) {
@@ -552,19 +664,6 @@
 
       if (window.FirebaseService && typeof window.FirebaseService.subscribeStudentChat === "function") {
         unsubscribeChat = window.FirebaseService.subscribeStudentChat(key, function(msgs) {
-          var user = getAppUser();
-          var myUid = user ? String(user.uid || user.id || "") : "";
-
-          if (msgs && msgs.length > lastKnownMsgCount) {
-            var latest = msgs[msgs.length - 1];
-            if (latest && String(latest.senderUid) !== myUid) {
-              playBeepSound();
-              if (typeof window.triggerDeviceNativeNotification === "function") {
-                window.triggerDeviceNativeNotification("رد جديد من أ/ محمد السعيد 🧪", latest.text || "رسالة جديدة", "support.html");
-              }
-            }
-          }
-
           lastKnownMsgCount = (msgs || []).length;
           renderChatMessages(msgs);
         });
@@ -683,6 +782,8 @@
         window.location.href = "login.html";
         return;
       }
+
+      syncNavButtons();
 
       var isStaff = user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "SUPPORT";
       var sidebar = document.getElementById("supportThreadsSidebar");
