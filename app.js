@@ -24,7 +24,7 @@ function customConfirm(message, title, confirmText, cancelText) {
     modal.style.cssText = "position:fixed; inset:0; background:rgba(8,10,33,0.78); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; z-index:999999; padding:16px;";
     modal.innerHTML = 
       '<div style="background:#ffffff; color:#191b26; border-radius:18px; padding:24px; max-width:420px; width:100%; box-shadow:0 20px 45px rgba(0,0,0,0.35); text-align:center; border:1px solid rgba(0,210,255,0.2);">' +
-        '<div style="width:48px; height:48px; background:rgba(0,210,255,0.12); color:#0284C7; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 12px; font-size:22px;">❓</div>' +
+        '<div style="width:48px; height:48px; background:rgba(0,210,255,0.12); color:#0284C7; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 12px; font-size:22px;">🧪</div>' +
         '<h3 style="font-size:17px; font-weight:900; color:#0E1338; margin-bottom:8px;">' + sanitizeText(title) + '</h3>' +
         '<p style="font-size:13.5px; color:#64748B; margin-bottom:22px; line-height:1.6;">' + sanitizeText(message) + '</p>' +
         '<div style="display:flex; gap:10px; justify-content:center;">' +
@@ -78,9 +78,9 @@ function calculateStudentMetrics(userUid) {
   var tracking = JSON.parse(localStorage.getItem("edu_course_watch_logs")) || {};
   var totalSec = 0;
   Object.keys(tracking).forEach(cId => {
-    if (tracking[cId][userUid]) {
+    if (tracking[cId] && tracking[cId][userUid]) {
       totalSec += tracking[cId][userUid].totalSeconds || 0;
-    } else if (targetUser && tracking[cId][targetUser.email]) {
+    } else if (targetUser && tracking[cId] && tracking[cId][targetUser.email]) {
       totalSec += tracking[cId][targetUser.email].totalSeconds || 0;
     }
   });
@@ -97,7 +97,7 @@ function calculateStudentMetrics(userUid) {
 }
 window.calculateStudentMetrics = calculateStudentMetrics;
 
-// المراقبة اللحظية الصارمة لوثيقة المستخدم
+// المراقبة اللحظية لوثيقة المستخدم
 function monitorCurrentUserStatus() {
   var user = getCurrentUser();
   if (!user || !user.uid) return;
@@ -337,7 +337,6 @@ async function handleEnrollClick(courseId) {
     return;
   }
 
-  // فحص موثوق ومرن
   if (isStudentEnrolledInCourse(user, courseId)) {
     showToast("أنت مشترك بالفعل في هذا الكورس، جاري فتح المحاضرات...", "success");
     setTimeout(function() { window.location.href = "course-view.html?id=" + courseId; }, 600);
@@ -384,7 +383,7 @@ window.handleHeroEnroll = function() {
 window.handleEnrollClick = handleEnrollClick;
 window.logout = logout;
 
-// شاشة اللودينج الكيميائية
+// شاشة اللودينج الكيميائية - مدة ممتدة مع عبارات كيميائية ديناميكية واقعية
 function injectChemicalPreloader() {
   if (document.getElementById("chemicalPreloader")) return;
   var preloader = document.createElement("div");
@@ -404,16 +403,24 @@ function injectChemicalPreloader() {
       '</div>' +
     '</div>' +
     '<div class="loader-brand-title">منصة هي كيميا<span>!</span></div>' +
-    '<div class="loader-dynamic-phrase" id="loaderDynamicPhrase">جاري تحميل المنصة...</div>' +
+    '<div class="loader-dynamic-phrase" id="loaderDynamicPhrase">جاري تحضير المحاليل والتأسيس...</div>' +
     '<div class="loader-counter-num" id="loaderCounterNum">0%</div>' +
     '<div class="loader-bar-outer"><div class="loader-bar-inner" id="loaderBarFill"></div></div>';
 
   document.body.prepend(preloader);
 
+  var phrases = [
+    "جاري إعداد بيئة التعلم التفاعلية...",
+    "جاري مراجعة بنك الأسئلة والتدريبات...",
+    "جاري الاتصال بالسيرفر الأكاديمي...",
+    "جاهز للانطلاق مع أ/ محمد السعيد 🧪"
+  ];
+
   var startTime = Date.now();
-  var duration = 1200;
+  var duration = 2800; // تم تمديدها إلى 2.8 ثانية لتكون واضحة وفخمة
   var barFill = document.getElementById("loaderBarFill");
   var counterNum = document.getElementById("loaderCounterNum");
+  var phraseEl = document.getElementById("loaderDynamicPhrase");
 
   var timer = setInterval(function() {
     var elapsed = Date.now() - startTime;
@@ -422,14 +429,22 @@ function injectChemicalPreloader() {
     if (barFill) barFill.style.width = progress + "%";
     if (counterNum) counterNum.innerText = progress + "%";
 
+    // تغيير العبارات الكيميائية بشكل ذكي بحسب نسبة التحميل
+    if (phraseEl) {
+      if (progress < 25) phraseEl.innerText = phrases[0];
+      else if (progress < 60) phraseEl.innerText = phrases[1];
+      else if (progress < 90) phraseEl.innerText = phrases[2];
+      else phraseEl.innerText = phrases[3];
+    }
+
     if (progress >= 100) {
       clearInterval(timer);
       setTimeout(function() {
         preloader.classList.add("hide-preloader");
-        setTimeout(function() { preloader.remove(); }, 350);
-      }, 50);
+        setTimeout(function() { preloader.remove(); }, 500);
+      }, 150);
     }
-  }, 25);
+  }, 30);
 }
 
 function initGlobalRealtimeSync() {

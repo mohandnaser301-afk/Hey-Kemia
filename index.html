@@ -6,10 +6,6 @@
   <title>هي كيميا ! - أ/ محمد السعيد</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    /* =========================================================
-       إعادة تصميم قسم الهيرو الملكي (UI / UX فخم ومتجاوب)
-       ========================================================= */
-
     .chem-watermark-bg {
       opacity: 0.05 !important;
       filter: blur(0.6px);
@@ -66,7 +62,6 @@
       color: var(--royal-indigo-base);
       margin: 4px 0 8px;
       line-height: 1.18;
-      letter-spacing: -0.5px;
     }
 
     .hero-main-title span {
@@ -88,15 +83,25 @@
       color: var(--royal-indigo-base);
     }
 
-    /* أزرار الإجراء السريع بتصميم متوازن */
     .hero-action-buttons {
-      display: inline-flex;
+      display: flex;
       gap: 12px;
       justify-content: center;
       align-items: center;
       margin-bottom: 30px;
       flex-wrap: wrap;
+      width: 100%;
+      max-width: 480px;
       z-index: 5;
+    }
+
+    .hero-action-buttons a,
+    .hero-action-buttons button {
+      white-space: nowrap;
+      text-align: center;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .btn-hero-main {
@@ -110,8 +115,6 @@
       text-decoration: none;
       box-shadow: 0 10px 25px rgba(14, 19, 56, 0.16);
       transition: all 0.25s ease;
-      display: inline-flex;
-      align-items: center;
       gap: 8px;
     }
 
@@ -140,7 +143,6 @@
       color: #0284C7;
     }
 
-    /* حاوية العرض والشعار الفخمة المترابطة بالبطاقات الجانبية */
     .hero-center-stage-layout {
       position: relative;
       width: 100%;
@@ -225,7 +227,6 @@
       display: block;
     }
 
-    /* البطاقات الجانبية المتناسقة هندسياً */
     .hero-side-card {
       position: absolute;
       top: 50%;
@@ -246,13 +247,6 @@
     .hero-side-card.right-side { right: 10px; }
     .hero-side-card.left-side { left: 10px; }
 
-    .hero-side-card:hover {
-      transform: translateY(calc(-50% - 4px));
-      border-color: #00D2FF;
-      box-shadow: 0 16px 35px rgba(0, 210, 255, 0.15);
-    }
-
-    /* بطاقة الترحيب المخصصة للمسجلين */
     .auth-user-welcome-card {
       background: #ffffff;
       border: 1px solid rgba(0, 210, 255, 0.35);
@@ -286,7 +280,6 @@
       background: #0284C7;
     }
 
-    /* كروت خطوات المنصة (كيف تبدأ) */
     .how-it-works-section { padding: 45px 0 55px; }
     .how-it-works-header { text-align: right; margin-bottom: 26px; }
     .how-it-works-header h2 { font-size: clamp(22px, 3.5vw, 32px); font-weight: 900; color: var(--royal-indigo-base); margin: 0 0 6px; }
@@ -335,14 +328,26 @@
       .hero-side-card { position: static; transform: none !important; width: 100%; max-width: 480px; }
       .steps-horizontal-grid { grid-template-columns: 1fr 1fr; }
     }
-    @media (max-width: 560px) {
+
+    @media (max-width: 600px) {
+      .hero-action-buttons {
+        flex-direction: column;
+        width: 100%;
+        padding: 0 16px;
+      }
+      .hero-action-buttons a,
+      .hero-action-buttons button {
+        width: 100%;
+        padding: 13px 20px;
+        font-size: 14.5px;
+      }
       .steps-horizontal-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
 
-  <!-- النافبار الكبسولي المتجاوب[cite: 3, 4] -->
+  <!-- النافبار الكبسولي المتجاوب[cite: 1, 2] -->
   <div class="navbar-capsule-wrapper anim-fade-up">
     <nav class="navbar-capsule">
       <a href="index.html" class="capsule-brand">
@@ -366,7 +371,7 @@
     </nav>
   </div>
 
-  <!-- الهيرو الملكي المطور بتصميم متزن للمسجلين والزوار[cite: 3, 4] -->
+  <!-- الهيرو الملكي[cite: 1, 2] -->
   <section id="hero" class="hero-editorial-stage anim-fade-up">
     <div class="chem-watermark-bg">
       <span>Fe</span> <span>H₂SO₄</span> <span>⬡</span> <span>KMnO₄</span> <span>C₆H₆</span> <span>Cu</span> <span>Δ</span> <span>NaCl</span>
@@ -405,14 +410,12 @@
 
     <!-- مسرح الهيرو مع البطاقات الجانبية المتناسقة -->
     <div class="hero-center-stage-layout">
-      <!-- البطاقة اليمنى -->
       <div class="hero-side-card right-side">
         <div style="color:#0284C7; font-size:12px; font-weight:800; margin-bottom:2px;">★ تقييم معتمد</div>
         <div style="font-size:18px; font-weight:900; color:var(--royal-indigo-base);">+10 سنوات</div>
         <div style="font-size:11.5px; color:#64748B; font-weight:700; margin-top:2px;">خبرة وتدريس كيمياء 3 ثانوي</div>
       </div>
 
-      <!-- القوس الزجاجي -->
       <div class="teacher-arch-stage" id="heroArchStage">
         <div class="orbital-ring">
           <div class="orbital-electron"></div>
@@ -423,7 +426,6 @@
         </div>
       </div>
 
-      <!-- البطاقة اليسرى -->
       <div class="hero-side-card left-side">
         <div style="color:#00D2FF; font-size:20px; font-weight:900; line-height:1;">“</div>
         <div style="font-size:12px; font-weight:800; color:var(--royal-indigo-base); line-height:1.5;">طريقك المباشر والأضمن لإتقان الكيمياء والدرجة النهائية</div>
@@ -431,7 +433,7 @@
     </div>
   </section>
 
-  <!-- قسم (إزاي هي كيميا بتشتغل؟) - يظهر فقط للزوار غير المسجلين -->
+  <!-- قسم (إزاي هي كيميا بتشتغل؟) -->
   <section id="howItWorksSection" class="how-it-works-section container anim-fade-up guest-only-section">
     <div class="how-it-works-header">
       <h2>إزاي منصة هي كيميا بتشتغل؟</h2>
@@ -481,7 +483,7 @@
     </div>
   </section>
 
-  <!-- الكورسات المتاحة[cite: 3, 4] -->
+  <!-- الكورسات المتاحة[cite: 1, 2] -->
   <section id="courses" style="padding: 30px 0 40px;">
     <div class="container anim-fade-up">
       <div style="margin-bottom: 24px; text-align:right;">
@@ -493,7 +495,7 @@
     </div>
   </section>
 
-  <!-- قسم لوحة شرف أوائل الشهر[cite: 3, 4] -->
+  <!-- قسم لوحة شرف أوائل الشهر[cite: 1, 2] -->
   <section id="honorRoll" class="honor-roll-section container anim-fade-up">
     <div style="text-align:center; margin-bottom:10px;">
       <span style="color:var(--cyan-accent); font-size:12px; font-weight:800; background:rgba(0, 210, 255, 0.1); padding:4px 14px; border-radius:20px;">لوحة التميز الأكاديمي</span>
@@ -503,7 +505,7 @@
     <div id="honorPodiumContainer" class="honor-podium-grid"></div>
   </section>
 
-  <!-- قسم الامتحانات الشاملة[cite: 3, 4] -->
+  <!-- قسم الامتحانات الشاملة[cite: 1, 2] -->
   <section id="generalExamsSection" class="container anim-fade-up" style="display: none; padding: 20px 0 40px;">
     <div style="margin-bottom: 24px; text-align:right;">
       <span style="color:var(--cyan-accent); font-size:12px; font-weight:800; background:rgba(0, 210, 255, 0.1); padding:4px 14px; border-radius:20px;">تقييمات المستوى الشاملة</span>
@@ -513,7 +515,7 @@
     <div class="courses-grid-layout" id="generalExamsGridContainer"></div>
   </section>
 
-  <!-- الأسئلة الشائعة[cite: 3, 4] -->
+  <!-- الأسئلة الشائعة[cite: 1, 2] -->
   <section id="faq" style="padding: 20px 0 40px;">
     <div class="container anim-fade-up">
       <div style="margin-bottom: 20px; text-align:right;">
@@ -524,7 +526,7 @@
     </div>
   </section>
 
-  <!-- بانر التسجيل (يظهر فقط لغير المسجلين)[cite: 3, 4] -->
+  <!-- بانر التسجيل[cite: 1, 2] -->
   <div class="container anim-fade-up guest-only-section" id="bottomCtaContainer">
     <section id="bottomCtaSection" class="cta-banner-bottom">
       <h2>جاهز تقفل الكيمياء مع أ/ محمد السعيد؟</h2>
@@ -533,7 +535,7 @@
     </section>
   </div>
 
-  <!-- الفوتر[cite: 3, 4] -->
+  <!-- الفوتر[cite: 1, 2] -->
   <footer class="platform-footer anim-fade-up">
     <div class="container">
       <div class="footer-grid">
@@ -613,11 +615,9 @@
       var dashLink = document.getElementById("heroDashboardLink");
 
       if (user) {
-        // إخفاء كل العناصر والأقسام الخاصة بالزوار غير المسجلين فوراً
         document.querySelectorAll(".guest-only-section").forEach(function(el) { el.style.display = "none"; });
         document.querySelectorAll(".guest-only-link").forEach(function(el) { el.style.display = "none"; });
         
-        // إظهار روابط وعناصر المستخدم المسجل
         document.querySelectorAll(".auth-only-section").forEach(function(el) { el.style.display = "block"; });
         document.querySelectorAll(".auth-only-link").forEach(function(el) { el.style.display = "list-item"; });
 

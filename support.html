@@ -2,163 +2,354 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>مركز الدعم الفني - هي كيميا !</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>شات الدعم والأسئلة الأكاديمية - هي كيميا !</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    .support-page-wrapper {
-      height: 100dvh;
+    body {
+      background: #F0F4FC;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      padding: 75px 16px 16px;
+    }
+
+    .support-chat-container {
       max-width: 1100px;
-      margin: 0 auto;
+      width: 100%;
+      margin: 85px auto 20px;
+      padding: 0 16px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
       box-sizing: border-box;
     }
-    .support-thread-layout {
-      flex: 1;
-      display: grid;
-      grid-template-columns: 310px 1fr;
-      gap: 16px;
+
+    .support-chat-card {
       background: #ffffff;
       border: 1px solid var(--border-subtle);
-      border-radius: 16px;
+      border-radius: 20px;
+      box-shadow: 0 15px 40px rgba(14, 19, 56, 0.08);
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      flex: 1;
+      min-height: 560px;
+      max-height: calc(100vh - 125px);
       overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-      min-height: 0; /* منع الـ Grid من التمدد خارج الشاشة */
-    }
-    .threads-sidebar {
-      background: #F8FAFC;
-      border-left: 1px solid #E2E8F0;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-    }
-    .thread-item {
-      padding: 12px 14px;
-      border-bottom: 1px solid #E2E8F0;
-      cursor: pointer;
-      transition: background 0.2s ease;
-    }
-    .thread-item:hover, .thread-item.active { background: #EDF2F7; }
-    .thread-item.active { border-right: 3px solid var(--cyan-accent); }
-    
-    .chat-view-pane {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      min-height: 0;
       position: relative;
     }
-    .chat-view-header {
-      background: var(--royal-indigo-base);
-      color: #fff;
-      padding: 12px 18px;
+
+    /* الشريط الجانبي للمحادثات */
+    .support-threads-sidebar {
+      background: #F8FAFC;
+      border-left: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .threads-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: #ffffff;
+    }
+
+    .threads-header h3 {
+      font-size: 15px;
+      font-weight: 900;
+      color: var(--royal-indigo-base);
+      margin-bottom: 8px;
+    }
+
+    .threads-search-input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      font-size: 12.5px;
+      outline: none;
+      box-sizing: border-box;
+    }
+
+    .threads-search-input:focus {
+      border-color: var(--cyan-accent);
+    }
+
+    .threads-list {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .thread-item-row {
+      padding: 12px 14px;
+      border-bottom: 1px solid #EEF2F6;
+      cursor: pointer;
+      transition: background 0.2s ease;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 8px;
+      position: relative;
+    }
+
+    .thread-item-row:hover, .thread-item-row.active {
+      background: rgba(0, 210, 255, 0.08);
+    }
+
+    .thread-info-box {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .thread-name-title {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: var(--royal-indigo-base);
+      margin-bottom: 3px;
+    }
+
+    .thread-preview-msg {
+      font-size: 12px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .thread-actions-box {
+      display: flex;
+      align-items: center;
+      gap: 6px;
       flex-shrink: 0;
     }
-    .chat-messages-area {
-      flex: 1;
-      padding: 16px;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
+
+    .btn-delete-thread {
+      background: transparent;
+      border: none;
+      color: #94A3B8;
+      font-size: 15px;
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-delete-thread:hover {
+      background: #FEE2E2;
+      color: #EF4444;
+      transform: scale(1.1);
+    }
+
+    /* نافذة الدردشة الرئيسية */
+    .chat-conversation-area {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      background: #FAFBFD;
-      min-height: 0;
+      height: 100%;
+      background: #ffffff;
+      position: relative;
     }
-    .msg-bubble {
-      max-width: 78%;
-      padding: 10px 14px;
-      border-radius: 12px;
-      font-size: 13.5px;
-      line-height: 1.5;
-      word-wrap: break-word;
-      word-break: break-word;
-      white-space: pre-wrap;
-    }
-    .msg-bubble.mine {
-      align-self: flex-start;
+
+    .chat-convo-header {
+      padding: 12px 20px;
       background: var(--royal-indigo-base);
       color: #ffffff;
-      border-bottom-right-radius: 2px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
     }
-    .msg-bubble.other {
+
+    .chat-convo-header h3 {
+      font-size: 14.5px;
+      font-weight: 900;
+      margin: 0 0 2px;
+    }
+
+    .chat-convo-header span {
+      font-size: 11.5px;
+      color: var(--cyan-accent);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .chat-convo-header span::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      background: #10B981;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .chat-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-clear-chat-history {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #FCA5A5;
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-clear-chat-history:hover {
+      background: #EF4444;
+      color: #ffffff;
+    }
+
+    .chat-back-btn {
+      display: none;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .messages-stream-box {
+      flex: 1;
+      padding: 20px 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: radial-gradient(circle at center, #FFFFFF 0%, #F8FAFC 100%);
+    }
+
+    .chat-bubble {
+      max-width: 78%;
+      width: fit-content;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 13.5px;
+      line-height: 1.5;
+      word-break: break-word;
+      position: relative;
+      animation: fadeInBubble 0.2s ease forwards;
+    }
+
+    @keyframes fadeInBubble {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .chat-bubble.student {
+      align-self: flex-start;
+      background: #F1F5F9;
+      color: #0E1338;
+      border-bottom-right-radius: 3px;
+      border: 1px solid #E2E8F0;
+    }
+
+    .chat-bubble.staff {
       align-self: flex-end;
-      background: #E2E8F0;
-      color: #0F172A;
-      border-bottom-left-radius: 2px;
+      background: linear-gradient(135deg, #0E1338 0%, #1D255E 100%);
+      color: #ffffff;
+      border-bottom-left-radius: 3px;
+      box-shadow: 0 4px 12px rgba(14, 19, 56, 0.12);
     }
-    .msg-time {
+
+    .chat-bubble .bubble-sender {
+      font-size: 11px;
+      font-weight: 800;
+      margin-bottom: 3px;
+      color: #0284C7;
+    }
+
+    .chat-bubble.staff .bubble-sender {
+      color: #00D2FF;
+    }
+
+    .chat-bubble .bubble-time {
+      display: block;
       font-size: 10px;
       opacity: 0.75;
       margin-top: 4px;
-      display: block;
       text-align: left;
     }
 
-    /* شريط كتابة الرسائل المتجاوب والثابت */
-    .chat-input-bar-container {
+    .chat-input-bar-form {
       padding: 12px 16px;
+      border-top: 1px solid #EEF2F6;
       background: #ffffff;
-      border-top: 1px solid #E2E8F0;
       display: flex;
       gap: 10px;
-      align-items: flex-end;
-      flex-shrink: 0;
-      position: sticky;
-      bottom: 0;
-      z-index: 20;
+      align-items: center;
     }
-    .chat-textarea-input {
+
+    .chat-input-bar-form input {
       flex: 1;
-      min-height: 42px;
-      max-height: 110px;
-      resize: none;
-      padding: 10px 14px;
-      font-size: 13.5px;
-      line-height: 1.4;
-      border: 1.5px solid #CBD5E1;
-      border-radius: 10px;
+      height: 44px;
+      padding: 0 14px;
       background: #F8FAFC;
-      color: var(--text-dark);
+      border: 1.5px solid #E2E8F0;
+      border-radius: 12px;
+      font-size: 13.5px;
       outline: none;
-      overflow-y: auto;
-      font-family: inherit;
     }
-    .chat-textarea-input:focus {
+
+    .chat-input-bar-form input:focus {
       border-color: var(--cyan-accent);
       background: #ffffff;
     }
-    .chat-send-btn {
-      height: 42px;
+
+    .chat-input-bar-form button {
       padding: 0 20px;
+      height: 44px;
       background: var(--royal-indigo-base);
       color: #ffffff;
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       font-weight: 800;
-      font-size: 13px;
+      font-size: 13.5px;
       cursor: pointer;
-      flex-shrink: 0;
+      transition: all 0.2s ease;
       display: flex;
       align-items: center;
-      justify-content: center;
+      gap: 6px;
     }
 
-    @media (max-width: 860px) {
-      .support-page-wrapper { padding: 65px 8px 8px; }
-      .support-thread-layout { grid-template-columns: 1fr; }
-      .threads-sidebar { display: none; }
-      .threads-sidebar.show-mobile-threads { display: flex; position: absolute; inset: 0; z-index: 50; }
+    .chat-input-bar-form button:hover {
+      background: var(--royal-indigo-light);
+    }
+
+    /* التجاوب للموبايل */
+    @media (max-width: 768px) {
+      .support-chat-card {
+        grid-template-columns: 1fr;
+        height: calc(100vh - 105px);
+        border-radius: 14px;
+      }
+
+      .support-threads-sidebar.hide-mobile {
+        display: none !important;
+      }
+
+      .chat-conversation-area.active-mobile {
+        display: flex !important;
+        width: 100%;
+        height: 100%;
+      }
+
+      .chat-back-btn {
+        display: inline-flex;
+      }
     }
   </style>
 </head>
 <body>
 
+  <!-- النافبار العلوي -->
   <div class="navbar-capsule-wrapper">
     <nav class="navbar-capsule">
       <a href="index.html" class="capsule-brand">
@@ -169,173 +360,301 @@
     </nav>
   </div>
 
-  <div class="support-page-wrapper">
-    <div class="support-thread-layout">
+  <main class="support-chat-container">
+    <div class="support-chat-card">
       
-      <!-- قائمة محادثات الطلاب للأدمن -->
-      <aside class="threads-sidebar" id="adminThreadsSidebar" style="display:none;">
-        <div style="padding:12px 14px; border-bottom:1px solid #E2E8F0; background:#fff;">
-          <h3 style="font-size:13.5px; font-weight:800; color:var(--royal-indigo-base); margin:0;">محادثات الطلاب المنفصلة</h3>
+      <!-- الشريط الجانبي للإدارة والمساعدين -->
+      <div class="support-threads-sidebar" id="supportThreadsSidebar" style="display:none;">
+        <div class="threads-header">
+          <h3>استفسارات الطلاب</h3>
+          <input type="text" id="threadsSearchInput" class="threads-search-input" placeholder="بحث باسم الطالب أو الهاتف..." oninput="filterThreadsList(this.value)">
         </div>
-        <div id="threadsListContainer" style="overflow-y:auto; flex:1;"></div>
-      </aside>
+        <div class="threads-list" id="supportThreadsListContainer"></div>
+      </div>
 
-      <!-- منطقة الشات -->
-      <main class="chat-view-pane">
-        <div class="chat-view-header">
+      <!-- نافذة المحادثة المباشرة -->
+      <div class="chat-conversation-area" id="chatConvoArea">
+        <div class="chat-convo-header">
           <div>
-            <h2 style="font-size:14.5px; font-weight:800; margin:0;" id="chatTargetNameDisplay">الدعم الفني</h2>
-            <span style="font-size:11px; color:#00D2FF;" id="chatTargetSubDisplay">فريق الأستاذ محمد السعيد</span>
+            <h3 id="chatTargetNameDisplay">الدعم الفني والأكاديمي</h3>
+            <span id="chatTargetSubDisplay">فريق الأستاذ محمد السعيد</span>
           </div>
-          <a href="dashboard.html" class="nav-btn-link" style="color:#fff; background:rgba(255,255,255,0.12);">الرجوع</a>
+
+          <div class="chat-header-actions">
+            <!-- زر مسح المحادثة الحالية (يظهر للإدارة) -->
+            <button type="button" id="btnClearCurrentChat" class="btn-clear-chat-history" style="display:none;" onclick="deleteCurrentOpenChat()">مسح المحادثة 🗑️</button>
+            <button type="button" class="chat-back-btn" onclick="closeThreadOnMobile()">← المحادثات</button>
+          </div>
         </div>
 
-        <div class="chat-messages-area" id="supportChatMessagesArea">
-          <div style="text-align:center; color:var(--text-muted); font-size:13px; margin:auto;">جاري تحميل المحادثة...</div>
-        </div>
+        <div class="messages-stream-box" id="messagesStreamBox"></div>
 
-        <form class="chat-input-bar-container" id="sendSupportMsgForm">
-          <textarea id="supportTextInput" class="chat-textarea-input" placeholder="اكتب استفسارك هنا..." rows="1" required></textarea>
-          <button type="submit" class="chat-send-btn">إرسال</button>
+        <form class="chat-input-bar-form" id="chatSendMessageForm">
+          <input type="text" id="chatMessageInput" placeholder="اكتب سؤالك أو استفسارك هنا..." required autocomplete="off">
+          <button type="submit" id="chatSendBtn">
+            <span>إرسال</span>
+            <span>✉️</span>
+          </button>
         </form>
-      </main>
+      </div>
 
     </div>
-  </div>
+  </main>
 
   <script src="firebase-config.js"></script>
   <script src="app.js"></script>
   <script>
-    var currentUser = null;
-    var activeStudentEmail = null;
-    var activeStudentName = null;
+    var currentSelectedStudentUid = null;
+    var unsubscribeMessages = null;
+    var cachedThreads = [];
 
-    // تمدد حقل الإدخال تلقائياً حتى حد أقصى
-    var textarea = document.getElementById("supportTextInput");
-    textarea.addEventListener("input", function() {
-      this.style.height = "auto";
-      this.style.height = (Math.min(this.scrollHeight, 110)) + "px";
-    });
-
-    textarea.addEventListener("keydown", function(e) {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        document.getElementById("sendSupportMsgForm").dispatchEvent(new Event("submit"));
-      }
-    });
-
-    function selectStudentThread(studentEmail, studentName) {
-      activeStudentEmail = studentEmail.toLowerCase().trim();
-      activeStudentName = studentName;
-      document.getElementById("chatTargetNameDisplay").innerText = studentName;
-      document.getElementById("chatTargetSubDisplay").innerText = studentEmail;
-
-      document.querySelectorAll(".thread-item").forEach(el => {
-        el.classList.toggle("active", el.getAttribute("data-email") === activeStudentEmail);
-      });
-
-      if (window.FirebaseService) {
-        window.FirebaseService.subscribeStudentChat(activeStudentEmail, renderMessages);
-      }
+    function formatChatTime(dateStr) {
+      if (!dateStr) return "";
+      var d = new Date(dateStr);
+      return d.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" });
     }
 
+    // عرض الرسائل
     function renderMessages(messages) {
-      var container = document.getElementById("supportChatMessagesArea");
-      if (!container) return;
+      var box = document.getElementById("messagesStreamBox");
+      if (!box) return;
+
+      var currentUser = getCurrentUser();
 
       if (!messages || messages.length === 0) {
-        container.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:13px; margin:auto;">لا توجد رسائل سابقة. تفضل بكتابة رسالتك وسنرد فوراً.</div>';
+        box.innerHTML = '<div style="text-align:center; color:#64748B; font-size:13px; margin:auto;">أهلاً بك! اكتب سؤالك أو مشكلتك هنا وسيقوم الفريق الأكاديمي بالرد عليك فوراً. 🧪</div>';
         return;
       }
 
-      container.innerHTML = messages.map(m => {
-        var isMine = currentUser && (m.senderEmail.toLowerCase().trim() === currentUser.email.toLowerCase().trim());
-        var timeStr = m.createdAt ? new Date(m.createdAt).toLocaleTimeString("ar-EG", { hour: '2-digit', minute: '2-digit' }) : "";
-        return '<div class="msg-bubble ' + (isMine ? 'mine' : 'other') + '">' +
+      box.innerHTML = messages.map(function(m) {
+        var isMe = currentUser && (m.senderUid === currentUser.uid || m.senderEmail === currentUser.email);
+        var isStaff = m.senderRole === "SUPER_ADMIN" || m.senderRole === "ADMIN" || m.senderRole === "SUPPORT";
+        var bubbleClass = isMe ? "staff" : "student";
+        var senderLabel = isMe ? "أنت" : sanitizeText(m.senderName || (isStaff ? "فريق أ/ محمد السعيد" : "الطالب"));
+
+        return '<div class="chat-bubble ' + bubbleClass + '">' +
+          '<div class="bubble-sender">' + senderLabel + '</div>' +
           '<div>' + sanitizeText(m.text) + '</div>' +
-          '<span class="msg-time">' + timeStr + '</span>' +
+          '<span class="bubble-time">' + formatChatTime(m.createdAt) + '</span>' +
         '</div>';
       }).join("");
 
-      container.scrollTop = container.scrollHeight;
+      box.scrollTop = box.scrollHeight;
     }
 
-    document.addEventListener("DOMContentLoaded", function() {
-      currentUser = getCurrentUser();
-      if (!currentUser) {
-        window.location.href = "login.html?redirect=support.html";
+    // تحديد محادثة طالب
+    function selectStudentThread(studentUid, studentName, studentPhone) {
+      currentSelectedStudentUid = studentUid;
+      document.getElementById("chatTargetNameDisplay").innerText = studentName;
+      document.getElementById("chatTargetSubDisplay").innerText = studentPhone || "طالب مسجل";
+
+      var user = getCurrentUser();
+      var isStaff = user && (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "SUPPORT");
+      var clearBtn = document.getElementById("btnClearCurrentChat");
+      if (clearBtn) clearBtn.style.display = isStaff ? "inline-flex" : "none";
+
+      document.querySelectorAll(".thread-item-row").forEach(el => el.classList.remove("active"));
+      var activeEl = document.getElementById("threadRow_" + studentUid);
+      if (activeEl) activeEl.classList.add("active");
+
+      var sidebar = document.getElementById("supportThreadsSidebar");
+      var convo = document.getElementById("chatConvoArea");
+      if (sidebar && convo) {
+        sidebar.classList.add("hide-mobile");
+        convo.classList.add("active-mobile");
+      }
+
+      if (unsubscribeMessages) unsubscribeMessages();
+
+      if (window.FirebaseService) {
+        unsubscribeMessages = window.FirebaseService.subscribeStudentChat(studentUid, function(msgs) {
+          renderMessages(msgs);
+        });
+      } else {
+        var localMsgs = JSON.parse(localStorage.getItem("edu_chat_" + studentUid)) || [];
+        renderMessages(localMsgs);
+      }
+    }
+
+    function closeThreadOnMobile() {
+      var sidebar = document.getElementById("supportThreadsSidebar");
+      var convo = document.getElementById("chatConvoArea");
+      if (sidebar && convo) {
+        sidebar.classList.remove("hide-mobile");
+        convo.classList.remove("active-mobile");
+      }
+    }
+
+    function filterThreadsList(query) {
+      var q = (query || "").trim().toLowerCase();
+      var filtered = cachedThreads.filter(function(t) {
+        return (t.studentName && t.studentName.toLowerCase().includes(q)) || 
+               (t.studentPhone && t.studentPhone.includes(q)) || 
+               (t.lastMessage && t.lastMessage.toLowerCase().includes(q));
+      });
+      renderThreadsDom(filtered);
+    }
+
+    function renderThreadsDom(threads) {
+      var container = document.getElementById("supportThreadsListContainer");
+      if (!container) return;
+
+      var user = getCurrentUser();
+      var isStaff = user && (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "SUPPORT");
+
+      if (!threads || threads.length === 0) {
+        container.innerHTML = '<div style="padding:20px; font-size:12.5px; color:#64748B; text-align:center;">لا توجد رسائل واردة حالياً.</div>';
         return;
       }
 
-      var isStaff = currentUser.role === "SUPER_ADMIN" || currentUser.role === "ADMIN" || currentUser.role === "SUPPORT";
+      container.innerHTML = threads.map(function(t) {
+        var unreadBadge = (t.unreadCount && t.unreadCount > 0) 
+          ? '<span style="background:#ef4444; color:#fff; font-size:10px; font-weight:900; padding:2px 6px; border-radius:10px;">' + t.unreadCount + '</span>' 
+          : '';
+        var isActive = currentSelectedStudentUid === t.studentUid ? "active" : "";
+        var deleteIconHtml = isStaff 
+          ? '<button type="button" class="btn-delete-thread" title="حذف المحادثة" onclick="event.stopPropagation(); deleteThreadByUid(\'' + t.studentUid + '\', \'' + sanitizeText(t.studentName) + '\')">🗑️</button>' 
+          : '';
+
+        return '<div id="threadRow_' + t.studentUid + '" class="thread-item-row ' + isActive + '" onclick="selectStudentThread(\'' + t.studentUid + '\', \'' + sanitizeText(t.studentName) + '\', \'' + sanitizeText(t.studentPhone) + '\')">' +
+          '<div class="thread-info-box">' +
+            '<div class="thread-name-title">' + sanitizeText(t.studentName) + '</div>' +
+            '<div class="thread-preview-msg">' + sanitizeText(t.lastMessage || "بدء محادثة...") + '</div>' +
+          '</div>' +
+          '<div class="thread-actions-box">' +
+            unreadBadge +
+            deleteIconHtml +
+          '</div>' +
+        '</div>';
+      }).join("");
+    }
+
+    // دالة حذف محادثة طالب بالكامل
+    async function deleteThreadByUid(studentUid, studentName) {
+      var confirmed = await customConfirm("هل أنت متأكد من رغبتك في حذف محادثة الطالب: (" + studentName + ") بالكامل؟ لا يمكن التراجع عن هذا الإجراء.", "حذف المحادثة", "حذف نهائي", "إلغاء");
+      if (!confirmed) return;
+
+      try {
+        // حذف من فايربيس
+        if (window.firebase && firebase.firestore) {
+          var db = firebase.firestore();
+          
+          // حذف رسائل الشات
+          var msgsSnap = await db.collection("support_messages").where("studentUid", "==", studentUid).get();
+          var batch = db.batch();
+          msgsSnap.forEach(doc => batch.delete(doc.ref));
+          await batch.commit();
+
+          // حذف سجل المحادثة
+          await db.collection("support_threads").doc(studentUid).delete();
+        }
+
+        // حذف من التخزين المحلي
+        localStorage.removeItem("edu_chat_" + studentUid);
+        cachedThreads = cachedThreads.filter(t => t.studentUid !== studentUid);
+        renderThreadsDom(cachedThreads);
+
+        if (currentSelectedStudentUid === studentUid) {
+          currentSelectedStudentUid = null;
+          renderMessages([]);
+          document.getElementById("chatTargetNameDisplay").innerText = "الدعم الفني والأكاديمي";
+          document.getElementById("chatTargetSubDisplay").innerText = "اختر محادثة";
+          document.getElementById("btnClearCurrentChat").style.display = "none";
+        }
+
+        showToast("تم حذف محادثة الطالب بنجاح", "success");
+      } catch (err) {
+        showToast("حدث خطأ أثناء محاولة حذف المحادثة", "error");
+      }
+    }
+
+    // دالة مسح رسائل المحادثة المفتوحة حالياً
+    async function deleteCurrentOpenChat() {
+      if (!currentSelectedStudentUid) return;
+      var targetName = document.getElementById("chatTargetNameDisplay").innerText;
+      await deleteThreadByUid(currentSelectedStudentUid, targetName);
+    }
+
+    // إرسال الرسالة
+    document.getElementById("chatSendMessageForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      var input = document.getElementById("chatMessageInput");
+      var text = input.value.trim();
+      if (!text) return;
+
+      var user = getCurrentUser();
+      if (!user) {
+        showToast("يرجى تسجيل الدخول أولاً للمراسلة", "error");
+        return;
+      }
+
+      var targetUid = currentSelectedStudentUid || user.uid;
+
+      var msgData = {
+        studentUid: targetUid,
+        senderUid: user.uid,
+        senderName: user.fullName || "مستخدم",
+        senderRole: user.role || "STUDENT",
+        studentName: (currentSelectedStudentUid && user.role !== "STUDENT") ? document.getElementById("chatTargetNameDisplay").innerText : (user.fullName || "طالب"),
+        studentPhone: user.studentPhone || user.phone || "",
+        studentEmail: user.email || "",
+        text: text,
+        createdAt: new Date().toISOString()
+      };
+
+      input.value = "";
+
+      if (window.FirebaseService) {
+        await window.FirebaseService.sendSupportMessage(msgData);
+      } else {
+        var key = "edu_chat_" + targetUid;
+        var list = JSON.parse(localStorage.getItem(key)) || [];
+        list.push(msgData);
+        localStorage.setItem(key, JSON.stringify(list));
+        renderMessages(list);
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+      var user = getCurrentUser();
+      if (!user) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      var isStaff = user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "SUPPORT";
+      var sidebar = document.getElementById("supportThreadsSidebar");
 
       if (isStaff) {
-        var sidebar = document.getElementById("adminThreadsSidebar");
         if (sidebar) sidebar.style.display = "flex";
-
+        
         var interval = setInterval(function() {
           if (window.FirebaseService && window.firebase && firebase.firestore) {
             clearInterval(interval);
-            window.FirebaseService.subscribeAllSupportThreads(threads => {
-              var container = document.getElementById("threadsListContainer");
-              if (!container) return;
+            window.FirebaseService.subscribeAllSupportThreads(function(threads) {
+              cachedThreads = threads || [];
+              renderThreadsDom(cachedThreads);
 
-              if (threads.length === 0) {
-                container.innerHTML = '<div style="padding:15px; font-size:12px; color:#64748B; text-align:center;">لا توجد محادثات طلاب حالياً.</div>';
-                return;
-              }
-
-              container.innerHTML = threads.map(t => {
-                var isSelected = activeStudentEmail === t.studentEmail;
-                return '<div class="thread-item ' + (isSelected ? 'active' : '') + '" data-email="' + t.studentEmail + '" onclick="selectStudentThread(\'' + t.studentEmail + '\', \'' + (t.studentName || t.studentEmail).replace(/'/g, "\\'") + '\')">' +
-                  '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">' +
-                    '<strong style="font-size:13px; color:var(--royal-indigo-base);">' + (t.studentName || t.studentEmail) + '</strong>' +
-                    (t.unreadCount > 0 ? '<span style="background:#ef4444; color:#fff; font-size:10px; font-weight:800; padding:1px 6px; border-radius:10px;">' + t.unreadCount + '</span>' : '') +
-                  '</div>' +
-                  '<p style="font-size:11.5px; color:#64748B; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin:0;">' + (t.lastMessage || "") + '</p>' +
-                '</div>';
-              }).join("");
-
-              if (!activeStudentEmail && threads[0]) {
-                selectStudentThread(threads[0].studentEmail, threads[0].studentName || threads[0].studentEmail);
+              if (!currentSelectedStudentUid && cachedThreads[0]) {
+                selectStudentThread(cachedThreads[0].studentUid, cachedThreads[0].studentName, cachedThreads[0].studentPhone);
               }
             });
           }
-        }, 250);
-
+        }, 200);
       } else {
-        activeStudentEmail = currentUser.email.toLowerCase().trim();
-        activeStudentName = currentUser.fullName;
+        currentSelectedStudentUid = user.uid;
+        document.getElementById("chatTargetNameDisplay").innerText = "أ/ محمد السعيد والدعم الأكاديمي";
+        document.getElementById("chatTargetSubDisplay").innerText = "متصل الآن للمساعدة";
 
         var intervalStudent = setInterval(function() {
           if (window.FirebaseService && window.firebase && firebase.firestore) {
             clearInterval(intervalStudent);
-            window.FirebaseService.subscribeStudentChat(activeStudentEmail, renderMessages);
+            window.FirebaseService.subscribeStudentChat(user.uid, function(msgs) {
+              renderMessages(msgs);
+            });
           }
-        }, 250);
+        }, 200);
       }
-
-      document.getElementById("sendSupportMsgForm").addEventListener("submit", async function(e) {
-        e.preventDefault();
-        var text = textarea.value.trim();
-        if (!text || !activeStudentEmail) return;
-
-        textarea.value = "";
-        textarea.style.height = "42px";
-
-        try {
-          await window.FirebaseService.sendSupportMessage({
-            studentEmail: activeStudentEmail,
-            studentName: activeStudentName || activeStudentEmail,
-            text: text,
-            senderEmail: currentUser.email.toLowerCase().trim(),
-            senderName: currentUser.fullName,
-            senderRole: currentUser.role || "STUDENT"
-          });
-        } catch (err) {
-          showToast("تعذر إرسال الرسالة: " + err.message, "error");
-        }
-      });
     });
   </script>
 </body>

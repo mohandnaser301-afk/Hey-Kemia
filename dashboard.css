@@ -1,313 +1,278 @@
-@import url('style.css');
+/* =========================================================
+   المنظومة التصميمية الموحدة للوحات التحكم - هي كيميا !
+   ========================================================= */
 
 :root {
-  --bg-sidebar: rgba(14, 19, 56, 0.95);
-  --bg-content: #F0F4FC;
+  --royal-indigo-base: #0E1338;
+  --royal-indigo-light: #1D255E;
+  --cyan-accent: #00D2FF;
+  --text-muted: #64748B;
+  --bg-card: #ffffff;
+  --border-subtle: #E2E8F0;
+  --liquid-glass-blur: blur(12px);
 }
 
 * {
   box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent; /* إزالة الوميض الرمادي عند الضغط في iOS */
+  margin: 0;
+  padding: 0;
 }
 
-html, body {
-  width: 100%;
-  overflow-x: hidden;
-  -webkit-text-size-adjust: 100%;
+body {
+  background: #F8FAFC;
+  font-family: inherit;
+  color: #0F172A;
+  direction: rtl;
 }
 
 .dashboard-wrapper {
   display: flex;
   min-height: 100vh;
-  min-height: -webkit-fill-available; /* معالجة شريط سفاري السفلي والعلوي */
-  width: 100%;
-  overflow-x: hidden;
 }
 
+/* القائمة الجانبية */
 .sidebar {
-  width: 270px;
-  background: var(--bg-sidebar);
-  backdrop-filter: var(--liquid-glass-blur);
-  -webkit-backdrop-filter: blur(16px);
-  border-left: 1px solid var(--liquid-glass-border-dark);
-  padding: 20px 14px;
+  width: 260px;
+  background: var(--royal-indigo-base);
+  color: #ffffff;
+  padding: 24px 16px;
   display: flex;
   flex-direction: column;
-  flex-shrink: 0;
-  box-shadow: inset -1.5px 0 2px rgba(255, 255, 255, 0.2), 12px 0 40px rgba(0, 0, 0, 0.12);
-  transition: all 0.3s ease;
-  z-index: 1000;
-}
-
-/* زر القائمة المنسدلة للموبايل وسفاري */
-.mobile-sidebar-toggle-btn {
-  display: none;
-  width: 100%;
-  padding: 13px 16px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 12px;
-  color: #ffffff;
-  font-weight: 800;
-  font-size: 13.5px;
-  cursor: pointer;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-  -webkit-appearance: none; /* إزالة الستايل الافتراضي لسفاري */
-  appearance: none;
-  touch-action: manipulation;
 }
 
 .sidebar-brand h2 {
-  font-size: 19px;
+  font-size: 22px;
   font-weight: 900;
   color: #ffffff;
-  margin-bottom: 16px;
-  padding-right: 6px;
+  margin-bottom: 20px;
+  text-align: center;
 }
 
-.sidebar-brand span { color: var(--cyan-accent); }
+.sidebar-brand h2 span {
+  color: var(--cyan-accent);
+}
 
 .user-profile-summary {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(0, 210, 255, 0.2);
+  border-radius: 12px;
+  padding: 12px;
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(255, 255, 255, 0.09);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 10px;
-  border-radius: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
-.avatar {
-  width: 36px;
-  height: 36px;
-  background: linear-gradient(135deg, var(--cyan-accent-light) 0%, var(--cyan-accent) 100%);
-  color: var(--royal-indigo-deep);
+.user-profile-summary .avatar {
+  width: 38px;
+  height: 38px;
   border-radius: 10px;
+  background: rgba(0, 210, 255, 0.15);
+  color: var(--cyan-accent);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 900;
-  font-size: 13px;
-  flex-shrink: 0;
-}
-
-.sidebar-section-title {
-  font-size: 11px;
-  font-weight: 800;
-  color: #94A3B8;
-  text-transform: uppercase;
-  margin: 14px 8px 6px;
-  letter-spacing: 0.5px;
-  display: block;
 }
 
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
+  flex: 1;
 }
 
-.nav-item {
-  padding: 11px 13px;
-  color: #d1d9ec;
+.sidebar-nav .nav-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 10px;
+  color: #94A3B8;
   text-decoration: none;
   font-size: 13px;
   font-weight: 700;
-  border-radius: 10px;
-  transition: all 0.2s ease;
   cursor: pointer;
-  border: 1px solid transparent;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  -webkit-touch-callout: none;
-  user-select: none;
-  -webkit-user-select: none;
-  touch-action: manipulation;
+  transition: all 0.2s ease;
 }
 
-.nav-item:hover, .nav-item:active {
-  background: rgba(255, 255, 255, 0.14);
+.sidebar-nav .nav-item:hover,
+.sidebar-nav .nav-item.active {
+  background: var(--royal-indigo-light);
   color: #ffffff;
+  border-right: 3px solid var(--cyan-accent);
 }
 
-.nav-item.active {
-  background: rgba(0, 210, 255, 0.18);
-  color: var(--cyan-accent);
-  border-color: rgba(0, 210, 255, 0.45);
-}
-
-.nav-item.logout {
+.sidebar-nav .nav-item.logout {
   margin-top: auto;
-  color: #fca5a5;
-  border-color: rgba(239, 68, 68, 0.2);
+  color: #F87171;
 }
 
+.mobile-sidebar-toggle-btn {
+  display: none;
+}
+
+/* المحتوى الرئيسي */
 .main-content {
   flex: 1;
-  padding: 24px;
+  padding: 24px 28px;
   overflow-y: auto;
-  min-width: 0;
-  background: transparent;
-  -webkit-overflow-scrolling: touch;
 }
 
 .topbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  gap: 12px;
-  flex-wrap: wrap;
+  margin-bottom: 24px;
 }
 
+/* كروت الإحصائيات */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
-  gap: 14px;
-  margin-bottom: 22px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
 .stat-card {
   background: var(--bg-card);
-  backdrop-filter: var(--liquid-glass-blur);
-  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-subtle);
-  padding: 16px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 4px 15px rgba(14, 19, 56, 0.03);
 }
 
-.stat-icon {
-  font-size: 18px;
-  background: rgba(255, 255, 255, 0.8);
-  padding: 8px;
-  border-radius: 8px;
-}
-
-/* إصلاح الجداول في Safari */
+/* حماية الجداول في الموبايل */
 .table-container {
-  background: var(--bg-card);
-  backdrop-filter: var(--liquid-glass-blur);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-subtle);
-  border-radius: 12px;
-  overflow-x: auto;
+  width: 100% !important;
+  max-width: 100%;
+  overflow-x: auto !important;
   -webkit-overflow-scrolling: touch;
-  width: 100%;
-  margin-bottom: 20px;
   display: block;
+  margin-bottom: 20px;
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 4px 15px rgba(14, 19, 56, 0.02);
 }
 
 .exams-table {
   width: 100%;
-  min-width: 680px;
+  min-width: 680px; /* ضمان الحفاظ على أبعاد الأعمدة مع التمرير */
   border-collapse: collapse;
   text-align: right;
   font-size: 13px;
   white-space: nowrap;
 }
 
-.exams-table th, .exams-table td {
-  padding: 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+.exams-table th, 
+.exams-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #EEF2F6;
 }
 
 .exams-table th {
-  background: rgba(255, 255, 255, 0.5);
+  background: #F8FAFC;
   color: var(--text-muted);
   font-weight: 800;
 }
 
-/* إصلاح الأزرار وإلغاء شكل أزرار iOS الافتراضية */
-button, input[type="button"], input[type="submit"], .btn, .btn-action {
-  -webkit-appearance: none;
-  appearance: none;
-  border-radius: 8px;
-  font-family: inherit;
-}
-
-.btn-action {
-  padding: 8px 14px;
-  border-radius: 8px;
-  border: none;
+/* الأزرار العامة */
+.btn {
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 13px;
   cursor: pointer;
-  font-weight: 700;
-  font-size: 12px;
+  border: 1px solid transparent;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin: 2px;
-  touch-action: manipulation;
+  text-decoration: none;
 }
 
-.btn-action-primary { background: var(--royal-indigo-base); color: #ffffff; }
-.btn-action-success { background: #059669; color: #ffffff; }
-.btn-action-danger { background: #dc2626; color: #ffffff; }
-
-/* معالجة الحقول في سفاري آيفون لمنع الـ Zoom التلقائي غير المرغوب */
-input, select, textarea {
-  font-size: 16px !important; /* يمنع زووم المتصفح عند الضغط على الحقل في iPhone */
-  -webkit-appearance: none;
-  appearance: none;
-  border-radius: 8px;
+.btn-primary {
+  background: var(--royal-indigo-base);
+  color: #ffffff;
 }
 
-/* التجاوب مع شاشات الموبايل */
+.btn-outline {
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  color: var(--royal-indigo-base);
+}
+
+/* حقول الإدخال */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+  text-align: right;
+}
+
+.form-group label {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--royal-indigo-base);
+}
+
+.form-group input, 
+.form-group select, 
+.form-group textarea {
+  padding: 10px 14px;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  font-size: 13px;
+  outline: none;
+}
+
+.form-group input:focus, 
+.form-group select:focus, 
+.form-group textarea:focus {
+  border-color: var(--cyan-accent);
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+}
+
+/* التجاوب للموبايل */
 @media (max-width: 900px) {
   .dashboard-wrapper {
     flex-direction: column;
   }
-  
+
   .sidebar {
     width: 100%;
-    border-left: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-    padding: 12px 14px;
+    padding: 16px;
   }
 
   .mobile-sidebar-toggle-btn {
-    display: flex;
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--royal-indigo-light);
+    color: #fff;
+    border: 1px solid rgba(0, 210, 255, 0.25);
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 13.5px;
+    cursor: pointer;
+    margin-bottom: 10px;
   }
 
   .sidebar-nav {
     display: none;
-    flex-direction: column;
-    gap: 6px;
-    background: rgba(8, 11, 33, 0.88);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 14px;
-    padding: 12px;
-    margin-top: 6px;
   }
 
   .sidebar-nav.show-mobile-menu {
-    display: flex;
-    animation: fadeInMenu 0.25s ease;
-  }
-
-  @keyframes fadeInMenu {
-    from { opacity: 0; transform: translateY(-8px); }
-    to { opacity: 1; transform: translateY(0); }
+    display: flex !important;
   }
 
   .main-content {
-    padding: 16px 12px;
-  }
-
-  .topbar {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .topbar button, .topbar .btn {
-    width: 100%;
-    text-align: center;
-    padding: 12px;
+    padding: 16px 14px;
   }
 }
