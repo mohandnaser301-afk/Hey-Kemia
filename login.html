@@ -3,333 +3,391 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>تسجيل الدخول - هي كيميا !</title>
+  <title>تسجيل الدخول - منصة هي كيميا !</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    /* =========================================================
-       تصميم صفحة تسجيل الدخول الفخمة (Liquid Glassmorphism UI)
-       ========================================================= */
-
     body {
+      background: radial-gradient(circle at top right, rgba(0, 210, 255, 0.09), transparent 50%),
+                  radial-gradient(circle at bottom left, rgba(14, 19, 56, 0.06), transparent 50%),
+                  #F0F4FC;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      background: radial-gradient(circle at 50% 18%, rgba(0, 210, 255, 0.16) 0%, rgba(2, 132, 199, 0.06) 45%, #F8FAFC 85%);
-      position: relative;
-      overflow-x: hidden;
+      margin: 0;
+      padding: 0;
     }
 
-    /* خلفية كيميائية ناعمة تفاعلية */
-    .auth-backdrop-elements {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
-      overflow: hidden;
-    }
-
-    .auth-chem-glow-1 {
-      position: absolute;
-      top: -80px;
-      right: -80px;
-      width: 340px;
-      height: 340px;
-      background: radial-gradient(circle, rgba(0, 210, 255, 0.28) 0%, transparent 70%);
-      border-radius: 50%;
-      filter: blur(40px);
-    }
-
-    .auth-chem-glow-2 {
-      position: absolute;
-      bottom: -60px;
-      left: -60px;
-      width: 380px;
-      height: 380px;
-      background: radial-gradient(circle, rgba(14, 19, 56, 0.18) 0%, transparent 70%);
-      border-radius: 50%;
-      filter: blur(50px);
-    }
-
-    /* حاوية النموذج الزجاجية الفاخرة */
-    .auth-page-container {
-      position: relative;
-      z-index: 2;
-      width: 100%;
-      max-width: 440px;
-      margin: 95px auto 40px;
-      padding: 0 16px;
+    .auth-page-wrapper {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 95px 16px 40px;
       box-sizing: border-box;
     }
 
-    .auth-glass-card {
-      background: rgba(255, 255, 255, 0.88);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1.5px solid rgba(0, 210, 255, 0.35);
-      border-radius: 28px;
-      padding: 36px 30px 32px;
-      box-shadow: 0 20px 45px rgba(14, 19, 56, 0.09), 
-                  0 4px 15px rgba(0, 210, 255, 0.08),
-                  inset 0 1px 2px rgba(255, 255, 255, 0.9);
-      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    .auth-card {
+      background: #ffffff;
+      border: 1px solid var(--border-subtle, rgba(226, 232, 240, 0.8));
+      border-radius: 24px;
+      box-shadow: 0 20px 45px rgba(14, 19, 56, 0.08);
+      max-width: 460px;
+      width: 100%;
+      padding: 36px 32px;
+      box-sizing: border-box;
+      position: relative;
     }
 
-    .auth-glass-card:hover {
-      border-color: rgba(0, 210, 255, 0.55);
-      box-shadow: 0 25px 55px rgba(14, 19, 56, 0.13), 
-                  0 8px 25px rgba(0, 210, 255, 0.15);
-    }
-
-    /* هيدر الكارت والأيقونة العلمية */
-    .auth-card-header {
+    .auth-header {
       text-align: center;
-      margin-bottom: 26px;
+      margin-bottom: 24px;
     }
 
-    .auth-flask-icon-box {
-      width: 58px;
-      height: 58px;
-      background: linear-gradient(135deg, rgba(0, 210, 255, 0.15) 0%, rgba(2, 132, 199, 0.2) 100%);
-      border: 1.5px solid rgba(0, 210, 255, 0.4);
-      border-radius: 18px;
+    .auth-logo-badge {
+      width: 52px;
+      height: 52px;
+      background: rgba(0, 210, 255, 0.12);
+      color: #0284C7;
+      border-radius: 16px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       font-size: 26px;
       margin-bottom: 12px;
-      box-shadow: 0 8px 20px rgba(0, 210, 255, 0.2);
     }
 
-    .auth-card-header h1 {
-      font-size: 24px;
+    .auth-header h1 {
+      font-size: 22px;
       font-weight: 900;
-      color: var(--royal-indigo-base);
+      color: var(--royal-indigo-base, #0E1338);
       margin: 0 0 6px;
     }
 
-    .auth-card-header p {
-      font-size: 13px;
-      font-weight: 700;
-      color: #64748B;
+    .auth-header p {
+      font-size: 13.5px;
+      color: var(--text-muted, #64748B);
       margin: 0;
     }
 
-    .auth-card-header p span {
-      color: #0284C7;
+    .form-group {
+      margin-bottom: 16px;
     }
 
-    /* حقول الإدخال المحسنة هندسياً وبصرياً */
-    .auth-input-group {
-      margin-bottom: 18px;
-      text-align: right;
-    }
-
-    .auth-input-group label {
+    .form-group label {
       display: block;
       font-size: 12.5px;
       font-weight: 800;
-      color: var(--royal-indigo-base);
-      margin-bottom: 7px;
+      color: var(--royal-indigo-base, #0E1338);
+      margin-bottom: 6px;
     }
 
-    .auth-input-wrapper {
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
-
-    .auth-input-wrapper input {
+    .form-group input {
       width: 100%;
-      height: 48px;
-      padding: 0 44px 0 16px;
-      background: #FFFFFF;
+      height: 44px;
+      padding: 0 14px;
+      background: #F8FAFC;
       border: 1.5px solid #E2E8F0;
-      border-radius: 14px;
-      font-size: 13.5px;
-      font-weight: 700;
-      color: var(--royal-indigo-base);
-      box-sizing: border-box;
+      border-radius: 12px;
+      font-size: 13px;
       outline: none;
+      box-sizing: border-box;
+      color: #1E293B;
       transition: all 0.2s ease;
     }
 
-    .auth-input-wrapper input:focus {
-      border-color: #00D2FF;
-      box-shadow: 0 0 0 4px rgba(0, 210, 255, 0.15);
-      background: #FFFFFF;
+    .form-group input:focus {
+      border-color: var(--cyan-accent, #00D2FF);
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(0, 210, 255, 0.15);
     }
 
-    .auth-input-wrapper input::placeholder {
-      color: #94A3B8;
-      font-weight: 600;
+    .form-options-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 20px;
     }
 
-    .auth-field-icon {
-      position: absolute;
-      right: 15px;
-      font-size: 16px;
-      color: #64748B;
-      pointer-events: none;
-      user-select: none;
-    }
-
-    /* زر الدخول الرئيسي المطور */
-    .btn-auth-submit {
-      width: 100%;
-      height: 50px;
-      background: linear-gradient(135deg, #0E1338 0%, #1D255E 100%);
-      color: #FFFFFF;
-      border: 1px solid rgba(0, 210, 255, 0.4);
-      border-radius: 14px;
-      font-size: 14.5px;
-      font-weight: 900;
+    .forgot-link {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #0284C7;
       cursor: pointer;
-      box-shadow: 0 10px 25px rgba(14, 19, 56, 0.2);
-      transition: all 0.25s ease;
+      text-decoration: none;
+    }
+
+    .forgot-link:hover {
+      text-decoration: underline;
+    }
+
+    .auth-submit-btn {
+      width: 100%;
+      height: 48px;
+      background: linear-gradient(135deg, #0E1338 0%, #1D255E 100%);
+      color: #ffffff;
+      border: none;
+      border-radius: 14px;
+      font-weight: 900;
+      font-size: 14.5px;
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      margin-top: 10px;
+      transition: all 0.2s ease;
+      box-shadow: 0 10px 25px rgba(14, 19, 56, 0.15);
     }
 
-    .btn-auth-submit:hover {
+    .auth-submit-btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 15px 32px rgba(0, 210, 255, 0.28);
-      color: #00D2FF;
-      border-color: #00D2FF;
+      box-shadow: 0 14px 30px rgba(14, 19, 56, 0.22);
     }
 
-    .btn-auth-submit:active {
-      transform: translateY(0);
-    }
-
-    /* الروابط السفلية */
-    .auth-card-footer {
+    .auth-footer-nav {
       text-align: center;
-      margin-top: 22px;
-      border-top: 1px solid #EEF2F6;
-      padding-top: 16px;
+      margin-top: 20px;
       font-size: 13px;
       color: #64748B;
-      font-weight: 700;
     }
 
-    .auth-card-footer a {
+    .auth-footer-nav a {
       color: #0284C7;
       text-decoration: none;
-      font-weight: 900;
-      transition: color 0.2s ease;
-      margin-right: 4px;
+      font-weight: 800;
     }
 
-    .auth-card-footer a:hover {
-      color: #00D2FF;
+    .auth-footer-nav a:hover {
       text-decoration: underline;
     }
 
-    @media (max-width: 480px) {
-      .auth-glass-card {
-        padding: 28px 20px 24px;
-        border-radius: 22px;
-      }
-      .auth-card-header h1 {
-        font-size: 21px;
-      }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 10, 33, 0.75);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 99999;
+      padding: 16px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-box {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 28px 24px;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
+      text-align: center;
+      animation: modalFadeIn 0.25s ease;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-icon {
+      width: 48px;
+      height: 48px;
+      background: rgba(0, 210, 255, 0.12);
+      color: #0284C7;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      margin-bottom: 12px;
+    }
+
+    .modal-box h3 {
+      font-size: 17px;
+      font-weight: 900;
+      color: #0E1338;
+      margin: 0 0 6px;
+    }
+
+    .modal-box p {
+      font-size: 13px;
+      color: #64748B;
+      margin: 0 0 18px;
+      line-height: 1.5;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .modal-actions button {
+      flex: 1;
+      height: 42px;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 13.5px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+    }
+
+    .btn-modal-confirm {
+      background: #0E1338;
+      color: #ffffff;
+    }
+
+    .btn-modal-cancel {
+      background: #F1F5F9;
+      color: #475569;
+      border: 1px solid #CBD5E1 !important;
     }
   </style>
 </head>
 <body>
 
-  <!-- تأثيرات التوهج الخلفية -->
-  <div class="auth-backdrop-elements">
-    <div class="auth-chem-glow-1"></div>
-    <div class="auth-chem-glow-2"></div>
-  </div>
-
-  <!-- النافبار الكبسولي العلوي -->
   <div class="navbar-capsule-wrapper">
     <nav class="navbar-capsule">
       <a href="index.html" class="capsule-brand">
         <div class="capsule-logo">HK</div>
         <span class="brand-text">هي كيميا<span>!</span></span>
       </a>
-      <div class="capsule-auth">
+      <div class="capsule-auth" id="navAuthBox">
         <a href="register.html" class="nav-btn-primary">حساب جديد</a>
       </div>
     </nav>
   </div>
 
-  <!-- حاوية تسجيل الدخول الزجاجية -->
-  <main class="auth-page-container anim-fade-up">
-    <div class="auth-glass-card">
-      
-      <div class="auth-card-header">
-        <div class="auth-flask-icon-box">🧪</div>
+  <div class="auth-page-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-logo-badge">🔑</div>
         <h1>تسجيل الدخول</h1>
-        <p>منصة الكيمياء للأستاذ/ <span>محمد السعيد</span></p>
+        <p>مرحباً بك مجدداً في منصة هي كيميا !</p>
       </div>
 
-      <form id="studentLoginForm">
-        <div class="auth-input-group">
-          <label for="loginEmail">البريد الإلكتروني</label>
-          <div class="auth-input-wrapper">
-            <span class="auth-field-icon">✉️</span>
-            <input type="email" id="loginEmail" placeholder="student@example.com" required autocomplete="email">
-          </div>
+      <form id="loginForm" autocomplete="off">
+        <div class="form-group">
+          <label for="loginEmail">البريد الإلكتروني *</label>
+          <input type="email" id="loginEmail" placeholder="example@gmail.com" required>
         </div>
 
-        <div class="auth-input-group">
-          <label for="loginPassword">كلمة المرور</label>
-          <div class="auth-input-wrapper">
-            <span class="auth-field-icon">🔒</span>
-            <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
-          </div>
+        <div class="form-group">
+          <label for="loginPassword">كلمة المرور *</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" required>
         </div>
 
-        <button type="submit" class="btn-auth-submit" id="loginSubmitBtn">
-          <span>دخول للمنصة</span>
+        <div class="form-options-row">
+          <button type="button" class="forgot-link" id="btnOpenForgotModal">هل نسيت كلمة السر؟</button>
+        </div>
+
+        <button type="submit" id="btnLoginSubmit" class="auth-submit-btn">
+          <span>تسجيل الدخول</span>
           <span>←</span>
         </button>
       </form>
 
-      <div class="auth-card-footer">
-        <span>ليس لديك حساب؟</span>
-        <a href="register.html">إنشاء حساب جديد الآن</a>
+      <div class="auth-footer-nav">
+        ليس لديك حساب بعد؟ <a href="register.html">إنشاء حساب جديد</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="forgotModal">
+    <div class="modal-box">
+      <div class="modal-icon">📩</div>
+      <h3>استعادة كلمة المرور</h3>
+      <p>أدخل بريدك الإلكتروني المسجل لإرسال رابط إعادة تعيين كلمة المرور فوراً.</p>
+
+      <div class="form-group" style="text-align: right; margin-bottom: 0;">
+        <input type="email" id="forgotEmailInput" placeholder="example@gmail.com">
       </div>
 
+      <div class="modal-actions">
+        <button type="button" class="btn-modal-confirm" id="btnSendResetEmail">إرسال الرابط</button>
+        <button type="button" class="btn-modal-cancel" id="btnCloseForgotModal">إلغاء</button>
+      </div>
     </div>
-  </main>
-
-  <!-- فوتر بسيط متناسق -->
-  <footer style="text-align:center; padding:16px 20px; font-size:12px; color:#64748B; position:relative; z-index:2; font-weight:700;">
-    © 2026 جميع الحقوق محفوظة لمنصة <strong>هي كيميا !</strong> - أ/ محمد السعيد 🧪
-  </footer>
+  </div>
 
   <script src="firebase-config.js"></script>
   <script src="app.js"></script>
   <script>
-    document.getElementById("studentLoginForm").addEventListener("submit", async function(e) {
-      e.preventDefault();
-      
-      var email = document.getElementById("loginEmail").value.trim();
-      var password = document.getElementById("loginPassword").value;
-      var btn = document.getElementById("loginSubmitBtn");
+    var isLoggingIn = false;
+    var loginForm = document.getElementById("loginForm");
+    var btnLoginSubmit = document.getElementById("btnLoginSubmit");
 
-      if (!email || !password) {
-        showToast("يرجى إدخال البريد الإلكتروني وكلمة المرور", "error");
-        return;
-      }
+    var forgotModal = document.getElementById("forgotModal");
+    var btnOpenForgotModal = document.getElementById("btnOpenForgotModal");
+    var btnCloseForgotModal = document.getElementById("btnCloseForgotModal");
+    var btnSendResetEmail = document.getElementById("btnSendResetEmail");
+    var forgotEmailInput = document.getElementById("forgotEmailInput");
 
-      btn.disabled = true;
-      btn.innerHTML = '<span>جاري التحقق والدخول...</span>';
+    if (btnOpenForgotModal) {
+      btnOpenForgotModal.addEventListener("click", function() {
+        var currentEmail = document.getElementById("loginEmail").value.trim();
+        if (currentEmail) forgotEmailInput.value = currentEmail;
+        forgotModal.classList.add("active");
+      });
+    }
 
-      try {
-        if (window.FirebaseService) {
+    if (btnCloseForgotModal) {
+      btnCloseForgotModal.addEventListener("click", function() {
+        forgotModal.classList.remove("active");
+      });
+    }
+
+    if (btnSendResetEmail) {
+      btnSendResetEmail.addEventListener("click", async function() {
+        var email = forgotEmailInput.value.trim();
+        if (!email || !email.includes("@")) {
+          showToast("يرجى إدخال بريد إلكتروني صحيح", "error");
+          return;
+        }
+
+        var origText = btnSendResetEmail.innerText;
+        btnSendResetEmail.disabled = true;
+        btnSendResetEmail.innerText = "جاري الإرسال...";
+
+        try {
+          await window.FirebaseService.resetPassword(email);
+          showToast("تم إرسال رابط إعادة التعيين إلى بريدك الإلكتروني بنجاح", "success");
+          forgotModal.classList.remove("active");
+        } catch (err) {
+          showToast(err.message || "تعذر إرسال الرابط، يرجى المحاولة مرة أخرى", "error");
+        } finally {
+          btnSendResetEmail.disabled = false;
+          btnSendResetEmail.innerText = origText;
+        }
+      });
+    }
+
+    if (loginForm) {
+      loginForm.addEventListener("submit", async function(e) {
+        e.preventDefault();
+
+        if (isLoggingIn) return;
+        isLoggingIn = true;
+
+        var origText = btnLoginSubmit.innerHTML;
+        btnLoginSubmit.disabled = true;
+        btnLoginSubmit.style.opacity = "0.7";
+        btnLoginSubmit.innerHTML = "<span>جاري التحقق...</span>";
+
+        var email = document.getElementById("loginEmail").value.trim();
+        var password = document.getElementById("loginPassword").value;
+
+        try {
           var user = await window.FirebaseService.loginUser(email, password);
-          showToast("مرحباً بك مجدداً يا " + (user.fullName ? user.fullName.split(" ")[0] : "بطل"), "success");
-          
+          showToast("تم تسجيل الدخول بنجاح! مرحباً بك 🧪", "success");
+
           setTimeout(function() {
             if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") {
               window.location.href = "admin.html";
@@ -338,19 +396,22 @@
             } else {
               window.location.href = "dashboard.html";
             }
-          }, 600);
+          }, 1000);
+
+        } catch (err) {
+          if (err.message === "EMAIL_NOT_VERIFIED") {
+            showToast("بريدك الإلكتروني غير مفعل، تم إرسال رابط التفعيل مجدداً إلى بريدك.", "info");
+          } else {
+            showToast(err.message || "بيانات الدخول غير صحيحة", "error");
+          }
+
+          isLoggingIn = false;
+          btnLoginSubmit.disabled = false;
+          btnLoginSubmit.style.opacity = "1";
+          btnLoginSubmit.innerHTML = origText;
         }
-      } catch (err) {
-        btn.disabled = false;
-        btn.innerHTML = '<span>دخول للمنصة</span><span>←</span>';
-        
-        if (err.message === "EMAIL_NOT_VERIFIED") {
-          showToast("يرجى مراجعة بريدك الإلكتروني وتفعيل الحساب أولاً عبر الرابط المرسل إليك.", "error", "تفعيل الحساب");
-        } else {
-          showToast(err.message || "البريد الإلكتروني أو كلمة المرور غير صحيحة", "error");
-        }
-      }
-    });
+      });
+    }
   </script>
 </body>
 </html>
