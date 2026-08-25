@@ -318,7 +318,7 @@ function updateNavbarAndAuthGuards() {
       } else if (user.role === "SUPPORT") {
         authBox.innerHTML = '<a href="support.html" class="nav-btn-primary">شات الدعم</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
       } else {
-        authBox.innerHTML = '<a href="dashboard.html" class="nav-btn-primary">لوحة الطالب (' + sanitizeText(user.fullName ? user.fullName.split(" ")[0] : "") + ')</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
+        authBox.innerHTML = '<a href="dashboard.html" class="nav-btn-primary">لوحة الطالب (' + sanitizeText(user.fullName.split(" ")[0]) + ')</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
       }
     } else {
       authBox.innerHTML = '<a href="login.html" class="nav-btn-link">تسجيل الدخول</a><a href="register.html" class="nav-btn-primary">حساب جديد</a>';
@@ -386,6 +386,19 @@ window.handleHeroEnroll = function() {
 
 window.handleEnrollClick = handleEnrollClick;
 window.logout = logout;
+
+// حقن توقيع المطور تلقائياً في أسفل كل صفحة
+function injectDeveloperFooter() {
+  if (document.getElementById("hkDeveloperFooter")) return;
+
+  var footer = document.createElement("div");
+  footer.id = "hkDeveloperFooter";
+  footer.style.cssText = "width:100%; text-align:center; padding:14px 10px; font-size:12.5px; color:#64748B; background:rgba(255,255,255,0.7); backdrop-filter:blur(6px); border-top:1px solid #E2E8F0; margin-top:auto; font-weight:700; z-index:99;";
+  
+  footer.innerHTML = 'تم تطوير المنصة بواسطة <a href="https://www.instagram.com/omar_samehh._/" target="_blank" rel="noopener noreferrer" style="color:#0284C7; text-decoration:none; font-weight:900; transition:color 0.2s;">Omar Sameh ↗</a>';
+
+  document.body.appendChild(footer);
+}
 
 function injectChemicalPreloader() {
   if (document.getElementById("chemicalPreloader")) return;
@@ -465,6 +478,7 @@ function initGlobalRealtimeSync() {
 
 document.addEventListener("DOMContentLoaded", function() {
   injectChemicalPreloader();
+  injectDeveloperFooter();
   registerDeviceServiceWorker();
   updateNavbarAndAuthGuards();
   monitorCurrentUserStatus();
