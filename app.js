@@ -20,7 +20,7 @@ function customConfirm(message, title, confirmText, cancelText) {
 
     var modal = document.createElement("div");
     modal.id = "hkCustomConfirmModal";
-    modal.style.cssText = "position:fixed; inset:0; background:rgba(8,10,33,0.78); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; z-index:999999; padding:16px;";
+    modal.style.cssText = "position:fixed; inset:0; background:rgba(8,10,33,0.78); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; z-index:999999; padding:16px;";
     modal.innerHTML = 
       '<div style="background:#ffffff; color:#191b26; border-radius:18px; padding:24px; max-width:420px; width:100%; box-shadow:0 20px 45px rgba(0,0,0,0.35); text-align:center; border:1px solid rgba(0,210,255,0.2);">' +
         '<div style="width:48px; height:48px; background:rgba(0,210,255,0.12); color:#0284C7; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 12px; font-size:22px;">🧪</div>' +
@@ -109,7 +109,7 @@ function monitorCurrentUserStatus() {
   if (!user || !user.uid) return;
 
   var interval = setInterval(function() {
-    if (window.firebase && firebase.firestore) {
+    if (typeof getFirebase === "function" && getFirebase() && firebase.firestore) {
       clearInterval(interval);
 
       firebase.firestore().collection("users").doc(user.uid)
@@ -146,13 +146,13 @@ function monitorCurrentUserStatus() {
           forceLogoutUser();
         });
     }
-  }, 200);
+  }, 300);
 }
 
 function forceLogoutUser() {
   localStorage.removeItem("current_user");
   localStorage.removeItem("edu_currentUser");
-  if (window.firebase && firebase.auth) {
+  if (typeof firebase !== "undefined" && firebase.auth) {
     try { firebase.auth().signOut(); } catch(e) {}
   }
   showToast("تم إنهاء الجلسة أو حذف الحساب.", "error", "تنبيه");
@@ -197,7 +197,7 @@ function initRealtimeNotificationsReceiver() {
   var isFirstLoad = true;
 
   var interval = setInterval(function() {
-    if (window.FirebaseService && window.firebase && firebase.firestore) {
+    if (window.FirebaseService && typeof window.FirebaseService.subscribeNotifications === "function") {
       clearInterval(interval);
       window.FirebaseService.subscribeNotifications(function(notifs) {
         if (!notifs || notifs.length === 0) return;
@@ -214,7 +214,7 @@ function initRealtimeNotificationsReceiver() {
           lastKnownNotifId = latest.id;
           localStorage.setItem("hk_last_received_notif_id", latest.id);
 
-          if (user && latest.senderEmail && user.email.toLowerCase() === latest.senderEmail) return;
+          if (user && latest.senderEmail && user.email && user.email.toLowerCase() === latest.senderEmail.toLowerCase()) return;
 
           if (!user && latest.targetUid !== "ALL") return;
           if (user && (latest.targetUid === "ALL" || latest.targetUid === user.uid)) {
@@ -224,7 +224,7 @@ function initRealtimeNotificationsReceiver() {
         }
       });
     }
-  }, 250);
+  }, 300);
 }
 
 function showToast(message, type, title) {
@@ -318,7 +318,7 @@ function updateNavbarAndAuthGuards() {
       } else if (user.role === "SUPPORT") {
         authBox.innerHTML = '<a href="support.html" class="nav-btn-primary">شات الدعم</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
       } else {
-        authBox.innerHTML = '<a href="dashboard.html" class="nav-btn-primary">لوحة الطالب (' + sanitizeText(user.fullName.split(" ")[0]) + ')</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
+        authBox.innerHTML = '<a href="dashboard.html" class="nav-btn-primary">لوحة الطالب (' + sanitizeText(user.fullName ? user.fullName.split(" ")[0] : "") + ')</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
       }
     } else {
       authBox.innerHTML = '<a href="login.html" class="nav-btn-link">تسجيل الدخول</a><a href="register.html" class="nav-btn-primary">حساب جديد</a>';
@@ -350,7 +350,7 @@ async function handleEnrollClick(courseId) {
   var course = courses.find(function(c) { return String(c.id) === String(courseId); });
 
   if (course && (course.isFree || Number(course.price) === 0)) {
-    var confirmed = await customConfirm("هل تؤكد رغبتك في الاشتراك بالكورس المجاني: " + course.title + "؟", "تأكيد الاشتراك")[cite: 1];
+    var confirmed = await customConfirm("هل تؤكد رغبتك في الاشتراك بالكورس المجاني: " + course.title + "؟", "تأكيد الاشتراك");
     if (!confirmed) return;
 
     var newEnrolled = (user.enrolledCourses || []).map(String);
@@ -368,7 +368,7 @@ async function handleEnrollClick(courseId) {
     return;
   }
 
-  var proceed = await customConfirm("هل تريد الانتقال لصفحة تأكيد ودفع رسوم الكورس: " + (course ? course.title : "") + "؟", "الاشتراك بالكورس")[cite: 1];
+  var proceed = await customConfirm("هل تريد الانتقال لصفحة تأكيد ودفع رسوم الكورس: " + (course ? course.title : "") + "؟", "الاشتراك بالكورس");
   if (proceed) {
     window.location.href = "checkout.html?course=" + courseId;
   }
@@ -450,19 +450,17 @@ function injectChemicalPreloader() {
 }
 
 function initGlobalRealtimeSync() {
-  var interval = setInterval(function() {
-    if (window.FirebaseService && window.firebase && firebase.firestore) {
-      clearInterval(interval);
-      window.FirebaseService.subscribeCourses(function(courses) {
-        if (typeof renderCoursesSection === "function") renderCoursesSection(courses);
-      });
-      window.FirebaseService.subscribeExams(function(exams) {
-        if (typeof renderGeneralExams === "function") renderGeneralExams(exams);
-      });
-      window.FirebaseService.subscribeUsers();
-      window.FirebaseService.subscribeSubmissions();
-    }
-  }, 250);
+  if (window.FirebaseService) {
+    window.FirebaseService.subscribeCourses(function(courses) {
+      if (typeof renderCoursesSection === "function") renderCoursesSection(courses);
+    });
+    window.FirebaseService.subscribeExams(function(exams) {
+      if (typeof renderGeneralExams === "function") renderGeneralExams(exams);
+    });
+    window.FirebaseService.subscribeUsers();
+    window.FirebaseService.subscribeSubmissions();
+    window.FirebaseService.subscribePayments();
+  }
 }
 
 document.addEventListener("DOMContentLoaded", function() {

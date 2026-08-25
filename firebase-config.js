@@ -28,8 +28,10 @@ const firebaseConfig = {
 
 function getFirebase() {
   if (typeof firebase === "undefined") return null;
-  if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
+  if (!firebase.apps || !firebase.apps.length) {
+    try {
+      firebase.initializeApp(firebaseConfig);
+    } catch (e) {}
   }
   return firebase;
 }
@@ -88,7 +90,6 @@ function compressImageBase64(base64Str, maxWidth, maxHeight, quality) {
 window.compressImageBase64 = compressImageBase64;
 
 window.FirebaseService = {
-  // 1. التسجيل والتحقق من البريد
   async registerStudent(userData) {
     const fb = getFirebase();
     let uid = "u_" + Date.now();
@@ -199,17 +200,22 @@ window.FirebaseService = {
     window.location.href = "login.html";
   },
 
-  // 2. إدارة المستخدمين والمزامنة
   subscribeUsers(callback) {
-    const fb = getFirebase();
-    if (fb && fb.firestore) {
-      return fb.firestore().collection("users").onSnapshot(snap => {
-        const list = [];
-        snap.forEach(doc => list.push({ uid: doc.id, ...doc.data() }));
-        localStorage.setItem("edu_users", JSON.stringify(list));
-        if (callback) callback(list);
-      });
-    }
+    const local = JSON.parse(localStorage.getItem("edu_users") || "[]");
+    if (callback) callback(local);
+
+    const check = setInterval(() => {
+      const fb = getFirebase();
+      if (fb && fb.firestore) {
+        clearInterval(check);
+        fb.firestore().collection("users").onSnapshot(snap => {
+          const list = [];
+          snap.forEach(doc => list.push({ uid: doc.id, ...doc.data() }));
+          localStorage.setItem("edu_users", JSON.stringify(list));
+          if (callback) callback(list);
+        });
+      }
+    }, 150);
   },
 
   async updateUserRoleByUid(uid, newRole) {
@@ -233,9 +239,7 @@ window.FirebaseService = {
     const fb = getFirebase();
     if (fb && fb.firestore && uid) {
       const batch = fb.firestore().batch();
-
-      const userRef = fb.firestore().collection("users").doc(uid);
-      batch.delete(userRef);
+      batch.delete(fb.firestore().collection("users").doc(uid));
 
       const paySnap = await fb.firestore().collection("payments").where("userUid", "==", uid).get();
       paySnap.forEach(doc => batch.delete(doc.ref));
@@ -255,17 +259,22 @@ window.FirebaseService = {
     }
   },
 
-  // 3. الكورسات
   subscribeCourses(callback) {
-    const fb = getFirebase();
-    if (fb && fb.firestore) {
-      return fb.firestore().collection("courses").onSnapshot(snap => {
-        const list = [];
-        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-        localStorage.setItem("edu_courses", JSON.stringify(list));
-        if (callback) callback(list);
-      });
-    }
+    const local = JSON.parse(localStorage.getItem("edu_courses") || "[]");
+    if (callback) callback(local);
+
+    const check = setInterval(() => {
+      const fb = getFirebase();
+      if (fb && fb.firestore) {
+        clearInterval(check);
+        fb.firestore().collection("courses").onSnapshot(snap => {
+          const list = [];
+          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+          localStorage.setItem("edu_courses", JSON.stringify(list));
+          if (callback) callback(list);
+        });
+      }
+    }, 150);
   },
 
   async saveCourse(courseData, courseId) {
@@ -297,17 +306,22 @@ window.FirebaseService = {
     }
   },
 
-  // 4. الامتحانات والتسليمات
   subscribeExams(callback) {
-    const fb = getFirebase();
-    if (fb && fb.firestore) {
-      return fb.firestore().collection("exams").onSnapshot(snap => {
-        const list = [];
-        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-        localStorage.setItem("edu_exams", JSON.stringify(list));
-        if (callback) callback(list);
-      });
-    }
+    const local = JSON.parse(localStorage.getItem("edu_exams") || "[]");
+    if (callback) callback(local);
+
+    const check = setInterval(() => {
+      const fb = getFirebase();
+      if (fb && fb.firestore) {
+        clearInterval(check);
+        fb.firestore().collection("exams").onSnapshot(snap => {
+          const list = [];
+          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+          localStorage.setItem("edu_exams", JSON.stringify(list));
+          if (callback) callback(list);
+        });
+      }
+    }, 150);
   },
 
   async saveExam(examData, examId) {
@@ -330,15 +344,21 @@ window.FirebaseService = {
   },
 
   subscribeSubmissions(callback) {
-    const fb = getFirebase();
-    if (fb && fb.firestore) {
-      return fb.firestore().collection("submissions").orderBy("createdAt", "desc").onSnapshot(snap => {
-        const list = [];
-        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-        localStorage.setItem("edu_submissions", JSON.stringify(list));
-        if (callback) callback(list);
-      });
-    }
+    const local = JSON.parse(localStorage.getItem("edu_submissions") || "[]");
+    if (callback) callback(local);
+
+    const check = setInterval(() => {
+      const fb = getFirebase();
+      if (fb && fb.firestore) {
+        clearInterval(check);
+        fb.firestore().collection("submissions").orderBy("createdAt", "desc").onSnapshot(snap => {
+          const list = [];
+          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+          localStorage.setItem("edu_submissions", JSON.stringify(list));
+          if (callback) callback(list);
+        });
+      }
+    }, 150);
   },
 
   async saveSubmission(submissionData) {
@@ -349,17 +369,22 @@ window.FirebaseService = {
     }
   },
 
-  // 5. المدفوعات وتفعيل الكورسات
   subscribePayments(callback) {
-    const fb = getFirebase();
-    if (fb && fb.firestore) {
-      return fb.firestore().collection("payments").orderBy("createdAt", "desc").onSnapshot(snap => {
-        const list = [];
-        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-        localStorage.setItem("edu_payments", JSON.stringify(list));
-        if (callback) callback(list);
-      });
-    }
+    const local = JSON.parse(localStorage.getItem("edu_payments") || "[]");
+    if (callback) callback(local);
+
+    const check = setInterval(() => {
+      const fb = getFirebase();
+      if (fb && fb.firestore) {
+        clearInterval(check);
+        fb.firestore().collection("payments").orderBy("createdAt", "desc").onSnapshot(snap => {
+          const list = [];
+          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+          localStorage.setItem("edu_payments", JSON.stringify(list));
+          if (callback) callback(list);
+        });
+      }
+    }, 150);
   },
 
   async submitPayment(paymentData) {
@@ -423,16 +448,18 @@ window.FirebaseService = {
     }
   },
 
-  // 6. الإشعارات السحابية
   subscribeNotifications(callback) {
-    const fb = getFirebase();
-    if (fb && fb.firestore) {
-      return fb.firestore().collection("notifications").orderBy("createdAt", "desc").limit(25).onSnapshot(snap => {
-        const list = [];
-        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-        if (callback) callback(list);
-      });
-    }
+    const check = setInterval(() => {
+      const fb = getFirebase();
+      if (fb && fb.firestore) {
+        clearInterval(check);
+        fb.firestore().collection("notifications").orderBy("createdAt", "desc").limit(25).onSnapshot(snap => {
+          const list = [];
+          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+          if (callback) callback(list);
+        });
+      }
+    }, 150);
   },
 
   async pushNotificationToCloud(title, body, targetUid, targetUrl, senderEmail) {
@@ -449,39 +476,53 @@ window.FirebaseService = {
     }
   },
 
-  // 7. الدعم الفني
   subscribeStudentChat(studentUid, callback) {
-    const fb = getFirebase();
-    if (fb && fb.firestore && studentUid) {
-      return fb.firestore().collection("support_threads").doc(studentUid).collection("messages")
-        .orderBy("createdAt", "asc")
-        .onSnapshot(snap => {
-          const list = [];
-          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-          if (callback) callback(list);
-        });
-    }
+    const local = JSON.parse(localStorage.getItem("edu_chat_" + studentUid) || "[]");
+    if (callback) callback(local);
+
+    const check = setInterval(() => {
+      const fb = getFirebase();
+      if (fb && fb.firestore && studentUid) {
+        clearInterval(check);
+        fb.firestore().collection("support_threads").doc(studentUid).collection("messages")
+          .orderBy("createdAt", "asc")
+          .onSnapshot(snap => {
+            const list = [];
+            snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+            localStorage.setItem("edu_chat_" + studentUid, JSON.stringify(list));
+            if (callback) callback(list);
+          });
+      }
+    }, 150);
   },
 
   subscribeAllSupportThreads(callback) {
-    const fb = getFirebase();
-    if (fb && fb.firestore) {
-      return fb.firestore().collection("support_threads")
-        .orderBy("lastMessageTime", "desc")
-        .onSnapshot(snap => {
-          const list = [];
-          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-          if (callback) callback(list);
-        });
-    }
+    const check = setInterval(() => {
+      const fb = getFirebase();
+      if (fb && fb.firestore) {
+        clearInterval(check);
+        fb.firestore().collection("support_threads")
+          .orderBy("lastMessageTime", "desc")
+          .onSnapshot(snap => {
+            const list = [];
+            snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+            if (callback) callback(list);
+          });
+      }
+    }, 150);
   },
 
   async sendSupportMessage(msgData) {
     const fb = getFirebase();
-    if (fb && fb.firestore) {
-      const studentUid = msgData.studentUid;
-      const now = new Date().toISOString();
+    const studentUid = String(msgData.studentUid);
+    const now = new Date().toISOString();
 
+    const localKey = "edu_chat_" + studentUid;
+    const localMsgs = JSON.parse(localStorage.getItem(localKey) || "[]");
+    localMsgs.push(msgData);
+    localStorage.setItem(localKey, JSON.stringify(localMsgs));
+
+    if (fb && fb.firestore) {
       const messageDoc = {
         text: msgData.text,
         senderUid: msgData.senderUid,
