@@ -387,7 +387,7 @@ window.handleHeroEnroll = function() {
 window.handleEnrollClick = handleEnrollClick;
 window.logout = logout;
 
-// حقن توقيع المطور تلقائياً في أسفل كل صفحة
+// حقن توقيع المطور
 function injectDeveloperFooter() {
   if (document.getElementById("hkDeveloperFooter")) return;
 
@@ -400,28 +400,125 @@ function injectDeveloperFooter() {
   document.body.appendChild(footer);
 }
 
+// شاشة التحميل الكيميائية الأصلية السريعة والمنظمة
 function injectChemicalPreloader() {
   if (document.getElementById("chemicalPreloader")) return;
+
+  if (!document.getElementById("chemicalPreloaderClassicStyles")) {
+    var style = document.createElement("style");
+    style.id = "chemicalPreloaderClassicStyles";
+    style.innerHTML = `
+      #chemicalPreloader {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background: #0E1338 !important;
+        z-index: 99999999 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        overflow: hidden !important;
+        transition: opacity 0.4s ease, visibility 0.4s ease !important;
+        pointer-events: all !important;
+      }
+      #chemicalPreloader.hide-preloader {
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+      }
+
+      .lab-stage-container {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+
+      .atomic-ring-1, .atomic-ring-2 {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 2px dashed rgba(0, 210, 255, 0.4);
+        animation: spinRing 3s linear infinite;
+      }
+      .atomic-ring-2 {
+        width: 80%;
+        height: 80%;
+        border-color: rgba(2, 132, 199, 0.5);
+        animation: spinRingRev 2.5s linear infinite;
+      }
+      @keyframes spinRing { 100% { transform: rotate(360deg); } }
+      @keyframes spinRingRev { 100% { transform: rotate(-360deg); } }
+
+      .main-flask-box {
+        font-size: 42px;
+        z-index: 5;
+        animation: pulseFlask 1.5s ease-in-out infinite alternate;
+      }
+      @keyframes pulseFlask { from { transform: scale(0.92); } to { transform: scale(1.08); } }
+
+      .loader-brand-title {
+        font-size: 22px;
+        font-weight: 900;
+        color: #ffffff;
+        margin-bottom: 8px;
+      }
+      .loader-brand-title span { color: #00D2FF; }
+
+      .loader-dynamic-phrase {
+        font-size: 13.5px;
+        font-weight: 700;
+        color: #94A3B8;
+        margin-bottom: 18px;
+        text-align: center;
+        padding: 0 16px;
+      }
+
+      .loader-counter-num {
+        font-size: 14px;
+        font-weight: 900;
+        color: #00D2FF;
+        margin-bottom: 10px;
+      }
+
+      .loader-bar-outer {
+        width: 220px;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      .loader-bar-inner {
+        width: 0%;
+        height: 100%;
+        background: linear-gradient(90deg, #00D2FF, #0284C7);
+        border-radius: 10px;
+        transition: width 0.1s linear;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   var preloader = document.createElement("div");
   preloader.id = "chemicalPreloader";
-  preloader.innerHTML = 
-    '<div class="lab-stage-container">' +
-      '<div class="atomic-ring-1"><div class="electron-dot"></div></div>' +
-      '<div class="atomic-ring-2"><div class="electron-dot"></div></div>' +
-      '<div class="test-tube left-tube"><div class="tube-liquid"></div></div>' +
-      '<div class="test-tube right-tube"><div class="tube-liquid"></div></div>' +
-      '<div class="flask-steam"></div>' +
-      '<div class="main-flask-neck"></div>' +
-      '<div class="main-flask-box">' +
-        '<div class="flask-liquid-core"></div>' +
-        '<div class="lab-bubble"></div>' +
-        '<div class="lab-bubble"></div>' +
-      '</div>' +
-    '</div>' +
-    '<div class="loader-brand-title">منصة هي كيميا<span>!</span></div>' +
-    '<div class="loader-dynamic-phrase" id="loaderDynamicPhrase">جاري تحضير المحاليل والتأسيس...</div>' +
-    '<div class="loader-counter-num" id="loaderCounterNum">0%</div>' +
-    '<div class="loader-bar-outer"><div class="loader-bar-inner" id="loaderBarFill"></div></div>';
+  preloader.innerHTML = `
+    <div class="lab-stage-container">
+      <div class="atomic-ring-1"></div>
+      <div class="atomic-ring-2"></div>
+      <div class="main-flask-box">🧪</div>
+    </div>
+    <div class="loader-brand-title">منصة هي كيميا<span>!</span></div>
+    <div class="loader-dynamic-phrase" id="loaderDynamicPhrase">جاري تحضير المحاليل والتأسيس...</div>
+    <div class="loader-counter-num" id="loaderCounterNum">0%</div>
+    <div class="loader-bar-outer"><div class="loader-bar-inner" id="loaderBarFill"></div></div>
+  `;
 
   document.body.prepend(preloader);
 
@@ -433,7 +530,7 @@ function injectChemicalPreloader() {
   ];
 
   var startTime = Date.now();
-  var duration = 2600;
+  var duration = 1200;
   var barFill = document.getElementById("loaderBarFill");
   var counterNum = document.getElementById("loaderCounterNum");
   var phraseEl = document.getElementById("loaderDynamicPhrase");
@@ -446,8 +543,8 @@ function injectChemicalPreloader() {
     if (counterNum) counterNum.innerText = progress + "%";
 
     if (phraseEl) {
-      if (progress < 25) phraseEl.innerText = phrases[0];
-      else if (progress < 60) phraseEl.innerText = phrases[1];
+      if (progress < 30) phraseEl.innerText = phrases[0];
+      else if (progress < 65) phraseEl.innerText = phrases[1];
       else if (progress < 90) phraseEl.innerText = phrases[2];
       else phraseEl.innerText = phrases[3];
     }
@@ -456,10 +553,12 @@ function injectChemicalPreloader() {
       clearInterval(timer);
       setTimeout(function() {
         preloader.classList.add("hide-preloader");
-        setTimeout(function() { preloader.remove(); }, 500);
-      }, 120);
+        setTimeout(function() {
+          preloader.remove();
+        }, 400);
+      }, 100);
     }
-  }, 30);
+  }, 25);
 }
 
 function initGlobalRealtimeSync() {
