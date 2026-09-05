@@ -254,7 +254,7 @@
   <div class="dashboard-wrapper">
     <aside class="sidebar">
       <div class="sidebar-brand"><h2>هي كيميا<span>!</span></h2></div>
-      
+
       <div class="user-profile-summary">
         <div class="avatar" style="font-weight:900;">HK</div>
         <div class="user-info">
@@ -422,6 +422,17 @@
               <strong style="font-size:14px; color:var(--primary-dark);" id="profEduType">-</strong>
             </div>
           </div>
+
+          <!-- قسم الأجهزة المسجلة على حساب الطالب -->
+          <div style="margin-top: 24px; border-top: 1px solid var(--border-color); padding-top: 18px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+              <h4 style="font-size: 14.5px; font-weight: 800; color: var(--primary-dark); margin: 0; display:flex; align-items:center; gap:6px;">
+                📱 الأجهزة المسجلة والجلسات النشطة
+              </h4>
+              <button type="button" class="btn btn-outline" style="padding: 4px 10px; font-size: 11.5px;" onclick="renderStudentDevicesList('studentDevicesContainer')">تحديث الأجهزة</button>
+            </div>
+            <div id="studentDevicesContainer"></div>
+          </div>
         </div>
       </div>
 
@@ -449,6 +460,12 @@
 
       var labelDisplay = document.getElementById("studentMobileLabelDisplay");
       if (labelDisplay && labelName) labelDisplay.innerText = labelName;
+
+      if (tabId === "myProfileTab") {
+        if (typeof renderStudentDevicesList === "function") {
+          renderStudentDevicesList("studentDevicesContainer");
+        }
+      }
 
       if (window.innerWidth <= 900) {
         var nav = document.getElementById("studentSidebarNav");
@@ -490,6 +507,11 @@
       document.getElementById("statAverageScoreDisplay").innerText = metrics.avgScore + "%";
       document.getElementById("statTotalWatchTime").innerText = metrics.totalHours + " س";
       document.getElementById("enrolledCountBadge").innerText = metrics.enrolledCount + " كورس مفعل";
+
+      // عرض الأجهزة المسجلة
+      if (typeof renderStudentDevicesList === "function") {
+        renderStudentDevicesList("studentDevicesContainer");
+      }
 
       // عرض الكورسات
       var container = document.getElementById("studentEnrolledCoursesGrid");

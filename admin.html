@@ -981,6 +981,14 @@
         </div>
       </div>
       <div id="studentModalDetailsBody"></div>
+      
+      <!-- قسم أجهزة الطالب للإدارة -->
+      <div class="no-print" style="margin-top: 20px; border-top: 1px solid var(--border-subtle); padding-top: 16px;">
+        <h4 style="font-size: 14.5px; font-weight: 800; color: var(--royal-indigo-base); margin-bottom: 12px; display:flex; align-items:center; gap:6px;">
+          📱 الأجهزة المسجلة لحساب هذا الطالب
+        </h4>
+        <div id="adminUserDevicesContainer"></div>
+      </div>
     </div>
   </div>
 
@@ -2248,6 +2256,12 @@
         '</div>';
 
       document.getElementById("studentModalDetailsBody").innerHTML = html;
+
+      // حقن وعرض أجهزة الطالب داخل المودال
+      if (typeof renderAdminUserDevices === "function") {
+        renderAdminUserDevices(uid, "adminUserDevicesContainer");
+      }
+
       openModal("studentDetailsModal");
     }
 
