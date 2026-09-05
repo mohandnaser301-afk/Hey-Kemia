@@ -120,7 +120,6 @@ function registerCurrentDeviceSession() {
 
   var existsIdx = devices.findIndex(function(d) { return d.deviceId === currentDev.deviceId; });
   if (existsIdx > -1) {
-    devices[existsIdx].lastLogin = currentDev.lastLogin;
     devices[existsIdx].os = currentDev.os;
     devices[existsIdx].browser = currentDev.browser;
     devices[existsIdx].deviceType = currentDev.deviceType;
@@ -371,7 +370,6 @@ function monitorCurrentUserStatus() {
 
                 if (roleChanged) {
                   showToast("تم تحديث رتبتك الإدارية إلى: " + liveDoc.role, "info", "تحديث الصلاحيات");
-                  setTimeout(function() { window.location.reload(); }, 600);
                 } else if (coursesChanged) {
                   showToast("تم تفعيل الكورس بنجاح في حسابك!", "success", "تفعيل المحتوى");
                   if (typeof renderStudentDashboard === "function") renderStudentDashboard();
@@ -609,7 +607,7 @@ async function handleEnrollClick(courseId) {
   var course = courses.find(function(c) { return String(c.id) === String(courseId); });
 
   if (course && (course.isFree || Number(course.price) === 0)) {
-    var confirmed = await customConfirm("هل تؤكد رغبتك في الاشتراك بالكورس المجاني: " + course.title + "؟", "تأكيد الاشتراك");
+    var confirmed = await customConfirm("هل تؤكد رغبتك في الاشتراك بالكورس المجاني: " + course.title + "؟", "تأكيد الاشتراك")[cite: 4];
     if (!confirmed) return;
 
     var newEnrolled = (user.enrolledCourses || []).map(String);
@@ -627,7 +625,7 @@ async function handleEnrollClick(courseId) {
     return;
   }
 
-  var proceed = await customConfirm("هل تريد الانتقال لصفحة تأكيد ودفع رسوم الكورس: " + (course ? course.title : "") + "؟", "الاشتراك بالكورس");
+  var proceed = await customConfirm("هل تريد الانتقال لصفحة تأكيد ودفع رسوم الكورس: " + (course ? course.title : "") + "؟", "الاشتراك بالكورس")[cite: 4];
   if (proceed) {
     window.location.href = "checkout.html?course=" + courseId;
   }
