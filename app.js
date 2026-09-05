@@ -112,32 +112,33 @@ function detectCurrentDeviceInfo() {
 }
 
 function registerCurrentDeviceSession() {
-  var user = getCurrentUser();
-  if (!user || !user.uid) return;
+  try {
+    var user = getCurrentUser();
+    if (!user || !user.uid) return;
 
-  var currentDev = detectCurrentDeviceInfo();
-  var devices = user.devices || [];
+    var currentDev = detectCurrentDeviceInfo();
+    var devices = user.devices || [];
 
-  var existsIdx = devices.findIndex(function(d) { return d.deviceId === currentDev.deviceId; });
-  if (existsIdx > -1) {
-    devices[existsIdx].os = currentDev.os;
-    devices[existsIdx].browser = currentDev.browser;
-    devices[existsIdx].deviceType = currentDev.deviceType;
-  } else {
-    devices.push(currentDev);
-  }
+    var existsIdx = devices.findIndex(function(d) { return d.deviceId === currentDev.deviceId; });
+    if (existsIdx > -1) {
+      devices[existsIdx].os = currentDev.os;
+      devices[existsIdx].browser = currentDev.browser;
+      devices[existsIdx].deviceType = currentDev.deviceType;
+      devices[existsIdx].lastLogin = currentDev.lastLogin;
+    } else {
+      devices.push(currentDev);
+    }
 
-  user.devices = devices;
-  localStorage.setItem("current_user", JSON.stringify(user));
-  localStorage.setItem("edu_currentUser", JSON.stringify(user));
+    user.devices = devices;
+    localStorage.setItem("current_user", JSON.stringify(user));
+    localStorage.setItem("edu_currentUser", JSON.stringify(user));
 
-  if (typeof getFirebase === "function" && getFirebase() && firebase.firestore) {
-    try {
+    if (typeof firebase !== "undefined" && firebase.firestore) {
       firebase.firestore().collection("users").doc(user.uid).set({
         devices: devices
-      }, { merge: true });
-    } catch (e) {}
-  }
+      }, { merge: true }).catch(function(){});
+    }
+  } catch (e) {}
 }
 
 async function revokeDeviceSession(targetUid, deviceIdToRevoke) {
@@ -174,7 +175,7 @@ async function revokeDeviceSession(targetUid, deviceIdToRevoke) {
     localStorage.setItem("edu_users", JSON.stringify(usersList));
   }
 
-  if (typeof getFirebase === "function" && getFirebase() && firebase.firestore) {
+  if (typeof firebase !== "undefined" && firebase.firestore) {
     try {
       await firebase.firestore().collection("users").doc(targetUid).update({
         devices: updatedDevices
@@ -339,28 +340,31 @@ function monitorCurrentUserStatus() {
   var attempts = 0;
   var interval = setInterval(function() {
     attempts++;
-    if (typeof getFirebase === "function" && getFirebase() && firebase.firestore) {
+    if (typeof firebase !== "undefined" && firebase.firestore) {
       clearInterval(interval);
 
       try {
         firebase.firestore().collection("users").doc(user.uid)
           .onSnapshot(function(docSnap) {
             if (!docSnap.exists) {
-              forceLogoutUser();
+              return;
             } else {
               var liveDoc = docSnap.data();
               liveDoc.uid = docSnap.id;
 
-              if (liveDoc.devices && Array.isArray(liveDoc.devices)) {
+              // إلغاء طرد الدخول المفاجئ، لا يطرد إلا إذا كان الجهاز قد تسجل بنجاح ثم أزيل عمداً من الإدارة
+              if (liveDoc.devices && Array.isArray(liveDoc.devices) && liveDoc.devices.length > 0) {
                 var isThisDeviceAllowed = liveDoc.devices.some(function(d) { return d.deviceId === currentDeviceId; });
-                if (!isThisDeviceAllowed) {
-                  showToast("تم تسجيل الخروج من هذا الجهاز عن بُعد.", "error", "إنهاء الجلسة");
+                var hadRegistered = user.devices && user.devices.some(function(d) { return d.deviceId === currentDeviceId; });
+                
+                if (hadRegistered && !isThisDeviceAllowed) {
+                  showToast("تم إنهاء جلستك من هذا الجهاز عن بُعد.", "error", "إنهاء الجلسة");
                   forceLogoutUser();
                   return;
                 }
               }
 
-              var roleChanged = liveDoc.role !== user.role;
+              var roleChanged = liveDoc.role && (liveDoc.role !== user.role);
               var coursesChanged = JSON.stringify((liveDoc.enrolledCourses || []).map(String)) !== JSON.stringify((user.enrolledCourses || []).map(String));
 
               if (roleChanged || coursesChanged) {
@@ -381,14 +385,12 @@ function monitorCurrentUserStatus() {
                 updateNavbarAndAuthGuards();
               }
             }
-          }, function() {
-            // خطأ قراءة مستند المستخدم
-          });
+          }, function() {});
       } catch (e) {}
     } else if (attempts > 30) {
       clearInterval(interval);
     }
-  }, 300);
+  }, 600);
 }
 
 function forceLogoutUser() {
@@ -397,7 +399,7 @@ function forceLogoutUser() {
   if (typeof firebase !== "undefined" && firebase.auth) {
     try { firebase.auth().signOut(); } catch(e) {}
   }
-  showToast("تم إنهاء الجلسة أو حذف الحساب.", "error", "تنبيه");
+  showToast("تم إنهاء الجلسة.", "error", "تنبيه");
   setTimeout(function() { window.location.replace("login.html"); }, 400);
 }
 
@@ -538,6 +540,7 @@ function updateNavbarAndAuthGuards() {
     var user = getCurrentUser();
     var currentPath = window.location.pathname.toLowerCase();
 
+    // حماية صفحات الإدارة والدخول العكسي
     if (currentPath.includes("admin.html")) {
       if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN")) {
         window.location.replace("login.html");
@@ -553,17 +556,6 @@ function updateNavbarAndAuthGuards() {
 
     if (currentPath.includes("course-view.html") || currentPath.includes("exam.html")) {
       if (!user) { window.location.replace("login.html"); return; }
-    }
-
-    if (user && (currentPath.includes("login.html") || currentPath.includes("register.html"))) {
-      if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") {
-        window.location.replace("admin.html");
-      } else if (user.role === "SUPPORT") {
-        window.location.replace("support.html");
-      } else {
-        window.location.replace("dashboard.html");
-      }
-      return;
     }
 
     var authBox = document.getElementById("navAuthBox");
@@ -607,7 +599,7 @@ async function handleEnrollClick(courseId) {
   var course = courses.find(function(c) { return String(c.id) === String(courseId); });
 
   if (course && (course.isFree || Number(course.price) === 0)) {
-    var confirmed = await customConfirm("هل تؤكد رغبتك في الاشتراك بالكورس المجاني: " + course.title + "؟", "تأكيد الاشتراك")[cite: 4];
+    var confirmed = await customConfirm("هل تؤكد رغبتك في الاشتراك بالكورس المجاني: " + course.title + "؟", "تأكيد الاشتراك");
     if (!confirmed) return;
 
     var newEnrolled = (user.enrolledCourses || []).map(String);
@@ -625,7 +617,7 @@ async function handleEnrollClick(courseId) {
     return;
   }
 
-  var proceed = await customConfirm("هل تريد الانتقال لصفحة تأكيد ودفع رسوم الكورس: " + (course ? course.title : "") + "؟", "الاشتراك بالكورس")[cite: 4];
+  var proceed = await customConfirm("هل تريد الانتقال لصفحة تأكيد ودفع رسوم الكورس: " + (course ? course.title : "") + "؟", "الاشتراك بالكورس");
   if (proceed) {
     window.location.href = "checkout.html?course=" + courseId;
   }
@@ -657,10 +649,14 @@ function injectDeveloperFooter() {
   } catch (e) {}
 }
 
-// شاشة التحميل الكيميائية الأصلية المحسنة والمتوافقة مع جميع مقاسات الشاشات
+// شاشة التحميل الكيميائية
 function injectChemicalPreloader() {
   try {
     if (document.getElementById("chemicalPreloader")) return;
+
+    var currentPath = window.location.pathname.toLowerCase();
+    // عدم تفعيل شاشة التحميل المعقدة داخل صفحة تسجيل الدخول حتى لا تؤثر على سرعة إدخال البيانات
+    if (currentPath.includes("login.html") || currentPath.includes("register.html")) return;
 
     if (!document.getElementById("chemicalPreloaderClassicStyles")) {
       var style = document.createElement("style");
@@ -938,7 +934,7 @@ function injectChemicalPreloader() {
     ];
 
     var startTime = Date.now();
-    var duration = 1250;
+    var duration = 1000;
     var barFill = document.getElementById("loaderBarFill");
     var counterNum = document.getElementById("loaderCounterNum");
     var phraseEl = document.getElementById("loaderDynamicPhrase");
@@ -963,8 +959,8 @@ function injectChemicalPreloader() {
           preloader.classList.add("hide-preloader");
           setTimeout(function() {
             try { preloader.remove(); } catch (e) {}
-          }, 420);
-        }, 60);
+          }, 350);
+        }, 50);
       }
     }, 25);
   } catch (e) {}
