@@ -2,7 +2,6 @@
 // المنظومة البرمجية الموحدة لمنصة هي كيميا !
 // =========================================================
 
-// 1. دوال الأمان والنصوص العامة
 function sanitizeText(str) {
   if (!str) return "";
   var temp = document.createElement("div");
@@ -11,15 +10,27 @@ function sanitizeText(str) {
 }
 window.sanitizeText = sanitizeText;
 
+// محول روابط يوتيوب الاحترافي لكافة الصيغ
 function formatYouTubeEmbedUrl(url) {
   if (!url) return "";
-  var str = String(url).trim();
-  if (str.includes("youtube.com/embed/")) return str;
-  var regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-  var match = str.match(regExp);
-  return (match && match[2].length === 11) 
-    ? "https://www.youtube.com/embed/" + match[2] 
-    : str;
+  var cleanUrl = String(url).trim();
+  if (cleanUrl.includes("youtube-nocookie.com/embed/")) return cleanUrl;
+
+  var videoId = "";
+  if (cleanUrl.includes("youtu.be/")) {
+    videoId = cleanUrl.split("youtu.be/")[1].split("?")[0].split("&")[0];
+  } else if (cleanUrl.includes("youtube.com/watch")) {
+    var urlParams = new URLSearchParams(cleanUrl.split("?")[1] || "");
+    videoId = urlParams.get("v") || "";
+  } else if (cleanUrl.includes("youtube.com/shorts/")) {
+    videoId = cleanUrl.split("youtube.com/shorts/")[1].split("?")[0].split("&")[0];
+  } else if (cleanUrl.includes("youtube.com/embed/")) {
+    videoId = cleanUrl.split("youtube.com/embed/")[1].split("?")[0].split("&")[0];
+  }
+
+  return videoId 
+    ? "https://www.youtube-nocookie.com/embed/" + videoId + "?rel=0&modestbranding=1&enablejsapi=1" 
+    : cleanUrl;
 }
 window.formatYouTubeEmbedUrl = formatYouTubeEmbedUrl;
 
@@ -94,24 +105,6 @@ function showToast(message, type, title) {
 }
 window.showToast = showToast;
 
-function logAdminAction(actionType, details) {
-  try {
-    var user = getCurrentUser() || { fullName: "غير مسجل", role: "GUEST" };
-    var logs = JSON.parse(localStorage.getItem("edu_activity_logs")) || [];
-    logs.unshift({
-      id: Date.now(),
-      actorName: sanitizeText(user.fullName),
-      actorRole: sanitizeText(user.role),
-      actionType: sanitizeText(actionType),
-      details: sanitizeText(details),
-      timestamp: new Date().toLocaleString("ar-EG")
-    });
-    localStorage.setItem("edu_activity_logs", JSON.stringify(logs));
-  } catch (e) {}
-}
-window.logAdminAction = logAdminAction;
-
-// 2. إدارة المستخدم والجلسات
 function getCurrentUser() {
   try {
     var data = localStorage.getItem("current_user") || localStorage.getItem("edu_currentUser");
@@ -148,7 +141,6 @@ function forceLogoutUser() {
 }
 window.forceLogoutUser = forceLogoutUser;
 
-// 3. منظومة تعدد الأجهزة والجلسات
 function getOrCreateDeviceId() {
   try {
     var devId = localStorage.getItem("hk_device_id");
@@ -229,7 +221,8 @@ window.registerCurrentDeviceSession = registerCurrentDeviceSession;
 async function revokeDeviceSession(targetUid, deviceIdToRevoke) {
   try {
     var user = getCurrentUser();
-    var isSuper = user && (user.role === "SUPER_ADMIN" || user.role === "ADMIN");
+    var role = (user && user.role ? user.role : "").toUpperCase();
+    var isSuper = role === "SUPER_ADMIN" || role === "ADMIN";
 
     if (!isSuper && (!user || user.uid !== targetUid)) {
       showToast("غير مصرح لك بتنفيذ هذا الإجراء", "error");
@@ -276,11 +269,13 @@ async function revokeDeviceSession(targetUid, deviceIdToRevoke) {
     }
 
     if (typeof renderStudentDevicesList === "function") renderStudentDevicesList();
+    if (typeof renderAdminOwnDevicesList === "function") renderAdminOwnDevicesList();
     if (typeof renderAdminUserDevices === "function") renderAdminUserDevices(targetUid);
   } catch(e) {}
 }
 window.revokeDeviceSession = revokeDeviceSession;
 
+// عرض الأجهزة المسجلة للطالب
 function renderStudentDevicesList(containerId) {
   try {
     var targetId = containerId || "studentDevicesContainer";
@@ -325,6 +320,52 @@ function renderStudentDevicesList(containerId) {
 }
 window.renderStudentDevicesList = renderStudentDevicesList;
 
+// عرض الأجهزة المسجلة لحساب الإداري نفسه داخل لوحة التحكم
+function renderAdminOwnDevicesList(containerId) {
+  try {
+    var targetId = containerId || "adminOwnDevicesContainer";
+    var container = document.getElementById(targetId);
+    if (!container) return;
+
+    var user = getCurrentUser();
+    if (!user) {
+      container.innerHTML = '<p style="font-size:13px; color:#64748B; text-align:center;">يرجى تسجيل الدخول لعرض الأجهزة</p>';
+      return;
+    }
+
+    var currentDevId = getOrCreateDeviceId();
+    var devices = Array.isArray(user.devices) && user.devices.length > 0 ? user.devices : [detectCurrentDeviceInfo()];
+
+    var html = '<div style="display:flex; flex-direction:column; gap:10px;">';
+    devices.forEach(function(dev) {
+      if (!dev) return;
+      var isCurrent = dev.deviceId === currentDevId;
+      var icon = dev.deviceType === "هاتف محمول" ? "📱" : (dev.deviceType === "تابلت / لوحي" ? "📟" : "💻");
+
+      html += '<div style="display:flex; align-items:center; justify-content:space-between; background:#F8FAFC; border:1px solid ' + (isCurrent ? 'rgba(0, 210, 255, 0.4)' : '#E2E8F0') + '; border-radius:10px; padding:10px 14px;">' +
+        '<div style="display:flex; align-items:center; gap:10px;">' +
+          '<span style="font-size:20px;">' + icon + '</span>' +
+          '<div>' +
+            '<div style="font-size:13px; font-weight:800; color:#0E1338; display:flex; align-items:center; gap:6px;">' +
+              sanitizeText(dev.platformName || dev.os) +
+              (isCurrent ? '<span style="font-size:10px; background:#00D2FF; color:#0E1338; font-weight:900; padding:1px 6px; border-radius:4px;">الجهاز الحالي</span>' : '') +
+            '</div>' +
+            '<div style="font-size:11.5px; color:#64748B;">النوع: ' + sanitizeText(dev.deviceType) + ' | آخر نشاط: ' + sanitizeText(dev.lastLogin || "الآن") + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div>' +
+          (!isCurrent ? '<button onclick="revokeDeviceSession(\'' + user.uid + '\', \'' + dev.deviceId + '\')" style="background:#FEE2E2; color:#DC2626; border:1px solid #FCA5A5; padding:5px 10px; border-radius:6px; font-size:11.5px; font-weight:800; cursor:pointer;">إنهاء الجلسة</button>' : '') +
+        '</div>' +
+      '</div>';
+    });
+    html += '</div>';
+
+    container.innerHTML = html;
+  } catch (e) {}
+}
+window.renderAdminOwnDevicesList = renderAdminOwnDevicesList;
+
+// عرض الأجهزة لأي طالب بواسطة الإدارة
 function renderAdminUserDevices(targetUid, containerId) {
   try {
     var targetId = containerId || "adminUserDevicesContainer";
@@ -367,7 +408,6 @@ function renderAdminUserDevices(targetUid, containerId) {
 }
 window.renderAdminUserDevices = renderAdminUserDevices;
 
-// 4. الحساب الأكاديمي الموحد للطلاب
 function calculateStudentMetrics(userUid) {
   if (!userUid) return { enrolledCount: 0, completedExams: 0, avgScore: 0, totalHours: 0, enrolledList: [], submissionsList: [] };
 
@@ -416,6 +456,388 @@ function calculateStudentMetrics(userUid) {
 }
 window.calculateStudentMetrics = calculateStudentMetrics;
 
+// =========================================================
+// شاشة التحميل المعملية الاحترافية (بدون دخان وبانتقال ناعم)
+// =========================================================
+function injectChemicalPreloader() {
+  try {
+    if (document.getElementById("chemicalPreloader")) return;
+
+    var currentPath = (window.location.pathname || "").toLowerCase();
+    if (currentPath.includes("login.html") || currentPath.includes("register.html")) return;
+
+    if (!document.getElementById("chemApparatusCleanStyles")) {
+      var style = document.createElement("style");
+      style.id = "chemApparatusCleanStyles";
+      style.innerHTML = `
+        #chemicalPreloader {
+          position: fixed !important;
+          inset: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          background: radial-gradient(circle at 50% 40%, #0F1738 0%, #060818 100%) !important;
+          z-index: 99999999 !important;
+          display: flex !important;
+          flex-direction: column !important;
+          align-items: center !important;
+          justify-content: center !important;
+          overflow: hidden !important;
+          transition: opacity 0.5s ease;
+        }
+
+        .chem-lab-apparatus {
+          position: relative;
+          width: 190px;
+          height: 170px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 22px;
+          z-index: 10;
+        }
+
+        .chem-main-beaker {
+          position: absolute;
+          bottom: 4px;
+          left: 55px;
+          width: 80px;
+          height: 95px;
+          border: 2.5px solid rgba(255, 255, 255, 0.9);
+          border-top: none;
+          clip-path: polygon(32% 0%, 68% 0%, 100% 84%, 86% 100%, 14% 100%, 0% 84%);
+          background: rgba(255, 255, 255, 0.05);
+          box-shadow: 0 0 25px rgba(0, 210, 255, 0.25);
+          overflow: hidden;
+        }
+
+        .chem-beaker-fluid {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          height: 38%;
+          background: linear-gradient(0deg, #FF1744 0%, #FF5252 100%);
+          box-shadow: 0 0 16px #FF1744;
+          transition: height 1.2s ease, background 0.4s ease;
+        }
+
+        .chem-main-beaker.mixing .chem-beaker-fluid {
+          height: 80%;
+          background: linear-gradient(0deg, #00E5FF 0%, #00B0FF 50%, #7C4DFF 100%);
+          box-shadow: 0 0 28px #00E5FF;
+        }
+
+        .beaker-bubble {
+          position: absolute;
+          width: 5px;
+          height: 5px;
+          background: rgba(255, 255, 255, 0.85);
+          border-radius: 50%;
+          bottom: 8px;
+          opacity: 0;
+          animation: bubbleBoil 0.9s ease-out infinite;
+        }
+        .bubble-1 { left: 24%; animation-delay: 0.1s; }
+        .bubble-2 { left: 50%; animation-delay: 0.45s; }
+        .bubble-3 { left: 74%; animation-delay: 0.25s; }
+
+        @keyframes bubbleBoil {
+          0% { transform: translateY(0) scale(0.6); opacity: 0; }
+          50% { opacity: 0.9; }
+          100% { transform: translateY(-46px) scale(1.3); opacity: 0; }
+        }
+
+        .chem-test-tube {
+          position: absolute;
+          top: 2px;
+          left: 42px;
+          width: 18px;
+          height: 72px;
+          border: 2px solid rgba(0, 210, 255, 0.9);
+          border-radius: 0 0 12px 12px;
+          background: rgba(0, 210, 255, 0.08);
+          box-shadow: 0 0 18px rgba(0, 210, 255, 0.45);
+          transform-origin: top right;
+          transform: rotate(50deg);
+          animation: tubeTiltAndPour 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+          overflow: hidden;
+        }
+
+        .chem-tube-fluid {
+          position: absolute;
+          bottom: 0;
+          width: 100%;
+          height: 80%;
+          background: linear-gradient(180deg, #00D2FF 0%, #0284C7 100%);
+          box-shadow: 0 0 10px #00D2FF;
+        }
+
+        @keyframes tubeTiltAndPour {
+          0% { transform: rotate(35deg); }
+          100% { transform: rotate(58deg); }
+        }
+
+        .chem-liquid-stream {
+          position: absolute;
+          left: 93px;
+          top: 48px;
+          width: 3.5px;
+          height: 52px;
+          background: linear-gradient(180deg, #00D2FF 0%, rgba(0, 210, 255, 0.8) 80%, transparent 100%);
+          box-shadow: 0 0 8px #00D2FF;
+          animation: streamFlow 0.8s linear infinite;
+        }
+
+        @keyframes streamFlow {
+          0% { opacity: 0.6; transform: scaleY(0.9); }
+          50% { opacity: 1; transform: scaleY(1.05); }
+          100% { opacity: 0.6; transform: scaleY(0.9); }
+        }
+
+        .chem-stream-droplet {
+          position: absolute;
+          width: 5px;
+          height: 8px;
+          background: #00D2FF;
+          border-radius: 50%;
+          left: 92px;
+          top: 46px;
+          opacity: 0;
+          box-shadow: 0 0 8px #00D2FF;
+          animation: dropCascade 0.7s ease-in infinite;
+        }
+        .drop-cascade-2 { animation-delay: 0.35s; }
+
+        @keyframes dropCascade {
+          0% { transform: translateY(0); opacity: 0; }
+          25% { opacity: 1; }
+          90% { transform: translateY(48px) scale(0.9); opacity: 1; }
+          100% { transform: translateY(52px) scale(0.2); opacity: 0; }
+        }
+
+        .chem-flash-wave {
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(circle at center, rgba(255,255,255,0.95) 0%, rgba(0,229,255,0.7) 30%, transparent 70%);
+          opacity: 0;
+          pointer-events: none;
+          z-index: 50;
+          transition: opacity 0.25s ease-out;
+        }
+
+        #chemicalPreloader.evaporate-up {
+          animation: wipeBottomToTop 0.65s cubic-bezier(0.7, 0, 0.2, 1) forwards !important;
+        }
+
+        @keyframes wipeBottomToTop {
+          0% { clip-path: inset(0 0 0 0); opacity: 1; }
+          100% { clip-path: inset(0 0 100% 0); opacity: 0; }
+        }
+
+        .loader-brand-title {
+          font-size: 24px;
+          font-weight: 900;
+          color: #ffffff;
+          margin-bottom: 6px;
+          text-shadow: 0 2px 14px rgba(0,0,0,0.6);
+          z-index: 10;
+        }
+        .loader-brand-title span { color: #00D2FF; text-shadow: 0 0 16px rgba(0,210,255,0.85); }
+
+        .loader-dynamic-phrase {
+          font-size: 13.5px;
+          font-weight: 700;
+          color: #94A3B8;
+          margin-bottom: 18px;
+          text-align: center;
+          padding: 0 16px;
+          z-index: 10;
+        }
+
+        .loader-counter-num {
+          font-size: 15px;
+          font-weight: 900;
+          color: #00D2FF;
+          margin-bottom: 10px;
+          font-family: monospace;
+          z-index: 10;
+        }
+
+        .loader-bar-outer {
+          width: 230px;
+          height: 6px;
+          background: rgba(255, 255, 255, 0.08);
+          border-radius: 20px;
+          overflow: hidden;
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          z-index: 10;
+        }
+
+        .loader-bar-inner {
+          width: 0%;
+          height: 100%;
+          background: linear-gradient(90deg, #FF1744 0%, #00D2FF 100%);
+          border-radius: 20px;
+          transition: width 0.08s linear;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    var preloader = document.createElement("div");
+    preloader.id = "chemicalPreloader";
+    preloader.innerHTML = `
+      <div class="chem-flash-wave" id="chemFlashWave"></div>
+
+      <div class="chem-lab-apparatus" id="chemApparatusStage">
+        <div class="chem-test-tube">
+          <div class="chem-tube-fluid"></div>
+        </div>
+        <div class="chem-liquid-stream"></div>
+        <div class="chem-stream-droplet drop-cascade-1"></div>
+        <div class="chem-stream-droplet drop-cascade-2"></div>
+
+        <div class="chem-main-beaker" id="chemMainBeaker">
+          <div class="chem-beaker-fluid">
+            <div class="beaker-bubble bubble-1"></div>
+            <div class="beaker-bubble bubble-2"></div>
+            <div class="beaker-bubble bubble-3"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="loader-brand-title" id="preloaderBrandTitle">منصة هي كيميا<span>!</span></div>
+      <div class="loader-dynamic-phrase" id="loaderDynamicPhrase">جاري سكب المحلول وبدء التفاعل...</div>
+      <div class="loader-counter-num" id="loaderCounterNum">0%</div>
+      <div class="loader-bar-outer" id="preloaderBarContainer"><div class="loader-bar-inner" id="loaderBarFill"></div></div>
+    `;
+
+    document.body.prepend(preloader);
+
+    var phrases = [
+      "جاري إضافة المركبات وبدء التفاعل الكيميائي...",
+      "جاري معايرة المحاليل والتدريبات التفاعلية...",
+      "اقتراب نقطة التكافؤ وانطلاق التفاعل...",
+      "تفاعل كيميائي كامل مع أ/ محمد السعيد 💥"
+    ];
+
+    var startTime = Date.now();
+    var duration = 1400;
+    var barFill = document.getElementById("loaderBarFill");
+    var counterNum = document.getElementById("loaderCounterNum");
+    var phraseEl = document.getElementById("loaderDynamicPhrase");
+    var mainBeaker = document.getElementById("chemMainBeaker");
+    var flashWave = document.getElementById("chemFlashWave");
+
+    var timer = setInterval(function() {
+      var elapsed = Date.now() - startTime;
+      var progress = Math.min(100, Math.round((elapsed / duration) * 100));
+
+      if (barFill) barFill.style.width = progress + "%";
+      if (counterNum) counterNum.innerText = progress + "%";
+
+      if (progress > 35 && mainBeaker) {
+        mainBeaker.classList.add("mixing");
+      }
+
+      if (phraseEl) {
+        if (progress < 28) phraseEl.innerText = phrases[0];
+        else if (progress < 60) phraseEl.innerText = phrases[1];
+        else if (progress < 88) phraseEl.innerText = phrases[2];
+        else phraseEl.innerText = phrases[3];
+      }
+
+      if (progress >= 100) {
+        clearInterval(timer);
+
+        if (flashWave) flashWave.style.opacity = "1";
+
+        setTimeout(function() {
+          if (preloader) {
+            preloader.classList.add("evaporate-up");
+            setTimeout(function() {
+              try { preloader.remove(); } catch (e) {}
+            }, 650);
+          }
+        }, 220);
+      }
+    }, 25);
+  } catch (e) {}
+}
+
+// =========================================================
+// حقن الزخارف الكيميائية (بدون مربعات عبر نصوص SVG وخطوط قياسية)
+// =========================================================
+function injectChemicalDecorations() {
+  try {
+    if (document.getElementById("hkChemicalBackgroundDecorations")) return;
+
+    var container = document.createElement("div");
+    container.id = "hkChemicalBackgroundDecorations";
+    container.style.cssText = "position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; opacity:0.18; font-family:system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;";
+
+    // أيقونات SVG كيميائية متوافقة بنسبة 100% مع كافة المتصفحات دون الاعتماد على خط الإيموجي
+    var flaskSvg = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00D2FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.31L4.67 19.46A2 2 0 0 0 6.4 22h11.2a2 2 0 0 0 1.73-2.54L14 9.31V2h-4z"></path><line x1="8.5" y1="2" x2="15.5" y2="2"></line><line x1="7" y1="16" x2="17" y2="16"></line></svg>';
+    var atomSvg = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#00D2FF" stroke-width="2"><circle cx="12" cy="12" r="2"></circle><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(30 12 12)"></ellipse><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(90 12 12)"></ellipse><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(150 12 12)"></ellipse></svg>';
+    var hexRingSvg = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#00D2FF" stroke-width="2"><polygon points="12 2 21 7 21 17 12 22 3 17 3 7 12 2"></polygon><circle cx="12" cy="12" r="4.5"></circle></svg>';
+
+    var chemicalItems = [
+      flaskSvg,
+      atomSvg,
+      hexRingSvg,
+      '<span style="font-weight:900; font-size:16px; color:#00D2FF;">H₂O</span>',
+      '<span style="font-weight:900; font-size:16px; color:#00D2FF;">CO₂</span>',
+      '<span style="font-weight:900; font-size:16px; color:#00D2FF;">H₂SO₄</span>',
+      '<span style="font-weight:900; font-size:16px; color:#00D2FF;">NaCl</span>',
+      '<span style="font-weight:900; font-size:15px; color:#00D2FF;">C₆H₁₂O₆</span>',
+      '<span style="font-weight:800; font-size:14px; color:#00D2FF;">2H₂ + O₂ → 2H₂O</span>'
+    ];
+
+    var html = "";
+    for (var i = 0; i < 16; i++) {
+      var top = Math.floor(Math.random() * 92) + "%";
+      var left = Math.floor(Math.random() * 92) + "%";
+      var rot = Math.floor(Math.random() * 60 - 30) + "deg";
+      var item = chemicalItems[i % chemicalItems.length];
+      html += '<div style="position:absolute; top:' + top + '; left:' + left + '; transform:rotate(' + rot + '); user-select:none; filter:drop-shadow(0 0 6px rgba(0,210,255,0.45)); display:inline-flex; align-items:center; justify-content:center;">' + item + '</div>';
+    }
+    container.innerHTML = html;
+    document.body.prepend(container);
+  } catch (e) {}
+}
+
+// =========================================================
+// شات الدعم الفني وتحديث المحادثات
+// =========================================================
+function initSupportChatWidget() {
+  try {
+    var user = getCurrentUser();
+    if (!user || !user.uid) return;
+
+    if (window.FirebaseService && typeof window.FirebaseService.subscribeStudentChat === "function") {
+      window.FirebaseService.subscribeStudentChat(user.uid, function(messages) {
+        if (typeof renderChatMessages === "function") {
+          renderChatMessages(messages);
+        }
+      });
+    }
+
+    var role = (user.role || "STUDENT").toUpperCase();
+    if ((role === "ADMIN" || role === "SUPER_ADMIN" || role === "SUPPORT") && typeof window.FirebaseService.subscribeAllSupportThreads === "function") {
+      window.FirebaseService.subscribeAllSupportThreads(function(threads) {
+        if (typeof renderSupportThreads === "function") {
+          renderSupportThreads(threads);
+        }
+      });
+    }
+  } catch (e) {}
+}
+
+// =========================================================
+// المراقبة المحصنة ضد تكرار التحديث والـ undefined والـ Loop
+// =========================================================
+var lastHandledRole = null;
+
 function monitorCurrentUserStatus() {
   try {
     var user = getCurrentUser();
@@ -426,63 +848,41 @@ function monitorCurrentUserStatus() {
         .onSnapshot(function(docSnap) {
           if (!docSnap || !docSnap.exists) return;
           var liveDoc = docSnap.data();
+          if (!liveDoc) return;
           liveDoc.uid = docSnap.id;
 
-          var roleChanged = liveDoc.role && (liveDoc.role !== user.role);
-          var coursesChanged = JSON.stringify((liveDoc.enrolledCourses || []).map(String)) !== JSON.stringify((user.enrolledCourses || []).map(String));
+          // إذا كانت الرتبة القادمة غير صالحة أو undefined، تجاهلها تماماً
+          if (!liveDoc.role) return;
 
-          if (roleChanged || coursesChanged) {
-            localStorage.setItem("current_user", JSON.stringify(liveDoc));
-            localStorage.setItem("edu_currentUser", JSON.stringify(liveDoc));
-            user = liveDoc;
+          var newRole = String(liveDoc.role).toUpperCase();
 
-            if (roleChanged) {
-              showToast("تم تحديث رتبتك الإدارية إلى: " + liveDoc.role, "info", "تحديث الصلاحيات");
-            } else if (coursesChanged) {
-              showToast("تم تفعيل الكورس بنجاح في حسابك!", "success", "تفعيل المحتوى");
-            }
+          // منع التكرار اللانهائي إذا لم تتغير الرتبة الحقيقية
+          if (lastHandledRole === newRole) return;
+          lastHandledRole = newRole;
 
-            if (typeof renderStudentDashboard === "function") renderStudentDashboard();
-            if (typeof renderAdmin === "function") renderAdmin();
-            updateNavbarAndAuthGuards();
-          }
+          // حفظ البيانات بثبات
+          localStorage.setItem("current_user", JSON.stringify(liveDoc));
+          localStorage.setItem("edu_currentUser", JSON.stringify(liveDoc));
+
+          renderNavbarOnly();
         }, function() {});
     }
   } catch(e) {}
 }
 
-function updateNavbarAndAuthGuards() {
+function renderNavbarOnly() {
   try {
     var user = getCurrentUser();
-    var currentPath = (window.location.pathname || "").toLowerCase();
-
-    if (currentPath.includes("login.html") || currentPath.includes("register.html")) {
-      return;
-    }
-
-    if (currentPath.includes("admin.html")) {
-      if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN")) {
-        window.location.replace("login.html");
-        return;
-      }
-    }
-
-    if (currentPath.includes("dashboard.html")) {
-      if (!user) { window.location.replace("login.html"); return; }
-      if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") { window.location.replace("admin.html"); return; }
-      if (user.role === "SUPPORT") { window.location.replace("support.html"); return; }
-    }
-
-    if (currentPath.includes("course-view.html") || currentPath.includes("exam.html")) {
-      if (!user) { window.location.replace("login.html"); return; }
-    }
+    var role = (user && user.role ? String(user.role) : "STUDENT").toUpperCase();
+    var isAdmin = role === "ADMIN" || role === "SUPER_ADMIN" || role === "SUPERADMIN" || role === "MANAGER";
+    var isSupport = role === "SUPPORT";
 
     var authBox = document.getElementById("navAuthBox");
     if (authBox) {
       if (user) {
-        if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") {
+        if (isAdmin) {
           authBox.innerHTML = '<a href="admin.html" class="nav-btn-primary">لوحة الإدارة</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
-        } else if (user.role === "SUPPORT") {
+        } else if (isSupport) {
           authBox.innerHTML = '<a href="support.html" class="nav-btn-primary">شات الدعم</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
         } else {
           authBox.innerHTML = '<a href="dashboard.html" class="nav-btn-primary">لوحة الطالب (' + sanitizeText((user.fullName || "طالب").split(" ")[0]) + ')</a><button onclick="logout()" class="nav-btn-link">تسجيل الخروج</button>';
@@ -491,6 +891,24 @@ function updateNavbarAndAuthGuards() {
         authBox.innerHTML = '<a href="login.html" class="nav-btn-link">تسجيل الدخول</a><a href="register.html" class="nav-btn-primary">حساب جديد</a>';
       }
     }
+  } catch (e) {}
+}
+
+// حارس التوجيه: بدون أي Redirect تلقائي عشوائي
+function updateNavbarAndAuthGuards() {
+  try {
+    var user = getCurrentUser();
+    var currentPath = (window.location.pathname || "").toLowerCase();
+
+    // حماية لوحة الإدارة فقط لغير المسجلين
+    if (currentPath.includes("admin.html")) {
+      if (!user) {
+        window.location.replace("login.html");
+        return;
+      }
+    }
+
+    renderNavbarOnly();
   } catch (e) {}
 }
 
@@ -503,7 +921,8 @@ async function handleEnrollClick(courseId) {
       return;
     }
 
-    if (user.role !== "STUDENT") {
+    var role = (user && user.role ? String(user.role) : "STUDENT").toUpperCase();
+    if (role !== "STUDENT") {
       showToast("الحسابات الإدارية تستعرض المحتوى مباشرة", "info");
       setTimeout(function() { window.location.href = "course-view.html?id=" + courseId; }, 600);
       return;
@@ -545,17 +964,6 @@ async function handleEnrollClick(courseId) {
 }
 window.handleEnrollClick = handleEnrollClick;
 
-window.handleHeroEnroll = function() {
-  var user = getCurrentUser();
-  if (user) {
-    if (user.role === "STUDENT") window.location.href = "#courses";
-    else window.location.href = "admin.html";
-  } else {
-    window.location.href = "register.html";
-  }
-};
-
-// 5. توقيع المطور
 function injectDeveloperFooter() {
   try {
     if (document.getElementById("hkDeveloperFooter")) return;
@@ -570,91 +978,20 @@ function injectDeveloperFooter() {
   } catch (e) {}
 }
 
-// 6. الإشعارات
-var swRegistration = null;
-function registerDeviceServiceWorker() {
-  try {
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("sw.js")
-        .then(function(reg) { swRegistration = reg; })
-        .catch(function(err) {});
-    }
-  } catch(e) {}
-}
-
-function triggerDeviceNativeNotification(title, body, targetUrl) {
-  try {
-    if (!("Notification" in window) || Notification.permission !== "granted") return;
-
-    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({
-        type: "TRIGGER_NATIVE_NOTIFICATION",
-        title: title,
-        body: body,
-        url: targetUrl || "dashboard.html"
-      });
-    } else {
-      var n = new Notification(title, {
-        body: body,
-        icon: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=192&q=80"
-      });
-      n.onclick = function() {
-        window.focus();
-        window.location.href = targetUrl || "dashboard.html";
-      };
-    }
-  } catch (e) {}
-}
-
-function initRealtimeNotificationsReceiver() {
-  try {
-    var lastKnownNotifId = localStorage.getItem("hk_last_received_notif_id") || "";
-    var isFirstLoad = true;
-
-    var attempts = 0;
-    var interval = setInterval(function() {
-      attempts++;
-      if (window.FirebaseService && typeof window.FirebaseService.subscribeNotifications === "function") {
-        clearInterval(interval);
-        try {
-          window.FirebaseService.subscribeNotifications(function(notifs) {
-            if (!notifs || notifs.length === 0) return;
-            var user = getCurrentUser();
-
-            if (isFirstLoad) {
-              isFirstLoad = false;
-              if (notifs[0]) localStorage.setItem("hk_last_received_notif_id", notifs[0].id);
-              return;
-            }
-
-            var latest = notifs[0];
-            if (latest && latest.id !== lastKnownNotifId) {
-              lastKnownNotifId = latest.id;
-              localStorage.setItem("hk_last_received_notif_id", latest.id);
-
-              if (user && latest.senderEmail && user.email && user.email.toLowerCase() === latest.senderEmail.toLowerCase()) return;
-
-              if (!user && latest.targetUid !== "ALL") return;
-              if (user && (latest.targetUid === "ALL" || latest.targetUid === user.uid)) {
-                triggerDeviceNativeNotification(latest.title, latest.body, latest.targetUrl);
-                showToast(latest.body, "info", latest.title);
-              }
-            }
-          });
-        } catch (e) {}
-      } else if (attempts > 15) {
-        clearInterval(interval);
-      }
-    }, 1000);
-  } catch(e) {}
-}
-
-// 7. محرك المزامنة الحية لربط واجهات الـ HTML
 function initGlobalRealtimeSync() {
   if (window.FirebaseService) {
     try {
       if (typeof window.FirebaseService.subscribeCourses === "function") {
         window.FirebaseService.subscribeCourses(function(courses) {
+          if (Array.isArray(courses)) {
+            courses.forEach(function(c) {
+              if (c.lessons && Array.isArray(c.lessons)) {
+                c.lessons.forEach(function(l) {
+                  l.videoUrl = formatYouTubeEmbedUrl(l.videoUrl);
+                });
+              }
+            });
+          }
           if (typeof renderCoursesSection === "function") renderCoursesSection(courses);
           if (typeof renderStudentDashboard === "function") renderStudentDashboard();
           if (typeof renderAdmin === "function") renderAdmin();
@@ -686,26 +1023,21 @@ function initGlobalRealtimeSync() {
   }
 }
 
-// تشغيل الواجهات فوراً عند جهوزية الـ DOM
 document.addEventListener("DOMContentLoaded", function() {
-  // إزالة أي preloader قديم معلق فوراً
-  var oldLoader = document.getElementById("chemicalPreloader");
-  if (oldLoader) oldLoader.remove();
-
+  injectChemicalPreloader();
+  injectChemicalDecorations();
   injectDeveloperFooter();
-  registerDeviceServiceWorker();
   updateNavbarAndAuthGuards();
   
-  // تشغيل المزامنة وقراءة الحساب
   setTimeout(function() {
     registerCurrentDeviceSession();
     monitorCurrentUserStatus();
     initGlobalRealtimeSync();
-    initRealtimeNotificationsReceiver();
+    initSupportChatWidget();
 
-    // تشغيل دوال الصفحة الحالية إن وجدت
     if (typeof renderStudentDashboard === "function") renderStudentDashboard();
     if (typeof renderAdmin === "function") renderAdmin();
     if (typeof renderStudentDevicesList === "function") renderStudentDevicesList();
+    if (typeof renderAdminOwnDevicesList === "function") renderAdminOwnDevicesList();
   }, 100);
 });

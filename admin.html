@@ -981,7 +981,7 @@
         </div>
       </div>
       <div id="studentModalDetailsBody"></div>
-      
+      <div id="adminOwnDevicesContainer"></div>
       <!-- قسم أجهزة الطالب للإدارة -->
       <div class="no-print" style="margin-top: 20px; border-top: 1px solid var(--border-subtle); padding-top: 16px;">
         <h4 style="font-size: 14.5px; font-weight: 800; color: var(--royal-indigo-base); margin-bottom: 12px; display:flex; align-items:center; gap:6px;">
@@ -2296,5 +2296,17 @@
       renderAdmin();
     });
   </script>
+  <!-- 1. مكتبات Firebase الأساسية من السيرفر مباشرة (إلزامية في البداية) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+
+  <!-- 2. ملف الإعدادات وخدمات المنصة السحابية -->
+  <script src="firebase-config.js"></script>
+
+  <!-- 3. ملف المنظومة البرمجية وتشغيل الواجهات -->
+  <script src="app.js"></script>
+</body>
 </body>
 </html>
