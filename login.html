@@ -357,7 +357,11 @@
         btnSendResetEmail.innerText = "جاري الإرسال...";
 
         try {
-          await window.FirebaseService.resetPassword(email);
+          if (window.FirebaseService && window.FirebaseService.resetPassword) {
+            await window.FirebaseService.resetPassword(email);
+          } else if (typeof firebase !== "undefined" && firebase.auth) {
+            await firebase.auth().sendPasswordResetEmail(email);
+          }
           showToast("تم إرسال رابط إعادة التعيين إلى بريدك الإلكتروني بنجاح", "success");
           forgotModal.classList.remove("active");
         } catch (err) {
@@ -367,6 +371,39 @@
           btnSendResetEmail.innerText = origText;
         }
       });
+    }
+
+    // وظيفة تسجيل دخول احتياطية مباشرة ومؤمنة في حال علق الـ Wrapper
+    async function directFirebaseLogin(email, password) {
+      if (typeof firebase === "undefined" || !firebase.auth) {
+        throw new Error("خدمات Firebase غير متصلة بعد، تحقق من اتصال الإنترنت.");
+      }
+      var cred = await firebase.auth().signInWithEmailAndPassword(email, password);
+      var fbUser = cred.user;
+      
+      var userData = {
+        uid: fbUser.uid,
+        email: fbUser.email,
+        fullName: fbUser.displayName || "طالب",
+        role: "STUDENT"
+      };
+
+      if (firebase.firestore) {
+        try {
+          var docSnap = await firebase.firestore().collection("users").doc(fbUser.uid).get();
+          if (docSnap.exists) {
+            var live = docSnap.data();
+            live.uid = fbUser.uid;
+            userData = live;
+          }
+        } catch (e) {
+          console.warn("تعذر جلب بيانات المستخدم من Firestore:", e);
+        }
+      }
+
+      localStorage.setItem("current_user", JSON.stringify(userData));
+      localStorage.setItem("edu_currentUser", JSON.stringify(userData));
+      return userData;
     }
 
     if (loginForm) {
@@ -384,31 +421,61 @@
         var email = document.getElementById("loginEmail").value.trim();
         var password = document.getElementById("loginPassword").value;
 
+        // صمام أمان لفك تعليق الزر تلقائياً في حال تأخر الرد
+        var loginTimeout = setTimeout(function() {
+          if (isLoggingIn) {
+            isLoggingIn = false;
+            btnLoginSubmit.disabled = false;
+            btnLoginSubmit.style.opacity = "1";
+            btnLoginSubmit.innerHTML = origText;
+            showToast("استغرقت العملية وقتاً أطول من المتوقع، يرجى المحاولة مرة أخرى.", "error");
+          }
+        }, 8000);
+
         try {
-          var user = await window.FirebaseService.loginUser(email, password);
+          var user = null;
+          if (window.FirebaseService && typeof window.FirebaseService.loginUser === "function") {
+            try {
+              user = await window.FirebaseService.loginUser(email, password);
+            } catch (errWrapper) {
+              // إذا كان الخطأ بسبب أن الحساب مفتوح في مكان آخر، نسجل الدخول مباشرة
+              if (errWrapper.message && errWrapper.message.includes("جهاز") || errWrapper.message.includes("device")) {
+                user = await directFirebaseLogin(email, password);
+              } else {
+                throw errWrapper;
+              }
+            }
+          } else {
+            user = await directFirebaseLogin(email, password);
+          }
+
+          clearTimeout(loginTimeout);
           showToast("تم تسجيل الدخول بنجاح! مرحباً بك 🧪", "success");
 
           setTimeout(function() {
-            if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") {
-              window.location.href = "admin.html";
-            } else if (user.role === "SUPPORT") {
-              window.location.href = "support.html";
+            if (user && (user.role === "SUPER_ADMIN" || user.role === "ADMIN")) {
+              window.location.replace("admin.html");
+            } else if (user && user.role === "SUPPORT") {
+              window.location.replace("support.html");
             } else {
-              window.location.href = "dashboard.html";
+              window.location.replace("dashboard.html");
             }
-          }, 1000);
+          }, 600);
 
         } catch (err) {
-          if (err.message === "EMAIL_NOT_VERIFIED") {
-            showToast("بريدك الإلكتروني غير مفعل، تم إرسال رابط التفعيل مجدداً إلى بريدك.", "info");
-          } else {
-            showToast(err.message || "بيانات الدخول غير صحيحة", "error");
-          }
-
+          clearTimeout(loginTimeout);
           isLoggingIn = false;
           btnLoginSubmit.disabled = false;
           btnLoginSubmit.style.opacity = "1";
           btnLoginSubmit.innerHTML = origText;
+
+          if (err.message === "EMAIL_NOT_VERIFIED") {
+            showToast("بريدك الإلكتروني غير مفعل، تم إرسال رابط التفعيل مجدداً إلى بريدك.", "info");
+          } else if (err.code === "auth/wrong-password" || err.code === "auth/user-not-found" || err.code === "auth/invalid-credential") {
+            showToast("البريد الإلكتروني أو كلمة المرور غير صحيحة", "error");
+          } else {
+            showToast(err.message || "بيانات الدخول غير صحيحة", "error");
+          }
         }
       });
     }
