@@ -275,7 +275,6 @@ async function revokeDeviceSession(targetUid, deviceIdToRevoke) {
 }
 window.revokeDeviceSession = revokeDeviceSession;
 
-// عرض أجهزة الطالب
 function renderStudentDevicesList(containerId) {
   try {
     var targetId = containerId || "studentDevicesContainer";
@@ -320,7 +319,6 @@ function renderStudentDevicesList(containerId) {
 }
 window.renderStudentDevicesList = renderStudentDevicesList;
 
-// عرض وإدارة أجهزة الإداري نفسه (تلقائي الحقن في صفحة admin.html)
 function renderAdminOwnDevicesList(containerId) {
   try {
     var user = getCurrentUser();
@@ -483,7 +481,7 @@ function calculateStudentMetrics(userUid) {
 }
 window.calculateStudentMetrics = calculateStudentMetrics;
 
-// شاشة التحميل المعملية الاحترافية دون تعليق
+// شاشة التحميل المعملية الاحترافية
 function injectChemicalPreloader() {
   try {
     if (document.getElementById("chemicalPreloader")) return;
@@ -719,52 +717,265 @@ function injectChemicalDecorations() {
 }
 
 // =========================================================
-// شات الدعم الفني المتكامل (الواجهة العائمة والتفاعل المباشر)
+// تشغيل شات صفحة support.html المعتمد وإدارة المحادثات
 // =========================================================
-function toggleSupportChatWidget() {
-  var box = document.getElementById("hkSupportChatBox");
-  if (!box) return;
-  if (box.style.display === "none" || !box.style.display) {
-    box.style.display = "flex";
-    var input = document.getElementById("hkChatInput");
-    if (input) input.focus();
-    scrollChatToBottom();
+
+var currentSelectedStudentUid = null;
+
+function initSupportChatWidget() {
+  try {
+    // إزالة أي شباك شات عائم خارجي كان يحجب الشاشة
+    var foreignLauncher = document.getElementById("hkSupportChatLauncher");
+    if (foreignLauncher) foreignLauncher.remove();
+    var foreignChatBox = document.getElementById("hkSupportChatBox");
+    if (foreignChatBox) foreignChatBox.remove();
+
+    var currentPath = (window.location.pathname || "").toLowerCase();
+
+    // تشغيل صفحة الدعم الرسمية (support.html)
+    if (currentPath.indexOf("support.html") !== -1) {
+      bindSupportPageElements();
+
+      if (window.FirebaseService && typeof window.FirebaseService.subscribeAllSupportThreads === "function") {
+        window.FirebaseService.subscribeAllSupportThreads(function(threads) {
+          renderSupportThreadsList(threads);
+        });
+      }
+    }
+  } catch (e) {}
+}
+
+function bindSupportPageElements() {
+  var chatInput = document.querySelector('input[placeholder*="اكتب سؤالك"], input[placeholder*="رسالتك"], input[placeholder*="استفسارك"]');
+  var searchInput = document.querySelector('input[placeholder*="بحث باسم الطالب"]');
+
+  if (chatInput && !chatInput.dataset.bound) {
+    chatInput.dataset.bound = "true";
+    chatInput.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        sendActiveChatMessage();
+      }
+    });
+  }
+
+  var allButtons = document.querySelectorAll("button");
+  allButtons.forEach(function(btn) {
+    if (btn.textContent.trim() === "إرسال" && !btn.dataset.bound) {
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", sendActiveChatMessage);
+    }
+  });
+
+  if (searchInput && !searchInput.dataset.bound) {
+    searchInput.dataset.bound = "true";
+    searchInput.addEventListener("input", function(e) {
+      filterSupportThreads(e.target.value);
+    });
+  }
+}
+
+// عرض قائمة استفسارات الطلاب في القائمة الجانبية بترتيب زمني مع أدوات التحكم
+function renderSupportThreadsList(threads) {
+  var listContainer = document.querySelector(".threads-list, .chat-sidebar-list, .students-list, [class*='sidebar'] ul, [class*='thread']");
+  if (!listContainer) {
+    var searchInput = document.querySelector('input[placeholder*="بحث باسم الطالب"]');
+    if (searchInput && searchInput.parentElement) {
+      listContainer = searchInput.parentElement.querySelector(".threads-container") || searchInput.parentElement;
+    }
+  }
+
+  if (!listContainer || !Array.isArray(threads)) return;
+
+  var user = getCurrentUser();
+  var isSuper = user && (user.role === "SUPER_ADMIN" || user.role === "ADMIN");
+
+  // ترتيب المحادثات من الأحدث إلى الأقدم تلقائياً
+  threads.sort(function(a, b) {
+    var timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
+    var timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
+    return timeB - timeA;
+  });
+
+  var threadsHtml = "";
+  threads.forEach(function(th) {
+    var isSelected = th.studentUid === currentSelectedStudentUid;
+    var unreadBadge = th.unreadCount && th.unreadCount > 0 
+      ? '<span style="background:#00D2FF; color:#0E1338; font-size:11px; font-weight:900; padding:2px 7px; border-radius:10px;">' + th.unreadCount + ' جديد</span>' 
+      : '';
+
+    var deleteBtn = isSuper ? 
+      '<button onclick="event.stopPropagation(); deleteSupportThread(\'' + th.studentUid + '\')" title="حذف المحادثة بالكامل" style="background:#FEE2E2; color:#DC2626; border:1px solid #FCA5A5; padding:2px 6px; border-radius:5px; font-size:11px; font-weight:800; cursor:pointer;">حذف</button>' : '';
+
+    threadsHtml += 
+      '<div onclick="selectStudentThread(\'' + th.studentUid + '\', \'' + sanitizeText(th.studentName) + '\', \'' + sanitizeText(th.studentPhone || '') + '\')" style="padding:12px; border-bottom:1px solid #F1F5F9; cursor:pointer; background:' + (isSelected ? '#F0F9FF' : '#ffffff') + '; transition:background 0.2s;" onmouseover="this.style.background=\'#F8FAFC\'" onmouseout="this.style.background=\'' + (isSelected ? '#F0F9FF' : '#ffffff') + '\'">' +
+        '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">' +
+          '<div style="font-weight:800; font-size:13.5px; color:#0E1338; display:flex; align-items:center; gap:6px;">' +
+            '<span>👤</span> ' + sanitizeText(th.studentName || "طالب") +
+          '</div>' +
+          '<div style="display:flex; align-items:center; gap:6px;">' +
+            unreadBadge +
+            deleteBtn +
+          '</div>' +
+        '</div>' +
+        '<div style="font-size:12px; color:#64748B; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + sanitizeText(th.lastMessage || "بدء محادثة...") + '</div>' +
+      '</div>';
+  });
+
+  var targetBox = document.getElementById("supportThreadsListContainer");
+  if (!targetBox) {
+    targetBox = document.createElement("div");
+    targetBox.id = "supportThreadsListContainer";
+    listContainer.appendChild(targetBox);
+  }
+  targetBox.innerHTML = threadsHtml;
+}
+
+function filterSupportThreads(query) {
+  var term = String(query).trim().toLowerCase();
+  var items = document.querySelectorAll("#supportThreadsListContainer > div");
+  items.forEach(function(item) {
+    var match = item.textContent.toLowerCase().indexOf(term) !== -1;
+    item.style.display = match ? "block" : "none";
+  });
+}
+
+// تحكم المدير العام: حذف محادثة بالكامل
+async function deleteSupportThread(studentUid) {
+  var confirmed = await customConfirm("هل أنت متأكد من رغبتك في حذف محادثة هذا الطالب وجميع رسائلها؟", "حذف المحادثة");
+  if (!confirmed) return;
+
+  if (typeof firebase !== "undefined" && firebase.firestore) {
+    try {
+      var msgsSnap = await firebase.firestore().collection("support_threads").doc(studentUid).collection("messages").get();
+      var batch = firebase.firestore().batch();
+      msgsSnap.forEach(function(doc) { batch.delete(doc.ref); });
+      batch.delete(firebase.firestore().collection("support_threads").doc(studentUid));
+      await batch.commit();
+
+      localStorage.removeItem("edu_chat_" + studentUid);
+      showToast("تم حذف المحادثة بنجاح", "success");
+
+      if (currentSelectedStudentUid === studentUid) {
+        currentSelectedStudentUid = null;
+        var messagesBox = document.getElementById("activeMessagesTargetContainer");
+        if (messagesBox) messagesBox.innerHTML = '<div style="text-align:center; color:#94A3B8; font-size:13px; margin:auto;">تم حذف المحادثة. اختر طالباً آخر من القائمة.</div>';
+      }
+    } catch (e) {
+      showToast("تعذر حذف المحادثة", "error");
+    }
+  }
+}
+window.deleteSupportThread = deleteSupportThread;
+
+// اختيار طالب وبدء عرض محادثته في النافذة الرئيسية
+function selectStudentThread(studentUid, studentName, studentPhone) {
+  currentSelectedStudentUid = studentUid;
+
+  var emptyState = document.querySelector(".empty-chat, [class*='empty']");
+  if (emptyState) emptyState.style.display = "none";
+
+  // تمييز المحادثة المحددة
+  var items = document.querySelectorAll("#supportThreadsListContainer > div");
+  items.forEach(function(item) { item.style.background = "#ffffff"; });
+
+  // تصفير عداد الرسائل غير المقروءة عند فتح الإدارة للمحادثة
+  if (typeof firebase !== "undefined" && firebase.firestore) {
+    firebase.firestore().collection("support_threads").doc(studentUid).update({
+      unreadCount: 0
+    }).catch(function(){});
+  }
+
+  if (window.FirebaseService && typeof window.FirebaseService.subscribeStudentChat === "function") {
+    window.FirebaseService.subscribeStudentChat(studentUid, function(messages) {
+      renderActiveChatMessages(messages, studentName, studentPhone);
+    });
+  }
+}
+window.selectStudentThread = selectStudentThread;
+
+// عرض رسائل المحادثة داخل النافذة الرئيسية بتصميم منظم
+function renderActiveChatMessages(messages, studentName, studentPhone) {
+  var messagesBox = document.querySelector(".chat-messages, .messages-body, [class*='chat-body'], [class*='messages-container']");
+  
+  if (!messagesBox) {
+    var centerArea = document.querySelector("main, .chat-main, .chat-content");
+    if (centerArea) messagesBox = centerArea;
+  }
+  if (!messagesBox) return;
+
+  var user = getCurrentUser();
+  var myUid = user ? user.uid : "";
+
+  var headerInfo = 
+    '<div style="padding:10px 16px; background:#F8FAFC; border-bottom:1px solid #E2E8F0; display:flex; justify-content:space-between; align-items:center;">' +
+      '<div>' +
+        '<span style="font-weight:900; font-size:14px; color:#0E1338;">محادثة: ' + sanitizeText(studentName || "طالب") + '</span>' +
+        (studentPhone ? '<span style="font-size:12px; color:#64748B; margin-right:8px;">(' + sanitizeText(studentPhone) + ')</span>' : '') +
+      '</div>' +
+      '<span style="font-size:11px; background:rgba(0,210,255,0.12); color:#0284C7; font-weight:800; padding:2px 8px; border-radius:6px;">محادثة نشطة</span>' +
+    '</div>';
+
+  var html = headerInfo + '<div style="display:flex; flex-direction:column; gap:10px; padding:16px; overflow-y:auto; flex:1;">';
+  
+  if (!messages || messages.length === 0) {
+    html += '<div style="text-align:center; color:#94A3B8; font-size:13px; margin:auto;">لا توجد رسائل سابقة في هذه المحادثة.</div>';
   } else {
-    box.style.display = "none";
-  }
-}
-window.toggleSupportChatWidget = toggleSupportChatWidget;
+    messages.forEach(function(msg) {
+      var isMe = msg.senderUid === myUid || (msg.senderRole && msg.senderRole !== "STUDENT");
+      var alignStyle = isMe ? "margin-left:0; margin-right:auto; background:linear-gradient(135deg, #00D2FF, #0284C7); color:#fff; border-bottom-left-radius:3px;" 
+                            : "margin-right:0; margin-left:auto; background:#F1F5F9; color:#0E1338; border-bottom-right-radius:3px;";
 
-function scrollChatToBottom() {
-  var body = document.getElementById("hkChatMessagesContainer");
-  if (body) {
-    setTimeout(function() {
-      body.scrollTop = body.scrollHeight;
-    }, 50);
+      var timeStr = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }) : "";
+
+      html += 
+        '<div style="max-width:75%; padding:10px 14px; border-radius:12px; font-size:13.5px; line-height:1.5; word-break:break-word; ' + alignStyle + '">' +
+          '<div style="font-size:11px; font-weight:800; margin-bottom:3px; opacity:0.85;">' + sanitizeText(msg.senderName) + '</div>' +
+          '<div>' + sanitizeText(msg.text) + '</div>' +
+          (timeStr ? '<div style="font-size:10px; text-align:left; margin-top:4px; opacity:0.75;">' + timeStr + '</div>' : '') +
+        '</div>';
+    });
   }
+  
+  html += '</div>';
+
+  var containerBox = document.getElementById("activeMessagesTargetContainer");
+  if (!containerBox) {
+    containerBox = document.createElement("div");
+    containerBox.id = "activeMessagesTargetContainer";
+    containerBox.style.cssText = "flex:1; display:flex; flex-direction:column; overflow-y:auto; height:100%;";
+    messagesBox.appendChild(containerBox);
+  }
+  containerBox.innerHTML = html;
+  containerBox.scrollTop = containerBox.scrollHeight;
 }
 
-async function sendSupportChatMessage() {
-  var input = document.getElementById("hkChatInput");
+// إرسال رد الإدارة فوراً من حقل الإدخال الأصلي بالصفحة
+async function sendActiveChatMessage() {
+  var input = document.querySelector('input[placeholder*="اكتب سؤالك"], input[placeholder*="رسالتك"], input[placeholder*="استفسارك"]');
   if (!input) return;
   var text = input.value.trim();
   if (!text) return;
 
   var user = getCurrentUser();
   if (!user) {
-    showToast("يرجى تسجيل الدخول لاستخدام الدعم الفني", "info");
+    showToast("يرجى تسجيل الدخول أولاً", "error");
+    return;
+  }
+
+  if (!currentSelectedStudentUid) {
+    showToast("يرجى اختيار طالب من القائمة أولاً للرد عليه", "info");
     return;
   }
 
   var msgData = {
     text: text,
     senderUid: user.uid,
-    senderName: user.fullName || "طالب",
-    senderRole: user.role || "STUDENT",
-    studentUid: user.uid,
-    studentName: user.fullName || "طالب",
-    studentPhone: user.studentPhone || "",
-    studentEmail: user.email || ""
+    senderName: user.fullName || "الأستاذ محمد السعيد (الدعم)",
+    senderRole: user.role || "ADMIN",
+    studentUid: currentSelectedStudentUid,
+    studentName: "محادثة الدعم",
+    studentPhone: "",
+    studentEmail: ""
   };
 
   input.value = "";
@@ -777,114 +988,11 @@ async function sendSupportChatMessage() {
     }
   }
 }
-window.sendSupportChatMessage = sendSupportChatMessage;
+window.sendActiveChatMessage = sendActiveChatMessage;
 
-function renderChatMessages(messages) {
-  var container = document.getElementById("hkChatMessagesContainer");
-  if (!container) return;
-
-  var user = getCurrentUser();
-  var myUid = user ? user.uid : "";
-
-  if (!messages || messages.length === 0) {
-    container.innerHTML = 
-      '<div style="text-align:center; color:#94A3B8; font-size:12.5px; margin:auto 0; padding:20px 10px;">' +
-        'مرحباً بك! 👋<br>فريق الدعم الفني ومستر محمد السعيد في خدمتك دائماً. اكتب استفسارك وسنرد عليك فوراً.' +
-      '</div>';
-    return;
-  }
-
-  var html = "";
-  messages.forEach(function(msg) {
-    var isMe = msg.senderUid === myUid;
-    var isSupport = msg.senderRole === "ADMIN" || msg.senderRole === "SUPER_ADMIN" || msg.senderRole === "SUPPORT";
-    
-    var alignStyle = isMe ? "margin-right:auto; margin-left:0; background:linear-gradient(135deg, #00D2FF, #0284C7); color:#fff; border-bottom-left-radius:3px;" 
-                          : "margin-left:auto; margin-right:0; background:#F1F5F9; color:#0E1338; border-bottom-right-radius:3px;";
-
-    var badge = isSupport && !isMe ? '<span style="font-size:10px; background:#0E1338; color:#00D2FF; padding:1px 5px; border-radius:4px; margin-left:4px;">الدعم</span>' : '';
-
-    html += 
-      '<div style="max-width:82%; padding:9px 12px; border-radius:12px; font-size:13px; line-height:1.45; word-break:break-word; ' + alignStyle + '">' +
-        (!isMe ? '<div style="font-size:11px; font-weight:800; margin-bottom:3px; opacity:0.85;">' + badge + sanitizeText(msg.senderName) + '</div>' : '') +
-        '<div>' + sanitizeText(msg.text) + '</div>' +
-      '</div>';
-  });
-
-  container.innerHTML = html;
-  scrollChatToBottom();
-}
-window.renderChatMessages = renderChatMessages;
-
-function injectSupportChatUI() {
-  try {
-    if (document.getElementById("hkSupportChatLauncher")) return;
-    var user = getCurrentUser();
-    if (!user) return;
-
-    var currentPath = (window.location.pathname || "").toLowerCase();
-    if (currentPath.indexOf("login.html") !== -1 || currentPath.indexOf("register.html") !== -1) return;
-
-    // زر فتح الشات العائم
-    var launcher = document.createElement("button");
-    launcher.id = "hkSupportChatLauncher";
-    launcher.onclick = toggleSupportChatWidget;
-    launcher.style.cssText = "position:fixed; bottom:24px; left:24px; width:54px; height:54px; border-radius:50%; background:linear-gradient(135deg, #00D2FF, #0284C7); border:none; color:#ffffff; font-size:24px; box-shadow:0 10px 25px rgba(0,210,255,0.45); cursor:pointer; z-index:999999; display:flex; align-items:center; justify-content:center; transition:transform 0.2s;";
-    launcher.innerHTML = "💬";
-    launcher.onmouseenter = function() { launcher.style.transform = "scale(1.08)"; };
-    launcher.onmouseleave = function() { launcher.style.transform = "scale(1)"; };
-
-    // نافذة الشات المنبثقة
-    var chatBox = document.createElement("div");
-    chatBox.id = "hkSupportChatBox";
-    chatBox.style.cssText = "position:fixed; bottom:90px; left:24px; width:340px; max-width:calc(100vw - 48px); height:460px; max-height:calc(100vh - 120px); background:#ffffff; border-radius:16px; box-shadow:0 20px 45px rgba(0,0,0,0.22); border:1px solid rgba(0,210,255,0.3); z-index:999999; display:none; flex-direction:column; overflow:hidden; font-family:system-ui, -apple-system, sans-serif;";
-    
-    chatBox.innerHTML = 
-      '<div style="background:linear-gradient(135deg, #0E1338, #1D255E); color:#ffffff; padding:14px 16px; display:flex; align-items:center; justify-content:space-between;">' +
-        '<div style="display:flex; align-items:center; gap:8px;">' +
-          '<div style="width:10px; height:10px; border-radius:50%; background:#22C55E; box-shadow:0 0 8px #22C55E;"></div>' +
-          '<span style="font-size:14px; font-weight:800;">الدعم الفني المباشر</span>' +
-        '</div>' +
-        '<button onclick="toggleSupportChatWidget()" style="background:transparent; border:none; color:#94A3B8; font-size:16px; cursor:pointer;">✕</button>' +
-      '</div>' +
-      '<div id="hkChatMessagesContainer" style="flex:1; padding:14px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; background:#FAFAFA;">' +
-        '<div style="text-align:center; color:#94A3B8; font-size:12.5px; margin:auto 0;">جاري تحميل المحادثة...</div>' +
-      '</div>' +
-      '<div style="padding:10px; border-top:1px solid #E2E8F0; background:#fff; display:flex; gap:8px; align-items:center;">' +
-        '<input type="text" id="hkChatInput" placeholder="اكتب رسالتك هنا..." style="flex:1; padding:10px 12px; border:1px solid #CBD5E1; border-radius:10px; font-size:13px; outline:none;" onkeydown="if(event.key === \'Enter\') sendSupportChatMessage()">' +
-        '<button onclick="sendSupportChatMessage()" style="background:linear-gradient(135deg, #00D2FF, #0284C7); color:#fff; border:none; border-radius:10px; padding:10px 14px; font-size:13.5px; font-weight:800; cursor:pointer;">إرسال</button>' +
-      '</div>';
-
-    document.body.appendChild(launcher);
-    document.body.appendChild(chatBox);
-  } catch (e) {}
-}
-
-function initSupportChatWidget() {
-  try {
-    var user = getCurrentUser();
-    if (!user || !user.uid) return;
-
-    injectSupportChatUI();
-
-    if (window.FirebaseService && typeof window.FirebaseService.subscribeStudentChat === "function") {
-      window.FirebaseService.subscribeStudentChat(user.uid, function(messages) {
-        renderChatMessages(messages);
-      });
-    }
-
-    var role = (user.role || "STUDENT").toUpperCase();
-    if ((role === "ADMIN" || role === "SUPER_ADMIN" || role === "SUPPORT") && typeof window.FirebaseService.subscribeAllSupportThreads === "function") {
-      window.FirebaseService.subscribeAllSupportThreads(function(threads) {
-        if (typeof renderSupportThreads === "function") {
-          renderSupportThreads(threads);
-        }
-      });
-    }
-  } catch (e) {}
-}
-
+// =========================================================
 // المراقبة المحصنة ضد تكرار التحديث والـ undefined والـ Loop
+// =========================================================
 var lastHandledRole = null;
 
 function monitorCurrentUserStatus() {
