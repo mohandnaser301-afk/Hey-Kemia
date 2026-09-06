@@ -483,7 +483,7 @@ function calculateStudentMetrics(userUid) {
 }
 window.calculateStudentMetrics = calculateStudentMetrics;
 
-// شاشة التحميل المعملية الاحترافية (هادئة، متدرجة، بدون انفجار)
+// شاشة التحميل المعملية الاحترافية دون تعليق
 function injectChemicalPreloader() {
   try {
     if (document.getElementById("chemicalPreloader")) return;
@@ -718,17 +718,158 @@ function injectChemicalDecorations() {
   } catch (e) {}
 }
 
-// شات الدعم الفني وتحديث المحادثات
+// =========================================================
+// شات الدعم الفني المتكامل (الواجهة العائمة والتفاعل المباشر)
+// =========================================================
+function toggleSupportChatWidget() {
+  var box = document.getElementById("hkSupportChatBox");
+  if (!box) return;
+  if (box.style.display === "none" || !box.style.display) {
+    box.style.display = "flex";
+    var input = document.getElementById("hkChatInput");
+    if (input) input.focus();
+    scrollChatToBottom();
+  } else {
+    box.style.display = "none";
+  }
+}
+window.toggleSupportChatWidget = toggleSupportChatWidget;
+
+function scrollChatToBottom() {
+  var body = document.getElementById("hkChatMessagesContainer");
+  if (body) {
+    setTimeout(function() {
+      body.scrollTop = body.scrollHeight;
+    }, 50);
+  }
+}
+
+async function sendSupportChatMessage() {
+  var input = document.getElementById("hkChatInput");
+  if (!input) return;
+  var text = input.value.trim();
+  if (!text) return;
+
+  var user = getCurrentUser();
+  if (!user) {
+    showToast("يرجى تسجيل الدخول لاستخدام الدعم الفني", "info");
+    return;
+  }
+
+  var msgData = {
+    text: text,
+    senderUid: user.uid,
+    senderName: user.fullName || "طالب",
+    senderRole: user.role || "STUDENT",
+    studentUid: user.uid,
+    studentName: user.fullName || "طالب",
+    studentPhone: user.studentPhone || "",
+    studentEmail: user.email || ""
+  };
+
+  input.value = "";
+
+  if (window.FirebaseService && typeof window.FirebaseService.sendSupportMessage === "function") {
+    try {
+      await window.FirebaseService.sendSupportMessage(msgData);
+    } catch (e) {
+      showToast("تعذر إرسال الرسالة، حاول ثانية", "error");
+    }
+  }
+}
+window.sendSupportChatMessage = sendSupportChatMessage;
+
+function renderChatMessages(messages) {
+  var container = document.getElementById("hkChatMessagesContainer");
+  if (!container) return;
+
+  var user = getCurrentUser();
+  var myUid = user ? user.uid : "";
+
+  if (!messages || messages.length === 0) {
+    container.innerHTML = 
+      '<div style="text-align:center; color:#94A3B8; font-size:12.5px; margin:auto 0; padding:20px 10px;">' +
+        'مرحباً بك! 👋<br>فريق الدعم الفني ومستر محمد السعيد في خدمتك دائماً. اكتب استفسارك وسنرد عليك فوراً.' +
+      '</div>';
+    return;
+  }
+
+  var html = "";
+  messages.forEach(function(msg) {
+    var isMe = msg.senderUid === myUid;
+    var isSupport = msg.senderRole === "ADMIN" || msg.senderRole === "SUPER_ADMIN" || msg.senderRole === "SUPPORT";
+    
+    var alignStyle = isMe ? "margin-right:auto; margin-left:0; background:linear-gradient(135deg, #00D2FF, #0284C7); color:#fff; border-bottom-left-radius:3px;" 
+                          : "margin-left:auto; margin-right:0; background:#F1F5F9; color:#0E1338; border-bottom-right-radius:3px;";
+
+    var badge = isSupport && !isMe ? '<span style="font-size:10px; background:#0E1338; color:#00D2FF; padding:1px 5px; border-radius:4px; margin-left:4px;">الدعم</span>' : '';
+
+    html += 
+      '<div style="max-width:82%; padding:9px 12px; border-radius:12px; font-size:13px; line-height:1.45; word-break:break-word; ' + alignStyle + '">' +
+        (!isMe ? '<div style="font-size:11px; font-weight:800; margin-bottom:3px; opacity:0.85;">' + badge + sanitizeText(msg.senderName) + '</div>' : '') +
+        '<div>' + sanitizeText(msg.text) + '</div>' +
+      '</div>';
+  });
+
+  container.innerHTML = html;
+  scrollChatToBottom();
+}
+window.renderChatMessages = renderChatMessages;
+
+function injectSupportChatUI() {
+  try {
+    if (document.getElementById("hkSupportChatLauncher")) return;
+    var user = getCurrentUser();
+    if (!user) return;
+
+    var currentPath = (window.location.pathname || "").toLowerCase();
+    if (currentPath.indexOf("login.html") !== -1 || currentPath.indexOf("register.html") !== -1) return;
+
+    // زر فتح الشات العائم
+    var launcher = document.createElement("button");
+    launcher.id = "hkSupportChatLauncher";
+    launcher.onclick = toggleSupportChatWidget;
+    launcher.style.cssText = "position:fixed; bottom:24px; left:24px; width:54px; height:54px; border-radius:50%; background:linear-gradient(135deg, #00D2FF, #0284C7); border:none; color:#ffffff; font-size:24px; box-shadow:0 10px 25px rgba(0,210,255,0.45); cursor:pointer; z-index:999999; display:flex; align-items:center; justify-content:center; transition:transform 0.2s;";
+    launcher.innerHTML = "💬";
+    launcher.onmouseenter = function() { launcher.style.transform = "scale(1.08)"; };
+    launcher.onmouseleave = function() { launcher.style.transform = "scale(1)"; };
+
+    // نافذة الشات المنبثقة
+    var chatBox = document.createElement("div");
+    chatBox.id = "hkSupportChatBox";
+    chatBox.style.cssText = "position:fixed; bottom:90px; left:24px; width:340px; max-width:calc(100vw - 48px); height:460px; max-height:calc(100vh - 120px); background:#ffffff; border-radius:16px; box-shadow:0 20px 45px rgba(0,0,0,0.22); border:1px solid rgba(0,210,255,0.3); z-index:999999; display:none; flex-direction:column; overflow:hidden; font-family:system-ui, -apple-system, sans-serif;";
+    
+    chatBox.innerHTML = 
+      '<div style="background:linear-gradient(135deg, #0E1338, #1D255E); color:#ffffff; padding:14px 16px; display:flex; align-items:center; justify-content:space-between;">' +
+        '<div style="display:flex; align-items:center; gap:8px;">' +
+          '<div style="width:10px; height:10px; border-radius:50%; background:#22C55E; box-shadow:0 0 8px #22C55E;"></div>' +
+          '<span style="font-size:14px; font-weight:800;">الدعم الفني المباشر</span>' +
+        '</div>' +
+        '<button onclick="toggleSupportChatWidget()" style="background:transparent; border:none; color:#94A3B8; font-size:16px; cursor:pointer;">✕</button>' +
+      '</div>' +
+      '<div id="hkChatMessagesContainer" style="flex:1; padding:14px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; background:#FAFAFA;">' +
+        '<div style="text-align:center; color:#94A3B8; font-size:12.5px; margin:auto 0;">جاري تحميل المحادثة...</div>' +
+      '</div>' +
+      '<div style="padding:10px; border-top:1px solid #E2E8F0; background:#fff; display:flex; gap:8px; align-items:center;">' +
+        '<input type="text" id="hkChatInput" placeholder="اكتب رسالتك هنا..." style="flex:1; padding:10px 12px; border:1px solid #CBD5E1; border-radius:10px; font-size:13px; outline:none;" onkeydown="if(event.key === \'Enter\') sendSupportChatMessage()">' +
+        '<button onclick="sendSupportChatMessage()" style="background:linear-gradient(135deg, #00D2FF, #0284C7); color:#fff; border:none; border-radius:10px; padding:10px 14px; font-size:13.5px; font-weight:800; cursor:pointer;">إرسال</button>' +
+      '</div>';
+
+    document.body.appendChild(launcher);
+    document.body.appendChild(chatBox);
+  } catch (e) {}
+}
+
 function initSupportChatWidget() {
   try {
     var user = getCurrentUser();
     if (!user || !user.uid) return;
 
+    injectSupportChatUI();
+
     if (window.FirebaseService && typeof window.FirebaseService.subscribeStudentChat === "function") {
       window.FirebaseService.subscribeStudentChat(user.uid, function(messages) {
-        if (typeof renderChatMessages === "function") {
-          renderChatMessages(messages);
-        }
+        renderChatMessages(messages);
       });
     }
 
