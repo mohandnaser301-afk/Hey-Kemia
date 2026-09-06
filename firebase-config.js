@@ -515,6 +515,7 @@ window.FirebaseService = {
   },
 
   subscribeStudentChat(studentUid, callback) {
+    if (!studentUid) return;
     var local = JSON.parse(localStorage.getItem("edu_chat_" + studentUid) || "[]");
     if (callback) callback(local);
 
@@ -540,10 +541,15 @@ window.FirebaseService = {
       if (fb && fb.firestore) {
         clearInterval(check);
         fb.firestore().collection("support_threads")
-          .orderBy("lastMessageTime", "desc")
           .onSnapshot(function(snap) {
             var list = [];
             snap.forEach(function(doc) { list.push(Object.assign({ id: doc.id }, doc.data())); });
+            // ترتيب المحادثات من الأحدث للأقدم فورياً
+            list.sort(function(a, b) {
+              var tA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
+              var tB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
+              return tB - tA;
+            });
             if (callback) callback(list);
           }, function() {});
       }
@@ -552,23 +558,26 @@ window.FirebaseService = {
 
   async sendSupportMessage(msgData) {
     var fb = getFirebase();
-    var studentUid = String(msgData.studentUid);
+    var studentUid = String(msgData.studentUid || msgData.senderUid);
+    if (!studentUid) return;
     var now = new Date().toISOString();
 
+    var messageDoc = {
+      text: msgData.text,
+      senderUid: msgData.senderUid,
+      senderName: msgData.senderName,
+      senderRole: msgData.senderRole || "STUDENT",
+      createdAt: now
+    };
+
+    // 1. تحديث محلي لحظي بكامل الحقول (بما فيها createdAt)
     var localKey = "edu_chat_" + studentUid;
     var localMsgs = JSON.parse(localStorage.getItem(localKey) || "[]");
-    localMsgs.push(msgData);
+    localMsgs.push(messageDoc);
     localStorage.setItem(localKey, JSON.stringify(localMsgs));
 
+    // 2. إرسال سحابي مباشر ومحدث لخيط المحادثة
     if (fb && fb.firestore) {
-      var messageDoc = {
-        text: msgData.text,
-        senderUid: msgData.senderUid,
-        senderName: msgData.senderName,
-        senderRole: msgData.senderRole || "STUDENT",
-        createdAt: now
-      };
-
       await fb.firestore().collection("support_threads").doc(studentUid).collection("messages").add(messageDoc);
 
       var threadUpdate = {

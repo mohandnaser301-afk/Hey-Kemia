@@ -717,20 +717,20 @@ function injectChemicalDecorations() {
 }
 
 // =========================================================
-// تشغيل شات صفحة support.html المعتمد وإدارة المحادثات
+// شات الدعم الفني: مزامنة حية وسريعة للطرفين
 // =========================================================
 
 var currentSelectedStudentUid = null;
 
 function initSupportChatWidget() {
   try {
-    // إزالة أي شباك شات عائم خارجي كان يحجب الشاشة
     var foreignLauncher = document.getElementById("hkSupportChatLauncher");
     if (foreignLauncher) foreignLauncher.remove();
     var foreignChatBox = document.getElementById("hkSupportChatBox");
     if (foreignChatBox) foreignChatBox.remove();
 
     var currentPath = (window.location.pathname || "").toLowerCase();
+    var user = getCurrentUser();
 
     // تشغيل صفحة الدعم الرسمية (support.html)
     if (currentPath.indexOf("support.html") !== -1) {
@@ -741,8 +741,113 @@ function initSupportChatWidget() {
           renderSupportThreadsList(threads);
         });
       }
+    } 
+    // إذا كان الطالب في لوحة الطالب أو صفحة عادية وبها شات
+    else if (user && (!user.role || user.role === "STUDENT")) {
+      bindStudentPageChatElements(user.uid);
     }
   } catch (e) {}
+}
+
+function bindStudentPageChatElements(studentUid) {
+  var chatInput = document.querySelector('input[placeholder*="اكتب سؤالك"], input[placeholder*="رسالتك"], input[placeholder*="استفسارك"]');
+  if (chatInput && !chatInput.dataset.bound) {
+    chatInput.dataset.bound = "true";
+    chatInput.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        sendStudentMessageDirectly();
+      }
+    });
+  }
+
+  var allButtons = document.querySelectorAll("button");
+  allButtons.forEach(function(btn) {
+    if (btn.textContent.trim() === "إرسال" && !btn.dataset.bound) {
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", sendStudentMessageDirectly);
+    }
+  });
+
+  if (window.FirebaseService && typeof window.FirebaseService.subscribeStudentChat === "function") {
+    window.FirebaseService.subscribeStudentChat(studentUid, function(messages) {
+      renderStudentPageMessages(messages);
+    });
+  }
+}
+
+async function sendStudentMessageDirectly() {
+  var input = document.querySelector('input[placeholder*="اكتب سؤالك"], input[placeholder*="رسالتك"], input[placeholder*="استفسارك"]');
+  if (!input) return;
+  var text = input.value.trim();
+  if (!text) return;
+
+  var user = getCurrentUser();
+  if (!user) {
+    showToast("يرجى تسجيل الدخول أولاً", "info");
+    return;
+  }
+
+  var msgData = {
+    text: text,
+    senderUid: user.uid,
+    senderName: user.fullName || "طالب",
+    senderRole: "STUDENT",
+    studentUid: user.uid,
+    studentName: user.fullName || "طالب",
+    studentPhone: user.studentPhone || "",
+    studentEmail: user.email || ""
+  };
+
+  input.value = "";
+
+  // عرض فوري محلياً للطالب بدون انتظار السحابة
+  appendMessageToStudentUI(msgData);
+
+  if (window.FirebaseService && typeof window.FirebaseService.sendSupportMessage === "function") {
+    try {
+      await window.FirebaseService.sendSupportMessage(msgData);
+    } catch (e) {
+      showToast("تعذر إرسال الرسالة، تأكد من الإنترنت", "error");
+    }
+  }
+}
+
+function appendMessageToStudentUI(msg) {
+  var messagesBox = document.querySelector(".chat-messages, .messages-body, [class*='chat-body'], [class*='messages-container'], #activeMessagesTargetContainer");
+  if (!messagesBox) return;
+
+  var newBubble = document.createElement("div");
+  newBubble.style.cssText = "max-width:75%; padding:10px 14px; border-radius:12px; font-size:13.5px; line-height:1.5; word-break:break-word; margin-right:0; margin-left:auto; background:#F1F5F9; color:#0E1338; border-bottom-right-radius:3px; margin-top:8px;";
+  newBubble.innerHTML = '<div style="font-size:11px; font-weight:800; margin-bottom:3px; opacity:0.85;">' + sanitizeText(msg.senderName) + '</div><div>' + sanitizeText(msg.text) + '</div>';
+  messagesBox.appendChild(newBubble);
+  messagesBox.scrollTop = messagesBox.scrollHeight;
+}
+
+function renderStudentPageMessages(messages) {
+  var messagesBox = document.querySelector(".chat-messages, .messages-body, [class*='chat-body'], [class*='messages-container']");
+  if (!messagesBox) return;
+
+  var user = getCurrentUser();
+  var myUid = user ? user.uid : "";
+
+  var html = "";
+  messages.forEach(function(msg) {
+    var isMe = msg.senderUid === myUid || msg.senderRole === "STUDENT";
+    var alignStyle = isMe ? "margin-right:0; margin-left:auto; background:#F1F5F9; color:#0E1338; border-bottom-right-radius:3px;" 
+                          : "margin-left:0; margin-right:auto; background:linear-gradient(135deg, #00D2FF, #0284C7); color:#fff; border-bottom-left-radius:3px;";
+
+    var timeStr = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }) : "";
+
+    html += 
+      '<div style="max-width:75%; padding:10px 14px; border-radius:12px; font-size:13.5px; line-height:1.5; word-break:break-word; ' + alignStyle + ' margin-bottom:8px;">' +
+        '<div style="font-size:11px; font-weight:800; margin-bottom:3px; opacity:0.85;">' + sanitizeText(msg.senderName) + '</div>' +
+        '<div>' + sanitizeText(msg.text) + '</div>' +
+        (timeStr ? '<div style="font-size:10px; text-align:left; margin-top:4px; opacity:0.75;">' + timeStr + '</div>' : '') +
+      '</div>';
+  });
+
+  messagesBox.innerHTML = html;
+  messagesBox.scrollTop = messagesBox.scrollHeight;
 }
 
 function bindSupportPageElements() {
@@ -774,7 +879,6 @@ function bindSupportPageElements() {
   }
 }
 
-// عرض قائمة استفسارات الطلاب في القائمة الجانبية بترتيب زمني مع أدوات التحكم
 function renderSupportThreadsList(threads) {
   var listContainer = document.querySelector(".threads-list, .chat-sidebar-list, .students-list, [class*='sidebar'] ul, [class*='thread']");
   if (!listContainer) {
@@ -789,7 +893,6 @@ function renderSupportThreadsList(threads) {
   var user = getCurrentUser();
   var isSuper = user && (user.role === "SUPER_ADMIN" || user.role === "ADMIN");
 
-  // ترتيب المحادثات من الأحدث إلى الأقدم تلقائياً
   threads.sort(function(a, b) {
     var timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
     var timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
@@ -839,7 +942,6 @@ function filterSupportThreads(query) {
   });
 }
 
-// تحكم المدير العام: حذف محادثة بالكامل
 async function deleteSupportThread(studentUid) {
   var confirmed = await customConfirm("هل أنت متأكد من رغبتك في حذف محادثة هذا الطالب وجميع رسائلها؟", "حذف المحادثة");
   if (!confirmed) return;
@@ -867,18 +969,15 @@ async function deleteSupportThread(studentUid) {
 }
 window.deleteSupportThread = deleteSupportThread;
 
-// اختيار طالب وبدء عرض محادثته في النافذة الرئيسية
 function selectStudentThread(studentUid, studentName, studentPhone) {
   currentSelectedStudentUid = studentUid;
 
   var emptyState = document.querySelector(".empty-chat, [class*='empty']");
   if (emptyState) emptyState.style.display = "none";
 
-  // تمييز المحادثة المحددة
   var items = document.querySelectorAll("#supportThreadsListContainer > div");
   items.forEach(function(item) { item.style.background = "#ffffff"; });
 
-  // تصفير عداد الرسائل غير المقروءة عند فتح الإدارة للمحادثة
   if (typeof firebase !== "undefined" && firebase.firestore) {
     firebase.firestore().collection("support_threads").doc(studentUid).update({
       unreadCount: 0
@@ -893,7 +992,6 @@ function selectStudentThread(studentUid, studentName, studentPhone) {
 }
 window.selectStudentThread = selectStudentThread;
 
-// عرض رسائل المحادثة داخل النافذة الرئيسية بتصميم منظم
 function renderActiveChatMessages(messages, studentName, studentPhone) {
   var messagesBox = document.querySelector(".chat-messages, .messages-body, [class*='chat-body'], [class*='messages-container']");
   
@@ -949,7 +1047,6 @@ function renderActiveChatMessages(messages, studentName, studentPhone) {
   containerBox.scrollTop = containerBox.scrollHeight;
 }
 
-// إرسال رد الإدارة فوراً من حقل الإدخال الأصلي بالصفحة
 async function sendActiveChatMessage() {
   var input = document.querySelector('input[placeholder*="اكتب سؤالك"], input[placeholder*="رسالتك"], input[placeholder*="استفسارك"]');
   if (!input) return;
