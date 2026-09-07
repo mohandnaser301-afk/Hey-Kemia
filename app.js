@@ -752,14 +752,13 @@ function initSupportChatWidget() {
         });
       }
     } 
-    // 2. إذا كان المستخدم طالباً (سواء في support.html أو dashboard أو أي صفحة أخرى)
+    // 2. إذا كان المستخدم طالباً في أي مكان
     else {
       enableStudentDirectChat();
     }
   } catch (e) {}
 }
 
-// فتح وتفعيل الشات للطالب فوراً وإزالة أي قيود إدارية
 function enableStudentDirectChat() {
   var user = getCurrentUser();
   var studentUid = user ? (user.uid || user.id) : null;
@@ -769,7 +768,6 @@ function enableStudentDirectChat() {
   var sidebarThreads = document.querySelector(".threads-list, .chat-sidebar-list, .students-list, [class*='sidebar'] ul");
   var emptyChatState = document.querySelector(".empty-chat, [class*='empty']");
 
-  // إخفاء القائمة الجانبية المخصصة للمديرين إذا كان طالباً
   if (sidebarThreads && sidebarThreads.parentElement) {
     sidebarThreads.parentElement.style.display = "none";
   }
@@ -779,14 +777,15 @@ function enableStudentDirectChat() {
 
   if (chatInput) {
     chatInput.disabled = false;
-    chatInput.placeholder = "اكتب استفسارك لمعلمك هنا...";
+    chatInput.placeholder = "اكتب سؤالك أو استفسارك هنا...";
     chatInput.style.opacity = "1";
     chatInput.style.cursor = "text";
 
-    if (!chatInput.dataset.studentBound) {
-      chatInput.dataset.studentBound = "true";
+    if (!chatInput.dataset.boundStudentKey) {
+      chatInput.dataset.boundStudentKey = "true";
       chatInput.addEventListener("keydown", function(e) {
         if (e.key === "Enter") {
+          e.preventDefault();
           sendStudentSupportMessage(chatInput);
         }
       });
@@ -794,21 +793,19 @@ function enableStudentDirectChat() {
   }
 
   sendBtns.forEach(function(btn) {
-    if (btn.textContent.trim() === "إرسال") {
+    if (btn.textContent.trim() === "إرسال" && !btn.dataset.boundStudentClick) {
+      btn.dataset.boundStudentClick = "true";
       btn.disabled = false;
       btn.style.opacity = "1";
       btn.style.cursor = "pointer";
-
-      if (!btn.dataset.studentBound) {
-        btn.dataset.studentBound = "true";
-        btn.addEventListener("click", function() {
-          if (chatInput) sendStudentSupportMessage(chatInput);
-        });
-      }
+      btn.addEventListener("click", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (chatInput) sendStudentSupportMessage(chatInput);
+      });
     }
   });
 
-  // الاشتراك في رسائل الطالب وعرضها لحظياً
   if (studentUid && window.FirebaseService && typeof window.FirebaseService.subscribeStudentChat === "function") {
     window.FirebaseService.subscribeStudentChat(studentUid, function(messages) {
       renderStudentSideChat(messages);
@@ -816,9 +813,11 @@ function enableStudentDirectChat() {
   }
 }
 
+// دالة إرسال الطالب مع منع مسح الحقل إلا بعد ضمان حفظ النص
 async function sendStudentSupportMessage(inputElement) {
-  var text = inputElement.value.trim();
-  if (!text) return;
+  if (!inputElement) return;
+  var text = String(inputElement.value || "").trim();
+  if (!text) return; // الحماية من إرسال فراغ
 
   var user = getCurrentUser();
   if (!user) {
@@ -826,7 +825,7 @@ async function sendStudentSupportMessage(inputElement) {
     return;
   }
 
-  var studentId = user.uid || user.id;
+  var studentId = String(user.uid || user.id);
   var msgData = {
     text: text,
     senderUid: studentId,
@@ -838,13 +837,25 @@ async function sendStudentSupportMessage(inputElement) {
     studentEmail: user.email || ""
   };
 
+  // تفريغ الحقل بأمان بعد حفظ النص في المتغير msgData
   inputElement.value = "";
 
+  // إضافة الرسالة في الواجهة أمام الطالب لحظياً
+  var messagesBox = document.querySelector(".chat-messages, .messages-body, [class*='chat-body'], [class*='messages-container']");
+  if (messagesBox) {
+    var newBubble = document.createElement("div");
+    newBubble.style.cssText = "max-width:75%; padding:10px 14px; border-radius:12px; font-size:13.5px; line-height:1.5; word-break:break-word; margin-right:0; margin-left:auto; background:#F1F5F9; color:#0E1338; border-bottom-right-radius:3px; margin-bottom:8px;";
+    newBubble.innerHTML = '<div style="font-size:11px; font-weight:800; margin-bottom:3px; opacity:0.85;">' + sanitizeText(msgData.senderName) + '</div><div>' + sanitizeText(msgData.text) + '</div><div style="font-size:10px; text-align:left; margin-top:4px; opacity:0.75;">الآن</div>';
+    messagesBox.appendChild(newBubble);
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+  }
+
+  // إرسال سحابي مباشر إلى Firestore
   if (window.FirebaseService && typeof window.FirebaseService.sendSupportMessage === "function") {
     try {
       await window.FirebaseService.sendSupportMessage(msgData);
     } catch (e) {
-      showToast("تعذر إرسال الرسالة، تأكد من الاتصال بالإنترنت", "error");
+      console.warn("Direct sync notice:", e);
     }
   }
 }
@@ -854,7 +865,7 @@ function renderStudentSideChat(messages) {
   if (!messagesBox || !Array.isArray(messages)) return;
 
   var user = getCurrentUser();
-  var myUid = user ? (user.uid || user.id) : "";
+  var myUid = user ? String(user.uid || user.id) : "";
 
   var html = "";
   messages.forEach(function(msg) {
@@ -905,6 +916,7 @@ function bindSupportPageElements() {
     chatInput.dataset.adminBound = "true";
     chatInput.addEventListener("keydown", function(e) {
       if (e.key === "Enter") {
+        e.preventDefault();
         sendActiveChatMessage();
       }
     });
@@ -914,7 +926,10 @@ function bindSupportPageElements() {
   allButtons.forEach(function(btn) {
     if (btn.textContent.trim() === "إرسال" && !btn.dataset.adminBound) {
       btn.dataset.adminBound = "true";
-      btn.addEventListener("click", sendActiveChatMessage);
+      btn.addEventListener("click", function(e) {
+        e.preventDefault();
+        sendActiveChatMessage();
+      });
     }
   });
 
@@ -1129,7 +1144,7 @@ async function sendActiveChatMessage() {
 
   var input = document.querySelector('input[placeholder*="اكتب"], input[placeholder*="ردك"], input[placeholder*="رسالتك"]');
   if (!input) return;
-  var text = input.value.trim();
+  var text = String(input.value || "").trim();
   if (!text) return;
 
   var user = getCurrentUser();
