@@ -595,10 +595,10 @@ window.FirebaseService = {
         clearInterval(check);
         fb.firestore().collection("system_settings").doc("chat_config")
           .onSnapshot(function(doc) {
-            var cfg = doc && doc.exists ? doc.data() : { isStudentChatEnabled: false };
+            var cfg = doc && doc.exists ? doc.data() : { isStudentChatEnabled: true };
             if (callback) callback(cfg);
           }, function() {
-            if (callback) callback({ isStudentChatEnabled: false });
+            if (callback) callback({ isStudentChatEnabled: true });
           });
       }
     }, 150);
@@ -663,24 +663,19 @@ window.FirebaseService = {
 
   async sendSupportMessage(msgData) {
     var fb = getFirebase();
-    var studentUid = String(msgData.studentUid || msgData.senderUid);
-    if (!studentUid) throw new Error("معرّف المحادثة غير صالح");
-
-    var now = new Date().toISOString();
-    var senderRole = (msgData.senderRole || "STUDENT").toUpperCase();
-
-    if (senderRole === "STUDENT") {
-      var cfgSnap = await fb.firestore().collection("system_settings").doc("chat_config").get();
-      var isEnabled = cfgSnap.exists && cfgSnap.data().isStudentChatEnabled;
-      if (!isEnabled) {
-        throw new Error("عذراً، الشات غير متاح للطلاب حالياً بتعليمات الإدارة.");
-      }
+    var studentUid = String(msgData.studentUid || msgData.senderUid || "");
+    if (!studentUid) {
+      var user = JSON.parse(localStorage.getItem("current_user") || "{}");
+      studentUid = String(user.uid || user.id || "guest_student");
     }
 
+    var now = new Date().toISOString();
+    var senderRole = String(msgData.senderRole || "STUDENT").toUpperCase();
+
     var messageDoc = {
-      text: String(msgData.text).trim(),
-      senderUid: msgData.senderUid,
-      senderName: msgData.senderName,
+      text: String(msgData.text || "").trim(),
+      senderUid: String(msgData.senderUid || studentUid),
+      senderName: String(msgData.senderName || "طالب"),
       senderRole: senderRole,
       createdAt: now
     };
@@ -690,21 +685,22 @@ window.FirebaseService = {
 
       var threadUpdate = {
         studentUid: studentUid,
-        studentName: msgData.studentName || "طالب",
-        studentPhone: msgData.studentPhone || "",
-        studentEmail: msgData.studentEmail || "",
+        studentName: String(msgData.studentName || "طالب"),
+        studentPhone: String(msgData.studentPhone || ""),
+        studentEmail: String(msgData.studentEmail || ""),
         lastMessage: msgData.text,
         lastMessageTime: now,
-        lastSenderRole: senderRole
+        lastSenderRole: senderRole,
+        status: senderRole === "STUDENT" ? "PENDING" : "RESOLVED"
       };
 
-      if (senderRole === "STUDENT") {
-        threadUpdate.status = "PENDING";
-        threadUpdate.unreadCount = firebase.firestore.FieldValue.increment(1);
-      } else {
-        threadUpdate.status = "RESOLVED";
-        threadUpdate.unreadCount = 0;
-      }
+      try {
+        if (typeof firebase !== "undefined" && firebase.firestore && firebase.firestore.FieldValue) {
+          threadUpdate.unreadCount = senderRole === "STUDENT" 
+            ? firebase.firestore.FieldValue.increment(1) 
+            : 0;
+        }
+      } catch (e) {}
 
       await fb.firestore().collection("support_threads").doc(studentUid).set(threadUpdate, { merge: true });
     }
