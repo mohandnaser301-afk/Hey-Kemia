@@ -724,7 +724,7 @@ function injectChemicalDecorations() {
 }
 
 // =========================================================
-// شات الدعم الفني: مفتوح دائماً للطلاب وبدون قفل
+// شات الدعم الفني: تمييز صارم بين واجهة الطالب ولوحة الإدارة
 // =========================================================
 
 var currentSelectedStudentUid = null;
@@ -738,11 +738,11 @@ function initSupportChatWidget() {
 
     var currentPath = (window.location.pathname || "").toLowerCase();
     var user = getCurrentUser();
+    var role = (user && user.role ? String(user.role) : "STUDENT").toUpperCase();
+    var isAdminOrSupport = role === "ADMIN" || role === "SUPER_ADMIN" || role === "SUPERADMIN" || role === "MANAGER" || role === "SUPPORT";
 
-    var banner = document.getElementById("studentChatLockBanner");
-    if (banner) banner.remove();
-
-    if (currentPath.indexOf("support.html") !== -1) {
+    // 1. إذا كان المستخدم إداري في صفحة الدعم الرسمية
+    if (currentPath.indexOf("support.html") !== -1 && isAdminOrSupport) {
       bindSupportPageElements();
       setAdminChatInputEnabled(false);
 
@@ -751,21 +751,46 @@ function initSupportChatWidget() {
           renderSupportThreadsList(threads);
         });
       }
-    } else {
-      enableStudentChatInputs();
+    } 
+    // 2. إذا كان المستخدم طالباً (سواء في support.html أو dashboard أو أي صفحة أخرى)
+    else {
+      enableStudentDirectChat();
     }
   } catch (e) {}
 }
 
-function enableStudentChatInputs() {
-  var chatInput = document.querySelector('input[placeholder*="اكتب سؤالك"], input[placeholder*="رسالتك"], input[placeholder*="استفسارك"]');
+// فتح وتفعيل الشات للطالب فوراً وإزالة أي قيود إدارية
+function enableStudentDirectChat() {
+  var user = getCurrentUser();
+  var studentUid = user ? (user.uid || user.id) : null;
+
+  var chatInput = document.querySelector('input[placeholder*="اكتب"], input[placeholder*="رسالتك"], input[placeholder*="استفسارك"]');
   var sendBtns = document.querySelectorAll("button");
+  var sidebarThreads = document.querySelector(".threads-list, .chat-sidebar-list, .students-list, [class*='sidebar'] ul");
+  var emptyChatState = document.querySelector(".empty-chat, [class*='empty']");
+
+  // إخفاء القائمة الجانبية المخصصة للمديرين إذا كان طالباً
+  if (sidebarThreads && sidebarThreads.parentElement) {
+    sidebarThreads.parentElement.style.display = "none";
+  }
+  if (emptyChatState) {
+    emptyChatState.style.display = "none";
+  }
 
   if (chatInput) {
     chatInput.disabled = false;
-    chatInput.placeholder = "اكتب سؤالك أو استفسارك هنا...";
+    chatInput.placeholder = "اكتب استفسارك لمعلمك هنا...";
     chatInput.style.opacity = "1";
     chatInput.style.cursor = "text";
+
+    if (!chatInput.dataset.studentBound) {
+      chatInput.dataset.studentBound = "true";
+      chatInput.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") {
+          sendStudentSupportMessage(chatInput);
+        }
+      });
+    }
   }
 
   sendBtns.forEach(function(btn) {
@@ -773,15 +798,87 @@ function enableStudentChatInputs() {
       btn.disabled = false;
       btn.style.opacity = "1";
       btn.style.cursor = "pointer";
+
+      if (!btn.dataset.studentBound) {
+        btn.dataset.studentBound = "true";
+        btn.addEventListener("click", function() {
+          if (chatInput) sendStudentSupportMessage(chatInput);
+        });
+      }
     }
   });
 
-  var banner = document.getElementById("studentChatLockBanner");
-  if (banner) banner.remove();
+  // الاشتراك في رسائل الطالب وعرضها لحظياً
+  if (studentUid && window.FirebaseService && typeof window.FirebaseService.subscribeStudentChat === "function") {
+    window.FirebaseService.subscribeStudentChat(studentUid, function(messages) {
+      renderStudentSideChat(messages);
+    });
+  }
+}
+
+async function sendStudentSupportMessage(inputElement) {
+  var text = inputElement.value.trim();
+  if (!text) return;
+
+  var user = getCurrentUser();
+  if (!user) {
+    showToast("يرجى تسجيل الدخول أولاً للدردشة مع الدعم", "info");
+    return;
+  }
+
+  var studentId = user.uid || user.id;
+  var msgData = {
+    text: text,
+    senderUid: studentId,
+    senderName: user.fullName || "طالب",
+    senderRole: "STUDENT",
+    studentUid: studentId,
+    studentName: user.fullName || "طالب",
+    studentPhone: user.studentPhone || "",
+    studentEmail: user.email || ""
+  };
+
+  inputElement.value = "";
+
+  if (window.FirebaseService && typeof window.FirebaseService.sendSupportMessage === "function") {
+    try {
+      await window.FirebaseService.sendSupportMessage(msgData);
+    } catch (e) {
+      showToast("تعذر إرسال الرسالة، تأكد من الاتصال بالإنترنت", "error");
+    }
+  }
+}
+
+function renderStudentSideChat(messages) {
+  var messagesBox = document.querySelector(".chat-messages, .messages-body, [class*='chat-body'], [class*='messages-container']");
+  if (!messagesBox || !Array.isArray(messages)) return;
+
+  var user = getCurrentUser();
+  var myUid = user ? (user.uid || user.id) : "";
+
+  var html = "";
+  messages.forEach(function(msg) {
+    var isMe = msg.senderUid === myUid || msg.senderRole === "STUDENT";
+    var alignStyle = isMe 
+      ? "margin-right:0; margin-left:auto; background:#F1F5F9; color:#0E1338; border-bottom-right-radius:3px;" 
+      : "margin-left:0; margin-right:auto; background:linear-gradient(135deg, #00D2FF, #0284C7); color:#fff; border-bottom-left-radius:3px;";
+
+    var timeStr = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }) : "";
+
+    html += 
+      '<div style="max-width:75%; padding:10px 14px; border-radius:12px; font-size:13.5px; line-height:1.5; word-break:break-word; ' + alignStyle + ' margin-bottom:8px;">' +
+        '<div style="font-size:11px; font-weight:800; margin-bottom:3px; opacity:0.85;">' + sanitizeText(msg.senderName) + '</div>' +
+        '<div>' + sanitizeText(msg.text) + '</div>' +
+        (timeStr ? '<div style="font-size:10px; text-align:left; margin-top:4px; opacity:0.75;">' + timeStr + '</div>' : '') +
+      '</div>';
+  });
+
+  messagesBox.innerHTML = html;
+  messagesBox.scrollTop = messagesBox.scrollHeight;
 }
 
 function setAdminChatInputEnabled(enabled) {
-  var chatInput = document.querySelector('input[placeholder*="اكتب سؤالك"], input[placeholder*="رسالتك"], input[placeholder*="استفسارك"]');
+  var chatInput = document.querySelector('input[placeholder*="اكتب"], input[placeholder*="رسالتك"], input[placeholder*="استفسارك"]');
   var sendBtns = document.querySelectorAll("button");
 
   if (chatInput) {
@@ -801,11 +898,11 @@ function setAdminChatInputEnabled(enabled) {
 }
 
 function bindSupportPageElements() {
-  var chatInput = document.querySelector('input[placeholder*="اكتب سؤالك"], input[placeholder*="رسالتك"], input[placeholder*="استفسارك"]');
+  var chatInput = document.querySelector('input[placeholder*="اكتب"], input[placeholder*="رسالتك"], input[placeholder*="استفسارك"]');
   var searchInput = document.querySelector('input[placeholder*="بحث باسم الطالب"]');
 
-  if (chatInput && !chatInput.dataset.bound) {
-    chatInput.dataset.bound = "true";
+  if (chatInput && !chatInput.dataset.adminBound) {
+    chatInput.dataset.adminBound = "true";
     chatInput.addEventListener("keydown", function(e) {
       if (e.key === "Enter") {
         sendActiveChatMessage();
@@ -815,14 +912,14 @@ function bindSupportPageElements() {
 
   var allButtons = document.querySelectorAll("button");
   allButtons.forEach(function(btn) {
-    if (btn.textContent.trim() === "إرسال" && !btn.dataset.bound) {
-      btn.dataset.bound = "true";
+    if (btn.textContent.trim() === "إرسال" && !btn.dataset.adminBound) {
+      btn.dataset.adminBound = "true";
       btn.addEventListener("click", sendActiveChatMessage);
     }
   });
 
-  if (searchInput && !searchInput.dataset.bound) {
-    searchInput.dataset.bound = "true";
+  if (searchInput && !searchInput.dataset.adminBound) {
+    searchInput.dataset.adminBound = "true";
     searchInput.addEventListener("input", function(e) {
       filterSupportThreads(e.target.value);
     });
@@ -1257,103 +1354,6 @@ function initGlobalRealtimeSync() {
   }
 }
 
-// دالة تفاعلية ذكية للطلاب لربط وإرسال رسائل الشات بسلاسة في واجهة الطالب
-function bindStudentChatDirectly() {
-  try {
-    var user = getCurrentUser();
-    if (!user || user.role === "ADMIN" || user.role === "SUPER_ADMIN") return;
-
-    var input = document.querySelector('input[placeholder*="اكتب سؤالك"], input[placeholder*="رسالتك"], input[placeholder*="استفسارك"]');
-    var sendBtns = document.querySelectorAll("button");
-
-    if (input && !input.dataset.studentBound) {
-      input.dataset.studentBound = "true";
-      input.disabled = false;
-      input.addEventListener("keydown", function(e) {
-        if (e.key === "Enter") {
-          sendStudentSupportMessage(input);
-        }
-      });
-    }
-
-    sendBtns.forEach(function(btn) {
-      if (btn.textContent.trim() === "إرسال" && !btn.dataset.studentBound) {
-        btn.dataset.studentBound = "true";
-        btn.disabled = false;
-        btn.addEventListener("click", function() {
-          if (input) sendStudentSupportMessage(input);
-        });
-      }
-    });
-
-    if (window.FirebaseService && typeof window.FirebaseService.subscribeStudentChat === "function") {
-      window.FirebaseService.subscribeStudentChat(user.uid || user.id, function(messages) {
-        renderStudentSideChat(messages);
-      });
-    }
-  } catch (e) {}
-}
-
-async function sendStudentSupportMessage(inputElement) {
-  var text = inputElement.value.trim();
-  if (!text) return;
-
-  var user = getCurrentUser();
-  if (!user) {
-    showToast("يرجى تسجيل الدخول أولاً للدردشة مع الدعم", "info");
-    return;
-  }
-
-  var msgData = {
-    text: text,
-    senderUid: user.uid || user.id,
-    senderName: user.fullName || "طالب",
-    senderRole: "STUDENT",
-    studentUid: user.uid || user.id,
-    studentName: user.fullName || "طالب",
-    studentPhone: user.studentPhone || "",
-    studentEmail: user.email || ""
-  };
-
-  inputElement.value = "";
-
-  if (window.FirebaseService && typeof window.FirebaseService.sendSupportMessage === "function") {
-    try {
-      await window.FirebaseService.sendSupportMessage(msgData);
-    } catch (e) {
-      showToast("تعذر إرسال الرسالة، تأكد من الاتصال بالإنترنت", "error");
-    }
-  }
-}
-
-function renderStudentSideChat(messages) {
-  var messagesBox = document.querySelector(".chat-messages, .messages-body, [class*='chat-body'], [class*='messages-container']");
-  if (!messagesBox || !Array.isArray(messages)) return;
-
-  var user = getCurrentUser();
-  var myUid = user ? (user.uid || user.id) : "";
-
-  var html = "";
-  messages.forEach(function(msg) {
-    var isMe = msg.senderUid === myUid || msg.senderRole === "STUDENT";
-    var alignStyle = isMe 
-      ? "margin-right:0; margin-left:auto; background:#F1F5F9; color:#0E1338; border-bottom-right-radius:3px;" 
-      : "margin-left:0; margin-right:auto; background:linear-gradient(135deg, #00D2FF, #0284C7); color:#fff; border-bottom-left-radius:3px;";
-
-    var timeStr = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }) : "";
-
-    html += 
-      '<div style="max-width:75%; padding:10px 14px; border-radius:12px; font-size:13.5px; line-height:1.5; word-break:break-word; ' + alignStyle + ' margin-bottom:8px;">' +
-        '<div style="font-size:11px; font-weight:800; margin-bottom:3px; opacity:0.85;">' + sanitizeText(msg.senderName) + '</div>' +
-        '<div>' + sanitizeText(msg.text) + '</div>' +
-        (timeStr ? '<div style="font-size:10px; text-align:left; margin-top:4px; opacity:0.75;">' + timeStr + '</div>' : '') +
-      '</div>';
-  });
-
-  messagesBox.innerHTML = html;
-  messagesBox.scrollTop = messagesBox.scrollHeight;
-}
-
 document.addEventListener("DOMContentLoaded", function() {
   injectChemicalPreloader();
   injectChemicalDecorations();
@@ -1365,7 +1365,6 @@ document.addEventListener("DOMContentLoaded", function() {
     monitorCurrentUserStatus();
     initGlobalRealtimeSync();
     initSupportChatWidget();
-    bindStudentChatDirectly();
 
     if (typeof renderStudentDashboard === "function") renderStudentDashboard();
     if (typeof renderAdmin === "function") renderAdmin();
