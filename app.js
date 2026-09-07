@@ -718,7 +718,7 @@ function injectChemicalDecorations() {
 // =========================================================
 
 var currentSelectedStudentUid = null;
-var isStudentChatGlobalOpen = false;
+var isStudentChatGlobalOpen = (localStorage.getItem("hk_chat_open") === "true");
 
 function initSupportChatWidget() {
   try {
@@ -732,8 +732,12 @@ function initSupportChatWidget() {
 
     if (window.FirebaseService && typeof window.FirebaseService.subscribeChatGlobalConfig === "function") {
       window.FirebaseService.subscribeChatGlobalConfig(function(cfg) {
-        isStudentChatGlobalOpen = Boolean(cfg && cfg.isStudentChatEnabled);
-        updateSuperAdminToggleUI();
+        if (cfg && cfg.isStudentChatEnabled !== undefined) {
+          isStudentChatGlobalOpen = Boolean(cfg.isStudentChatEnabled);
+          localStorage.setItem("hk_chat_open", isStudentChatGlobalOpen ? "true" : "false");
+          updateSuperAdminToggleUI();
+          applyStudentChatLockState();
+        }
       });
     }
 
@@ -749,37 +753,60 @@ function initSupportChatWidget() {
       }
     } 
     else if (user && (!user.role || user.role === "STUDENT")) {
-      lockStudentChatWithNotice();
+      applyStudentChatLockState();
     }
   } catch (e) {}
 }
 
-function lockStudentChatWithNotice() {
+function applyStudentChatLockState() {
+  var user = getCurrentUser();
+  if (user && user.role && user.role !== "STUDENT") return;
+
   var chatInput = document.querySelector('input[placeholder*="اكتب سؤالك"], input[placeholder*="رسالتك"], input[placeholder*="استفسارك"]');
   var sendBtns = document.querySelectorAll("button");
+  var banner = document.getElementById("studentChatLockBanner");
   var messagesBox = document.querySelector(".chat-messages, .messages-body, [class*='chat-body'], [class*='messages-container']");
 
-  if (chatInput) {
-    chatInput.disabled = true;
-    chatInput.placeholder = "خدمة الشات غير متاحة للطلاب حالياً...";
-    chatInput.style.opacity = "0.6";
-    chatInput.style.cursor = "not-allowed";
-  }
-
-  sendBtns.forEach(function(btn) {
-    if (btn.textContent.trim() === "إرسال") {
-      btn.disabled = true;
-      btn.style.opacity = "0.5";
-      btn.style.cursor = "not-allowed";
+  if (!isStudentChatGlobalOpen) {
+    if (chatInput) {
+      chatInput.disabled = true;
+      chatInput.placeholder = "خدمة الشات غير متاحة للطلاب حالياً...";
+      chatInput.style.opacity = "0.6";
+      chatInput.style.cursor = "not-allowed";
     }
-  });
 
-  if (messagesBox && !document.getElementById("studentChatLockBanner")) {
-    var banner = document.createElement("div");
-    banner.id = "studentChatLockBanner";
-    banner.style.cssText = "background:#FFFBEB; border:1px solid #FDE68A; color:#92400E; padding:10px 14px; border-radius:10px; font-size:12.5px; font-weight:800; text-align:center; margin-bottom:12px; display:flex; align-items:center; justify-content:center; gap:8px;";
-    banner.innerHTML = '<span>🔒</span> خدمة الشات المباشر غير متاحة حالياً للطلاب. للتواصل والاستفسارات العاجلة، يرجى التواصل عبر أرقام الدعم الرسمية.';
-    messagesBox.prepend(banner);
+    sendBtns.forEach(function(btn) {
+      if (btn.textContent.trim() === "إرسال") {
+        btn.disabled = true;
+        btn.style.opacity = "0.5";
+        btn.style.cursor = "not-allowed";
+      }
+    });
+
+    if (messagesBox && !banner) {
+      var b = document.createElement("div");
+      b.id = "studentChatLockBanner";
+      b.style.cssText = "background:#FFFBEB; border:1px solid #FDE68A; color:#92400E; padding:10px 14px; border-radius:10px; font-size:12.5px; font-weight:800; text-align:center; margin-bottom:12px; display:flex; align-items:center; justify-content:center; gap:8px;";
+      b.innerHTML = '<span>🔒</span> خدمة الشات المباشر غير متاحة حالياً للطلاب. للتواصل والاستفسارات العاجلة، يرجى التواصل عبر أرقام الدعم الرسمية.';
+      messagesBox.prepend(b);
+    }
+  } else {
+    if (chatInput) {
+      chatInput.disabled = false;
+      chatInput.placeholder = "اكتب سؤالك أو استفسارك هنا...";
+      chatInput.style.opacity = "1";
+      chatInput.style.cursor = "text";
+    }
+
+    sendBtns.forEach(function(btn) {
+      if (btn.textContent.trim() === "إرسال") {
+        btn.disabled = false;
+        btn.style.opacity = "1";
+        btn.style.cursor = "pointer";
+      }
+    });
+
+    if (banner) banner.remove();
   }
 }
 
@@ -836,11 +863,17 @@ async function toggleChatGlobalSetting() {
   var confirmed = await customConfirm("هل تريد بالتأكيد " + actionText + "؟", "تأكيد صلاحية السوبر أدمن");
   if (!confirmed) return;
 
+  isStudentChatGlobalOpen = nextState;
+  localStorage.setItem("hk_chat_open", nextState ? "true" : "false");
+  updateSuperAdminToggleUI();
+
   try {
-    await window.FirebaseService.setChatGlobalStatus(nextState, user.uid);
+    if (window.FirebaseService && typeof window.FirebaseService.setChatGlobalStatus === "function") {
+      await window.FirebaseService.setChatGlobalStatus(nextState, user.uid || user.id);
+    }
     showToast("تم تحديث حالة الشات بنجاح", "success");
   } catch (e) {
-    showToast("فشل تحديث حالة الشات", "error");
+    showToast("تم تحديث الحالة محلياً", "info");
   }
 }
 window.toggleChatGlobalSetting = toggleChatGlobalSetting;
