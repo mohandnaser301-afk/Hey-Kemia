@@ -83,30 +83,39 @@ function compressImageBase64(base64Str, maxWidth, maxHeight, quality) {
 }
 window.compressImageBase64 = compressImageBase64;
 
-// واجهة تأكيد البريد الإلكتروني الأنيقة
-function showVerificationPrompt(email, fbUser) {
+// منع كتابة الأحرف الإنجليزية والأرقام والرموز في خانة الاسم لحظياً
+document.addEventListener("input", function(e) {
+  if (e.target && (e.target.id === "fullName" || e.target.name === "fullName" || (e.target.placeholder && e.target.placeholder.indexOf("الاسم") !== -1))) {
+    var cleanVal = e.target.value.replace(/[^\u0621-\u064A\s]/g, "");
+    if (e.target.value !== cleanVal) {
+      e.target.value = cleanVal;
+    }
+  }
+});
+
+// واجهة تأكيد البريد الإلكتروني الأنيقة والمتكاملة مع السحابة
+function showVerificationPrompt(email, fbUser, pendingDoc) {
   try {
     var oldModal = document.getElementById("hkEmailVerificationModal");
     if (oldModal) oldModal.remove();
 
     var modal = document.createElement("div");
     modal.id = "hkEmailVerificationModal";
-    modal.style.cssText = "position:fixed; inset:0; background:rgba(8,10,33,0.85); backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; z-index:99999999; padding:20px; font-family:system-ui, -apple-system, sans-serif;";
+    modal.style.cssText = "position:fixed; inset:0; background:rgba(8,10,33,0.88); backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; z-index:99999999; padding:20px; font-family:system-ui, -apple-system, sans-serif;";
     
     modal.innerHTML = 
       '<div style="background:#ffffff; border-radius:24px; max-width:440px; width:100%; padding:32px 24px; text-align:center; box-shadow:0 25px 60px rgba(0,0,0,0.4); border:1px solid rgba(0,210,255,0.3); position:relative; overflow:hidden;">' +
-        '<div style="position:absolute; top:-40px; right:-40px; width:100px; height:100px; background:radial-gradient(circle, rgba(0,210,255,0.2) 0%, transparent 70%);"></div>' +
         '<div style="width:68px; height:68px; background:linear-gradient(135deg, rgba(0,210,255,0.15), rgba(2,132,199,0.2)); color:#0284C7; border-radius:20px; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:32px; box-shadow:0 8px 20px rgba(0,210,255,0.25);">' +
           '✉️' +
         '</div>' +
         '<h3 style="font-size:20px; font-weight:900; color:#0E1338; margin-bottom:8px;">تأكيد البريد الإلكتروني</h3>' +
-        '<p style="font-size:13.5px; color:#64748B; line-height:1.6; margin-bottom:14px;">تم إرسال رابط تأكيد إلى بريدك الإلكتروني:</p>' +
-        '<div style="background:#F1F5F9; border:1px dashed #00D2FF; padding:10px 14px; border-radius:12px; font-size:13.5px; font-weight:800; color:#0E1338; word-break:break-all; margin-bottom:20px;">' +
+        '<p style="font-size:13.5px; color:#64748B; line-height:1.6; margin-bottom:14px;">تم إرسال رابط التفعيل إلى بريدك الإلكتروني:</p>' +
+        '<div style="background:#F1F5F9; border:1px dashed #00D2FF; padding:10px 14px; border-radius:12px; font-size:13.5px; font-weight:800; color:#0E1338; word-break:break-all; margin-bottom:18px;">' +
           email +
         '</div>' +
-        '<p style="font-size:12.5px; color:#94A3B8; line-height:1.6; margin-bottom:24px;">يرجى فتح صندوق الوارد (أو مجلد الرسائل غير المرغوب فيها Spam) والضغط على الرابط لتفعيل حسابك ومتابعة الدراسة.</p>' +
+        '<p style="font-size:12.5px; color:#94A3B8; line-height:1.6; margin-bottom:22px;">يرجى فتح صندوق الوارد (أو مجلد الرسائل غير المرغوب فيها Spam) والضغط على رابط التفعيل، ثم اضغط على زر المتابعة بالأسفل لإتمام الدخول.</p>' +
         '<div style="display:flex; flex-direction:column; gap:10px;">' +
-          '<button id="hkBtnCheckVerified" style="width:100%; padding:13px; background:linear-gradient(135deg, #00D2FF, #0284C7); color:#fff; border:none; border-radius:12px; font-weight:900; font-size:14px; cursor:pointer; box-shadow:0 8px 20px rgba(0,210,255,0.35);">لقد قمت بالتأكيد، المتابعة الآن 🚀</button>' +
+          '<button id="hkBtnCheckVerified" style="width:100%; padding:13px; background:linear-gradient(135deg, #00D2FF, #0284C7); color:#fff; border:none; border-radius:12px; font-weight:900; font-size:14px; cursor:pointer; box-shadow:0 8px 20px rgba(0,210,255,0.35);">تأكيد والمتابعة الآن 🚀</button>' +
           '<button id="hkBtnResendVerification" style="width:100%; padding:11px; background:#F8FAFC; color:#0284C7; border:1px solid #CBD5E1; border-radius:12px; font-weight:800; font-size:13px; cursor:pointer;">إعادة إرسال الرابط</button>' +
         '</div>' +
       '</div>';
@@ -119,30 +128,30 @@ function showVerificationPrompt(email, fbUser) {
           await fbUser.reload();
           if (fbUser.emailVerified) {
             var fb = getFirebase();
-            if (fb && fb.firestore) {
-              await fb.firestore().collection("users").doc(fbUser.uid).update({ emailVerified: true });
+            // إنشاء وحفظ وثيقة الطالب في Firestore فقط عند التأكيد الفعلي
+            if (fb && fb.firestore && pendingDoc) {
+              pendingDoc.emailVerified = true;
+              await fb.firestore().collection("users").doc(fbUser.uid).set(pendingDoc, { merge: true });
+              localStorage.setItem("current_user", JSON.stringify(pendingDoc));
+              localStorage.setItem("edu_currentUser", JSON.stringify(pendingDoc));
             }
-            var localUser = JSON.parse(localStorage.getItem("current_user") || "{}");
-            localUser.emailVerified = true;
-            localStorage.setItem("current_user", JSON.stringify(localUser));
-            localStorage.setItem("edu_currentUser", JSON.stringify(localUser));
             modal.remove();
             window.location.replace("dashboard.html");
             return;
           }
         }
       } catch (e) {}
-      alert("لم يتم تأكيد البريد بعد. يرجى الضغط على الرابط المرسل إلى بريدك أولاً.");
+      alert("لم يتم تفعيل البريد الإلكتروني بعد. يرجى الضغط على الرابط في رسالتك ثم إعادة المحاولة.");
     };
 
     document.getElementById("hkBtnResendVerification").onclick = async function() {
       try {
         if (fbUser) {
           await fbUser.sendEmailVerification();
-          alert("تمت إعادة إرسال رابط التأكيد بنجاح. تحقق من بريدك.");
+          alert("تمت إعادة إرسال رابط التفعيل بنجاح. تفقد بريدك الإلكتروني.");
         }
       } catch (e) {
-        alert("يرجى الانتظار قليلاً قبل محاولة إعادة الإرسال.");
+        alert("يرجى الانتظار دقيقة واحدة قبل طلب إعادة الإرسال.");
       }
     };
   } catch (e) {}
@@ -150,34 +159,33 @@ function showVerificationPrompt(email, fbUser) {
 window.showVerificationPrompt = showVerificationPrompt;
 
 window.FirebaseService = {
-  async registerStudent(userData) {
-    var fb = getFirebase();
+  // التحقق المسبق الصارم من كافة الحقول ومنع الانتقال بين المراحل إذا وُجد خطأ
+  validateRegistrationData(userData) {
     userData = userData || {};
 
-    // 1. استخراج وتنظيف البيانات[cite: 5]
-    var cleanFullName = String(userData.fullName || userData.name || userData.studentName || userData.userName || "").trim();
+    var cleanFullName = String(userData.fullName || userData.name || userData.studentName || "").trim();
     var cleanEmail = String(userData.email || "").toLowerCase().trim();
     var cleanPassword = String(userData.password || "");
     var cleanStudentPhone = String(userData.studentPhone || userData.phone || userData.mobile || "").trim();
     var cleanParentPhone = String(userData.parentPhone || userData.guardianPhone || userData.fatherPhone || "").trim();
 
-    // 2. التحقق الصارم من الاسم: حروف عربية فقط وثلاثي على الأقل[cite: 5]
+    // 1. الاسم عربي فقط وثلاثي على الأقل وبدون أي أحرف إنجليزية
     var arabicRegex = /^[\u0621-\u064A\s]+$/;
     if (!cleanFullName || !arabicRegex.test(cleanFullName)) {
-      throw new Error("يجب كتابة الاسم باللغة العربية فقط وبدون أرقام أو رموز.");
+      throw new Error("يجب كتابة الاسم باللغة العربية فقط (يمنع تماماً كتابة الحروف الإنجليزية أو الأرقام).");
     }
     var nameParts = cleanFullName.split(/\s+/).filter(Boolean);
     if (nameParts.length < 3) {
       throw new Error("يرجى كتابة الاسم ثلاثياً باللغة العربية على الأقل.");
     }
 
-    // 3. التحقق من البريد الإلكتروني[cite: 5]
+    // 2. التحقق من صحة البريد الإلكتروني
     var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!cleanEmail || !emailRegex.test(cleanEmail)) {
-      throw new Error("يرجى إدخال بريد إلكتروني صحيح ومعتمد.");
+      throw new Error("يرجى إدخال صيغة بريد إلكتروني صحيحة.");
     }
 
-    // 4. التحقق من أن رقمي الهاتف مصريان مكونان من 11 رقماً ويبدآن بـ 010 أو 011 أو 012 أو 015[cite: 5]
+    // 3. أرقام هواتف مصرية مكونة من 11 رقماً وتبدأ بـ 010, 011, 012, 015
     var egyptianPhoneRegex = /^01[0125][0-9]{8}$/;
 
     if (!cleanStudentPhone || !egyptianPhoneRegex.test(cleanStudentPhone)) {
@@ -188,27 +196,42 @@ window.FirebaseService = {
       throw new Error("رقم ولي الأمر غير صحيح، يجب أن يكون رقماً مصرياً مكوناً من 11 رقماً يبدأ بـ (010, 011, 012, 015).");
     }
 
-    // 5. التحقق من اختلاف رقم ولي الأمر عن رقم الطالب[cite: 5]
+    // 4. التحقق من اختلاف رقم ولي الأمر عن رقم الطالب
     if (cleanStudentPhone === cleanParentPhone) {
       throw new Error("يجب أن يكون رقم ولي الأمر مختلفاً تماماً عن رقم هاتف الطالب.");
     }
 
-    // 6. التحقق من كلمة المرور[cite: 5]
+    // 5. كلمة المرور
     if (!cleanPassword || cleanPassword.length < 6) {
-      throw new Error("يجب ألا تقل كلمة المرور عن 6 أحرف أو أرقام.");
+      throw new Error("كلمة المرور يجب ألا تقل عن 6 خانات.");
     }
 
-    // 7. التحقق من عدم التكرار المسبق في قاعدة البيانات[cite: 5]
+    return {
+      fullName: cleanFullName,
+      name: cleanFullName,
+      email: cleanEmail,
+      password: cleanPassword,
+      studentPhone: cleanStudentPhone,
+      phone: cleanStudentPhone,
+      parentPhone: cleanParentPhone,
+      governorate: userData.governorate || "غير محدد",
+      educationType: userData.educationType || "GENERAL",
+      schoolName: userData.schoolName || "غير محدد"
+    };
+  },
+
+  async registerStudent(userData) {
+    // التحقق من كافة الشروط أولاً ومنع المتابعة في حال وجود أي نقص
+    var valid = this.validateRegistrationData(userData);
+    var fb = getFirebase();
+
     if (fb && fb.firestore) {
       try {
-        var emailCheck = await fb.firestore().collection("users").where("email", "==", cleanEmail).get();
-        if (!emailCheck.empty) {
-          throw new Error("هذا البريد الإلكتروني مسجل بالفعل بحساب آخر.");
-        }
-        var phoneCheck = await fb.firestore().collection("users").where("studentPhone", "==", cleanStudentPhone).get();
-        if (!phoneCheck.empty) {
-          throw new Error("رقم هاتف الطالب مسجل بالفعل بحساب آخر.");
-        }
+        var emailCheck = await fb.firestore().collection("users").where("email", "==", valid.email).get();
+        if (!emailCheck.empty) throw new Error("هذا البريد الإلكتروني مسجل بالفعل بحساب آخر.");
+
+        var phoneCheck = await fb.firestore().collection("users").where("studentPhone", "==", valid.studentPhone).get();
+        if (!phoneCheck.empty) throw new Error("رقم هاتف الطالب مسجل بالفعل بحساب آخر.");
       } catch (errCheck) {
         if (errCheck.message && (errCheck.message.includes("مسجل بالفعل") || errCheck.message.includes("البريد الإلكتروني") || errCheck.message.includes("رقم هاتف"))) {
           throw errCheck;
@@ -219,19 +242,15 @@ window.FirebaseService = {
     var uid = "u_" + Date.now();
     var createdFbUser = null;
 
-    // 8. إنشاء الحساب وإرسال رابط التأكيد عبر Firebase Auth[cite: 5]
+    // إنشاء الحساب في Auth وإرسال رابط التفعيل
     if (fb && fb.auth) {
       try {
-        var userCredential = await fb.auth().createUserWithEmailAndPassword(cleanEmail, cleanPassword);
+        var userCredential = await fb.auth().createUserWithEmailAndPassword(valid.email, valid.password);
         createdFbUser = userCredential.user;
         uid = createdFbUser.uid;
 
-        await createdFbUser.updateProfile({
-          displayName: cleanFullName
-        }).catch(function() {});
-
-        // إرسال رابط تأكيد البريد الإلكتروني
-        await createdFbUser.sendEmailVerification().catch(function() {});
+        await createdFbUser.updateProfile({ displayName: valid.fullName }).catch(function() {});
+        await createdFbUser.sendEmailVerification();
       } catch (authErr) {
         if (authErr.code === 'auth/email-already-in-use') {
           throw new Error("هذا البريد الإلكتروني مسجل بالفعل بحساب آخر.");
@@ -240,38 +259,30 @@ window.FirebaseService = {
       }
     }
 
-    // 9. وثيقة المستخدم الكاملة[cite: 5]
+    // تجهيز الوثيقة الكاملة وتأجيل الحفظ السحابي في users لحين الضغط على الرابط
     var userDoc = {
       uid: uid,
       id: uid,
-      fullName: cleanFullName,
-      name: cleanFullName,
-      email: cleanEmail,
-      studentPhone: cleanStudentPhone,
-      phone: cleanStudentPhone,
-      parentPhone: cleanParentPhone,
-      governorate: userData.governorate || "غير محدد",
-      educationType: userData.educationType || "GENERAL",
-      schoolName: userData.schoolName || "غير محدد",
+      fullName: valid.fullName,
+      name: valid.fullName,
+      email: valid.email,
+      studentPhone: valid.studentPhone,
+      phone: valid.studentPhone,
+      parentPhone: valid.parentPhone,
+      governorate: valid.governorate,
+      educationType: valid.educationType,
+      schoolName: valid.schoolName,
       role: "STUDENT",
-      enrolledCourses: Array.isArray(userData.enrolledCourses) ? userData.enrolledCourses.map(String) : ["c1"],
-      customAllowedLessons: userData.customAllowedLessons || {},
+      enrolledCourses: ["c1"],
+      customAllowedLessons: {},
       courseAccessCount: {},
       emailVerified: false,
       devices: [],
       createdAt: new Date().toISOString()
     };
 
-    if (fb && fb.firestore) {
-      await fb.firestore().collection("users").doc(uid).set(userDoc, { merge: true });
-    }
-
-    localStorage.setItem("current_user", JSON.stringify(userDoc));
-    localStorage.setItem("edu_currentUser", JSON.stringify(userDoc));
-
-    // إظهار نافذة تأكيد البريد الإلكتروني بعد التسجيل
-    showVerificationPrompt(cleanEmail, createdFbUser);
-
+    // إظهار نافذة تأكيد البريد الإلكتروني ومنع النزول في Firestore بدون تأكيد
+    showVerificationPrompt(valid.email, createdFbUser, userDoc);
     return userDoc;
   },
 
@@ -286,10 +297,11 @@ window.FirebaseService = {
         var fbUser = userCredential.user;
         var uid = fbUser.uid;
 
-        // التحقق مما إذا كان البريد مؤكداً
-        if (!fbUser.emailVerified && fbUser.email) {
-          showVerificationPrompt(fbUser.email, fbUser);
-          throw new Error("يرجى تأكيد بريدك الإلكتروني أولاً عبر الرابط المرسل إليك.");
+        // التحقق من تفعيل البريد الإلكتروني عبر فايربيز ومنع الدخول بدونه
+        await fbUser.reload();
+        if (!fbUser.emailVerified) {
+          showVerificationPrompt(fbUser.email, fbUser, null);
+          throw new Error("يرجى تفعيل حسابك أولاً من خلال رابط التحقق المرسل إلى بريدك الإلكتروني.");
         }
 
         if (fb.firestore) {
@@ -315,7 +327,7 @@ window.FirebaseService = {
           };
         }
       } catch (e) {
-        if (e.message && e.message.includes("تأكيد بريدك الإلكتروني")) {
+        if (e.message && e.message.includes("تفعيل حسابك")) {
           throw e;
         }
         if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
@@ -339,7 +351,7 @@ window.FirebaseService = {
     if (foundUser) {
       foundUser.uid = foundUser.uid || foundUser.id;
       foundUser.id = foundUser.uid;
-      foundUser.fullName = foundUser.fullName || foundUser.name || foundUser.studentName || "طالب";
+      foundUser.fullName = foundUser.fullName || foundUser.name || "طالب";
       foundUser.studentPhone = foundUser.studentPhone || foundUser.phone || "";
       foundUser.email = foundUser.email || cleanEmail;
       foundUser.role = (foundUser.role || "STUDENT").toUpperCase();
@@ -723,7 +735,7 @@ window.FirebaseService = {
   },
 
   // =========================================================
-  // شات الدعم الفني: سحابي 100% بدون الاعتماد على localStorage[cite: 5]
+  // شات الدعم الفني: سحابي 100% بدون الاعتماد على localStorage[cite: 6]
   // =========================================================
 
   subscribeChatGlobalConfig(callback) {
