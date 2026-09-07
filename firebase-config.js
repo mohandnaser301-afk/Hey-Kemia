@@ -2,7 +2,6 @@
 // إعدادات وتهيئة Firebase لمنصة هي كيميا !
 // =========================================================
 
-// استخدام var لمنع خطأ "already been declared" نهائياً
 var firebaseConfig = {
   apiKey: "AIzaSyDwUdbxMJmGlQctBuZWgxFbJqdHwqYUzzs",
   authDomain: "hey-kemia-a8f6c.firebaseapp.com",
@@ -514,23 +513,28 @@ window.FirebaseService = {
     }
   },
 
+  // ==========================================
+  // شات الدعم الفني السحابي 100% (بدون localStorage)
+  // ==========================================
+
   subscribeStudentChat(studentUid, callback) {
     if (!studentUid) return;
-    var local = JSON.parse(localStorage.getItem("edu_chat_" + studentUid) || "[]");
-    if (callback) callback(local);
 
     var check = setInterval(function() {
       var fb = getFirebase();
-      if (fb && fb.firestore && studentUid) {
+      if (fb && fb.firestore) {
         clearInterval(check);
         fb.firestore().collection("support_threads").doc(studentUid).collection("messages")
           .orderBy("createdAt", "asc")
           .onSnapshot(function(snap) {
             var list = [];
-            snap.forEach(function(doc) { list.push(Object.assign({ id: doc.id }, doc.data())); });
-            localStorage.setItem("edu_chat_" + studentUid, JSON.stringify(list));
+            snap.forEach(function(doc) { 
+              list.push(Object.assign({ id: doc.id }, doc.data())); 
+            });
             if (callback) callback(list);
-          }, function() {});
+          }, function(err) {
+            console.error("Cloud Chat Sync Error:", err);
+          });
       }
     }, 150);
   },
@@ -543,15 +547,19 @@ window.FirebaseService = {
         fb.firestore().collection("support_threads")
           .onSnapshot(function(snap) {
             var list = [];
-            snap.forEach(function(doc) { list.push(Object.assign({ id: doc.id }, doc.data())); });
-            // ترتيب المحادثات من الأحدث للأقدم فورياً
+            snap.forEach(function(doc) { 
+              list.push(Object.assign({ id: doc.id }, doc.data())); 
+            });
+            // ترتيب سحابي فوري من الأحدث للأقدم
             list.sort(function(a, b) {
               var tA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
               var tB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
               return tB - tA;
             });
             if (callback) callback(list);
-          }, function() {});
+          }, function(err) {
+            console.error("Threads Sync Error:", err);
+          });
       }
     }, 150);
   },
@@ -559,7 +567,7 @@ window.FirebaseService = {
   async sendSupportMessage(msgData) {
     var fb = getFirebase();
     var studentUid = String(msgData.studentUid || msgData.senderUid);
-    if (!studentUid) return;
+    if (!studentUid) throw new Error("Missing studentUid");
     var now = new Date().toISOString();
 
     var messageDoc = {
@@ -570,16 +578,11 @@ window.FirebaseService = {
       createdAt: now
     };
 
-    // 1. تحديث محلي لحظي بكامل الحقول (بما فيها createdAt)
-    var localKey = "edu_chat_" + studentUid;
-    var localMsgs = JSON.parse(localStorage.getItem(localKey) || "[]");
-    localMsgs.push(messageDoc);
-    localStorage.setItem(localKey, JSON.stringify(localMsgs));
-
-    // 2. إرسال سحابي مباشر ومحدث لخيط المحادثة
     if (fb && fb.firestore) {
+      // 1. إضافة الرسالة مباشرة لمجموعة المحادثة في Firestore
       await fb.firestore().collection("support_threads").doc(studentUid).collection("messages").add(messageDoc);
 
+      // 2. تحديث وثيقة الخيط وعدّاد غير المقروء سحابياً
       var threadUpdate = {
         studentUid: studentUid,
         studentName: msgData.studentName || "طالب",

@@ -10,7 +10,6 @@ function sanitizeText(str) {
 }
 window.sanitizeText = sanitizeText;
 
-// محول روابط يوتيوب الاحترافي لكافة الصيغ
 function formatYouTubeEmbedUrl(url) {
   if (!url) return "";
   var cleanUrl = String(url).trim();
@@ -481,7 +480,6 @@ function calculateStudentMetrics(userUid) {
 }
 window.calculateStudentMetrics = calculateStudentMetrics;
 
-// شاشة التحميل المعملية الاحترافية
 function injectChemicalPreloader() {
   try {
     if (document.getElementById("chemicalPreloader")) return;
@@ -663,7 +661,6 @@ function injectChemicalPreloader() {
   } catch (e) {}
 }
 
-// الزخارف الكيميائية المحسنة وفائقة الوضوح (نيون متوهج ودون مربعات)
 function injectChemicalDecorations() {
   try {
     if (document.getElementById("hkChemicalBackgroundDecorations")) return;
@@ -717,7 +714,7 @@ function injectChemicalDecorations() {
 }
 
 // =========================================================
-// شات الدعم الفني: مزامنة حية وسريعة للطرفين
+// شات الدعم الفني: سحابي 100% مع قفل إرسال الإدارة لحين الاختيار
 // =========================================================
 
 var currentSelectedStudentUid = null;
@@ -735,6 +732,7 @@ function initSupportChatWidget() {
     // تشغيل صفحة الدعم الرسمية (support.html)
     if (currentPath.indexOf("support.html") !== -1) {
       bindSupportPageElements();
+      setAdminChatInputEnabled(false); // قفل الحقل افتراضياً حتى يختار الإداري طالباً
 
       if (window.FirebaseService && typeof window.FirebaseService.subscribeAllSupportThreads === "function") {
         window.FirebaseService.subscribeAllSupportThreads(function(threads) {
@@ -747,6 +745,27 @@ function initSupportChatWidget() {
       bindStudentPageChatElements(user.uid);
     }
   } catch (e) {}
+}
+
+// التحكم في قفل أو فتح حقل الإرسال للإدارة
+function setAdminChatInputEnabled(enabled) {
+  var chatInput = document.querySelector('input[placeholder*="اكتب سؤالك"], input[placeholder*="رسالتك"], input[placeholder*="استفسارك"]');
+  var sendBtns = document.querySelectorAll("button");
+
+  if (chatInput) {
+    chatInput.disabled = !enabled;
+    chatInput.placeholder = enabled ? "اكتب ردك على الطالب..." : "اختر طالباً من القائمة الجانبية لبدء الرد...";
+    chatInput.style.opacity = enabled ? "1" : "0.6";
+    chatInput.style.cursor = enabled ? "text" : "not-allowed";
+  }
+
+  sendBtns.forEach(function(btn) {
+    if (btn.textContent.trim() === "إرسال") {
+      btn.disabled = !enabled;
+      btn.style.opacity = enabled ? "1" : "0.5";
+      btn.style.cursor = enabled ? "pointer" : "not-allowed";
+    }
+  });
 }
 
 function bindStudentPageChatElements(studentUid) {
@@ -800,27 +819,13 @@ async function sendStudentMessageDirectly() {
 
   input.value = "";
 
-  // عرض فوري محلياً للطالب بدون انتظار السحابة
-  appendMessageToStudentUI(msgData);
-
   if (window.FirebaseService && typeof window.FirebaseService.sendSupportMessage === "function") {
     try {
       await window.FirebaseService.sendSupportMessage(msgData);
     } catch (e) {
-      showToast("تعذر إرسال الرسالة، تأكد من الإنترنت", "error");
+      showToast("تعذر إرسال الرسالة، تأكد من الاتصال", "error");
     }
   }
-}
-
-function appendMessageToStudentUI(msg) {
-  var messagesBox = document.querySelector(".chat-messages, .messages-body, [class*='chat-body'], [class*='messages-container'], #activeMessagesTargetContainer");
-  if (!messagesBox) return;
-
-  var newBubble = document.createElement("div");
-  newBubble.style.cssText = "max-width:75%; padding:10px 14px; border-radius:12px; font-size:13.5px; line-height:1.5; word-break:break-word; margin-right:0; margin-left:auto; background:#F1F5F9; color:#0E1338; border-bottom-right-radius:3px; margin-top:8px;";
-  newBubble.innerHTML = '<div style="font-size:11px; font-weight:800; margin-bottom:3px; opacity:0.85;">' + sanitizeText(msg.senderName) + '</div><div>' + sanitizeText(msg.text) + '</div>';
-  messagesBox.appendChild(newBubble);
-  messagesBox.scrollTop = messagesBox.scrollHeight;
 }
 
 function renderStudentPageMessages(messages) {
@@ -879,6 +884,7 @@ function bindSupportPageElements() {
   }
 }
 
+// عرض قائمة استفسارات الطلاب مع عداد الرسائل غير المقروءة سحابياً
 function renderSupportThreadsList(threads) {
   var listContainer = document.querySelector(".threads-list, .chat-sidebar-list, .students-list, [class*='sidebar'] ul, [class*='thread']");
   if (!listContainer) {
@@ -902,8 +908,8 @@ function renderSupportThreadsList(threads) {
   var threadsHtml = "";
   threads.forEach(function(th) {
     var isSelected = th.studentUid === currentSelectedStudentUid;
-    var unreadBadge = th.unreadCount && th.unreadCount > 0 
-      ? '<span style="background:#00D2FF; color:#0E1338; font-size:11px; font-weight:900; padding:2px 7px; border-radius:10px;">' + th.unreadCount + ' جديد</span>' 
+    var unreadBadge = th.unreadCount && Number(th.unreadCount) > 0 
+      ? '<span style="background:#EF4444; color:#ffffff; font-size:11px; font-weight:900; padding:2px 7px; border-radius:10px; box-shadow:0 0 6px rgba(239,68,68,0.5);">' + th.unreadCount + ' جديد</span>' 
       : '';
 
     var deleteBtn = isSuper ? 
@@ -943,7 +949,7 @@ function filterSupportThreads(query) {
 }
 
 async function deleteSupportThread(studentUid) {
-  var confirmed = await customConfirm("هل أنت متأكد من رغبتك في حذف محادثة هذا الطالب وجميع رسائلها؟", "حذف المحادثة");
+  var confirmed = await customConfirm("هل أنت متأكد من رغبتك في حذف محادثة هذا الطالب نهائياً من قاعدة البيانات؟", "حذف المحادثة");
   if (!confirmed) return;
 
   if (typeof firebase !== "undefined" && firebase.firestore) {
@@ -954,11 +960,11 @@ async function deleteSupportThread(studentUid) {
       batch.delete(firebase.firestore().collection("support_threads").doc(studentUid));
       await batch.commit();
 
-      localStorage.removeItem("edu_chat_" + studentUid);
       showToast("تم حذف المحادثة بنجاح", "success");
 
       if (currentSelectedStudentUid === studentUid) {
         currentSelectedStudentUid = null;
+        setAdminChatInputEnabled(false);
         var messagesBox = document.getElementById("activeMessagesTargetContainer");
         if (messagesBox) messagesBox.innerHTML = '<div style="text-align:center; color:#94A3B8; font-size:13px; margin:auto;">تم حذف المحادثة. اختر طالباً آخر من القائمة.</div>';
       }
@@ -971,6 +977,7 @@ window.deleteSupportThread = deleteSupportThread;
 
 function selectStudentThread(studentUid, studentName, studentPhone) {
   currentSelectedStudentUid = studentUid;
+  setAdminChatInputEnabled(true); // فتح حقل الإدخال للإدارة الآن
 
   var emptyState = document.querySelector(".empty-chat, [class*='empty']");
   if (emptyState) emptyState.style.display = "none";
@@ -978,6 +985,7 @@ function selectStudentThread(studentUid, studentName, studentPhone) {
   var items = document.querySelectorAll("#supportThreadsListContainer > div");
   items.forEach(function(item) { item.style.background = "#ffffff"; });
 
+  // تصفير عداد غير المقروء في Firestore مباشرة
   if (typeof firebase !== "undefined" && firebase.firestore) {
     firebase.firestore().collection("support_threads").doc(studentUid).update({
       unreadCount: 0
@@ -1048,7 +1056,12 @@ function renderActiveChatMessages(messages, studentName, studentPhone) {
 }
 
 async function sendActiveChatMessage() {
-  var input = document.querySelector('input[placeholder*="اكتب سؤالك"], input[placeholder*="رسالتك"], input[placeholder*="استفسارك"]');
+  if (!currentSelectedStudentUid) {
+    showToast("يرجى اختيار طالب من القائمة أولاً للرد عليه", "info");
+    return;
+  }
+
+  var input = document.querySelector('input[placeholder*="اكتب"], input[placeholder*="ردك"], input[placeholder*="رسالتك"]');
   if (!input) return;
   var text = input.value.trim();
   if (!text) return;
@@ -1056,11 +1069,6 @@ async function sendActiveChatMessage() {
   var user = getCurrentUser();
   if (!user) {
     showToast("يرجى تسجيل الدخول أولاً", "error");
-    return;
-  }
-
-  if (!currentSelectedStudentUid) {
-    showToast("يرجى اختيار طالب من القائمة أولاً للرد عليه", "info");
     return;
   }
 
@@ -1088,7 +1096,7 @@ async function sendActiveChatMessage() {
 window.sendActiveChatMessage = sendActiveChatMessage;
 
 // =========================================================
-// المراقبة المحصنة ضد تكرار التحديث والـ undefined والـ Loop
+// المراقبة والتوجيه العام للمنصة
 // =========================================================
 var lastHandledRole = null;
 
