@@ -2,7 +2,6 @@
 // إعدادات وتهيئة Firebase لمنصة هي كيميا !
 // =========================================================
 
-// استخدام var لمنع خطأ "already been declared" نهائياً
 var firebaseConfig = {
   apiKey: "AIzaSyDwUdbxMJmGlQctBuZWgxFbJqdHwqYUzzs",
   authDomain: "hey-kemia-a8f6c.firebaseapp.com",
@@ -29,20 +28,24 @@ getFirebase();
 
 function formatYouTubeEmbedUrl(url) {
   if (!url) return "";
-  url = String(url).trim();
-  if (url.includes("embed/")) return url;
+  var cleanUrl = String(url).trim();
+  if (cleanUrl.indexOf("youtube-nocookie.com/embed/") !== -1) return cleanUrl;
 
   var videoId = "";
-  if (url.includes("youtu.be/")) {
-    videoId = url.split("youtu.be/")[1].split("?")[0].split("&")[0];
-  } else if (url.includes("youtube.com/watch")) {
-    var urlParams = new URLSearchParams(url.split("?")[1] || "");
+  if (cleanUrl.indexOf("youtu.be/") !== -1) {
+    videoId = cleanUrl.split("youtu.be/")[1].split("?")[0].split("&")[0];
+  } else if (cleanUrl.indexOf("youtube.com/watch") !== -1) {
+    var urlParams = new URLSearchParams(cleanUrl.split("?")[1] || "");
     videoId = urlParams.get("v") || "";
-  } else if (url.includes("youtube.com/shorts/")) {
-    videoId = url.split("youtube.com/shorts/")[1].split("?")[0].split("&")[0];
+  } else if (cleanUrl.indexOf("youtube.com/shorts/") !== -1) {
+    videoId = cleanUrl.split("youtube.com/shorts/")[1].split("?")[0].split("&")[0];
+  } else if (cleanUrl.indexOf("youtube.com/embed/") !== -1) {
+    videoId = cleanUrl.split("youtube.com/embed/")[1].split("?")[0].split("&")[0];
   }
 
-  return videoId ? "https://www.youtube-nocookie.com/embed/" + videoId + "?rel=0&modestbranding=1&enablejsapi=1" : url;
+  return videoId 
+    ? "https://www.youtube-nocookie.com/embed/" + videoId + "?rel=0&modestbranding=1&enablejsapi=1" 
+    : cleanUrl;
 }
 window.formatYouTubeEmbedUrl = formatYouTubeEmbedUrl;
 
@@ -119,6 +122,7 @@ window.FirebaseService = {
 
     var userDoc = {
       uid: uid,
+      id: uid,
       fullName: userData.fullName,
       email: cleanEmail,
       studentPhone: cleanPhone,
@@ -161,6 +165,7 @@ window.FirebaseService = {
             if (snap.exists) {
               foundUser = snap.data();
               foundUser.uid = uid;
+              foundUser.id = uid;
             }
           } catch (e) {}
         }
@@ -168,6 +173,7 @@ window.FirebaseService = {
         if (!foundUser) {
           foundUser = {
             uid: uid,
+            id: uid,
             email: cleanEmail,
             fullName: fbUser.displayName || "طالب",
             role: "STUDENT",
@@ -189,12 +195,15 @@ window.FirebaseService = {
         if (!qSnap.empty) {
           foundUser = qSnap.docs[0].data();
           foundUser.uid = qSnap.docs[0].id;
+          foundUser.id = qSnap.docs[0].id;
         }
       } catch (e) {}
     }
 
     if (foundUser) {
-      foundUser.role = foundUser.role || "STUDENT";
+      foundUser.uid = foundUser.uid || foundUser.id;
+      foundUser.id = foundUser.uid;
+      foundUser.role = (foundUser.role || "STUDENT").toUpperCase();
       foundUser.enrolledCourses = (foundUser.enrolledCourses || []).map(String);
       foundUser.devices = Array.isArray(foundUser.devices) ? foundUser.devices : [];
 
@@ -247,7 +256,7 @@ window.FirebaseService = {
 
   subscribeUsers(callback) {
     var local = JSON.parse(localStorage.getItem("edu_users") || "[]");
-    if (callback) callback(local);
+    if (callback && local.length > 0) callback(local);
 
     var check = setInterval(function() {
       var fb = getFirebase();
@@ -255,10 +264,25 @@ window.FirebaseService = {
         clearInterval(check);
         fb.firestore().collection("users").onSnapshot(function(snap) {
           var list = [];
-          snap.forEach(function(doc) { list.push(Object.assign({ uid: doc.id }, doc.data())); });
+          snap.forEach(function(doc) { 
+            var uData = doc.data() || {};
+            var docId = String(doc.id || "");
+            uData.uid = docId;
+            uData.id = docId;
+            uData.fullName = String(uData.fullName || "طالب");
+            uData.email = String(uData.email || "");
+            uData.studentPhone = String(uData.studentPhone || "");
+            uData.role = String(uData.role || "STUDENT").toUpperCase();
+            uData.enrolledCourses = Array.isArray(uData.enrolledCourses) ? uData.enrolledCourses.map(String) : [];
+            uData.devices = Array.isArray(uData.devices) ? uData.devices : [];
+            list.push(uData);
+          });
           localStorage.setItem("edu_users", JSON.stringify(list));
           if (callback) callback(list);
-        }, function() {});
+        }, function(err) {
+          console.warn("Users sync notice:", err);
+          if (callback && local.length > 0) callback(local);
+        });
       }
     }, 150);
   },
@@ -298,9 +322,10 @@ window.FirebaseService = {
     }
   },
 
+  // جلب الكورسات مع معالجة شاملة تضمن أن كل الحقول هي نصوص String وليست undefined
   subscribeCourses(callback) {
     var local = JSON.parse(localStorage.getItem("edu_courses") || "[]");
-    if (callback) callback(local);
+    if (callback && local.length > 0) callback(local);
 
     var check = setInterval(function() {
       var fb = getFirebase();
@@ -308,10 +333,42 @@ window.FirebaseService = {
         clearInterval(check);
         fb.firestore().collection("courses").onSnapshot(function(snap) {
           var list = [];
-          snap.forEach(function(doc) { list.push(Object.assign({ id: doc.id }, doc.data())); });
+          snap.forEach(function(doc) { 
+            var cData = doc.data() || {};
+            var safeCourse = {
+              id: String(doc.id || ""),
+              title: String(cData.title || ""),
+              description: String(cData.description || ""),
+              image: String(cData.image || ""),
+              price: String(cData.price !== undefined && cData.price !== null ? cData.price : "0"),
+              isFree: Boolean(cData.isFree),
+              lessons: []
+            };
+
+            if (Array.isArray(cData.lessons)) {
+              safeCourse.lessons = cData.lessons.map(function(l) {
+                if (!l || typeof l !== "object") l = {};
+                var rawUrl = String(l.videoUrl || "");
+                return {
+                  id: String(l.id || ""),
+                  title: String(l.title || ""),
+                  description: String(l.description || ""),
+                  videoUrl: rawUrl ? formatYouTubeEmbedUrl(rawUrl) : "",
+                  duration: String(l.duration || ""),
+                  pdfUrl: String(l.pdfUrl || "")
+                };
+              });
+            }
+
+            list.push(safeCourse);
+          });
+
           localStorage.setItem("edu_courses", JSON.stringify(list));
           if (callback) callback(list);
-        }, function() {});
+        }, function(err) {
+          console.warn("Courses sync notice:", err);
+          if (callback && local.length > 0) callback(local);
+        });
       }
     }, 150);
   },
@@ -324,7 +381,7 @@ window.FirebaseService = {
       }
       if (courseData.lessons && Array.isArray(courseData.lessons)) {
         courseData.lessons = courseData.lessons.map(function(l) {
-          return Object.assign({}, l, { videoUrl: formatYouTubeEmbedUrl(l.videoUrl) });
+          return Object.assign({}, l, { videoUrl: formatYouTubeEmbedUrl(l.videoUrl || "") });
         });
       }
       if (courseId) {
@@ -346,7 +403,7 @@ window.FirebaseService = {
 
   subscribeExams(callback) {
     var local = JSON.parse(localStorage.getItem("edu_exams") || "[]");
-    if (callback) callback(local);
+    if (callback && local.length > 0) callback(local);
 
     var check = setInterval(function() {
       var fb = getFirebase();
@@ -354,10 +411,18 @@ window.FirebaseService = {
         clearInterval(check);
         fb.firestore().collection("exams").onSnapshot(function(snap) {
           var list = [];
-          snap.forEach(function(doc) { list.push(Object.assign({ id: doc.id }, doc.data())); });
+          snap.forEach(function(doc) { 
+            var exData = doc.data() || {};
+            exData.id = String(doc.id || "");
+            exData.title = String(exData.title || "");
+            list.push(exData);
+          });
           localStorage.setItem("edu_exams", JSON.stringify(list));
           if (callback) callback(list);
-        }, function() {});
+        }, function(err) {
+          console.warn("Exams sync notice:", err);
+          if (callback && local.length > 0) callback(local);
+        });
       }
     }, 150);
   },
@@ -383,18 +448,20 @@ window.FirebaseService = {
 
   subscribeSubmissions(callback) {
     var local = JSON.parse(localStorage.getItem("edu_submissions") || "[]");
-    if (callback) callback(local);
+    if (callback && local.length > 0) callback(local);
 
     var check = setInterval(function() {
       var fb = getFirebase();
       if (fb && fb.firestore) {
         clearInterval(check);
-        fb.firestore().collection("submissions").orderBy("createdAt", "desc").onSnapshot(function(snap) {
+        fb.firestore().collection("submissions").onSnapshot(function(snap) {
           var list = [];
           snap.forEach(function(doc) { list.push(Object.assign({ id: doc.id }, doc.data())); });
           localStorage.setItem("edu_submissions", JSON.stringify(list));
           if (callback) callback(list);
-        }, function() {});
+        }, function(err) {
+          if (callback && local.length > 0) callback(local);
+        });
       }
     }, 150);
   },
@@ -409,18 +476,20 @@ window.FirebaseService = {
 
   subscribePayments(callback) {
     var local = JSON.parse(localStorage.getItem("edu_payments") || "[]");
-    if (callback) callback(local);
+    if (callback && local.length > 0) callback(local);
 
     var check = setInterval(function() {
       var fb = getFirebase();
       if (fb && fb.firestore) {
         clearInterval(check);
-        fb.firestore().collection("payments").orderBy("createdAt", "desc").onSnapshot(function(snap) {
+        fb.firestore().collection("payments").onSnapshot(function(snap) {
           var list = [];
           snap.forEach(function(doc) { list.push(Object.assign({ id: doc.id }, doc.data())); });
           localStorage.setItem("edu_payments", JSON.stringify(list));
           if (callback) callback(list);
-        }, function() {});
+        }, function(err) {
+          if (callback && local.length > 0) callback(local);
+        });
       }
     }, 150);
   },
@@ -469,11 +538,12 @@ window.FirebaseService = {
       await batch.commit();
 
       var currentUser = JSON.parse(localStorage.getItem("current_user"));
-      if (currentUser && currentUser.uid === targetUid) {
+      if (currentUser && (currentUser.uid === targetUid || currentUser.id === targetUid)) {
         if (!currentUser.enrolledCourses) currentUser.enrolledCourses = [];
         if (!currentUser.enrolledCourses.map(String).includes(stringCourseId)) {
           currentUser.enrolledCourses.push(stringCourseId);
           localStorage.setItem("current_user", JSON.stringify(currentUser));
+          localStorage.setItem("edu_currentUser", JSON.stringify(currentUser));
         }
       }
     }
@@ -515,10 +585,9 @@ window.FirebaseService = {
   },
 
   // =========================================================
-  // منظومة الشات السحابية: صلاحيات Backend وحفظ سحابي 100%
+  // شات الدعم الفني: سحابي 100% بدون الاعتماد على localStorage
   // =========================================================
 
-  // استماع لحالة قفل وفتح الشات من السيرفر
   subscribeChatGlobalConfig(callback) {
     var check = setInterval(function() {
       var fb = getFirebase();
@@ -535,7 +604,6 @@ window.FirebaseService = {
     }, 150);
   },
 
-  // تغيير حالة الشات سحابياً (سوبر أدمن فقط)
   async setChatGlobalStatus(isEnabled, adminUid) {
     var fb = getFirebase();
     if (fb && fb.firestore) {
@@ -547,7 +615,6 @@ window.FirebaseService = {
     }
   },
 
-  // استماع لرسائل محادثة معينة بدون localStorage نهائياً
   subscribeStudentChat(studentUid, callback) {
     if (!studentUid) return;
 
@@ -564,13 +631,12 @@ window.FirebaseService = {
             });
             if (callback) callback(list);
           }, function(err) {
-            console.error("Chat sync error:", err);
+            console.warn("Chat sync notice:", err);
           });
       }
     }, 150);
   },
 
-  // استماع لجميع المحادثات من السحابة مرتبة زمنياً
   subscribeAllSupportThreads(callback) {
     var check = setInterval(function() {
       var fb = getFirebase();
@@ -589,13 +655,12 @@ window.FirebaseService = {
             });
             if (callback) callback(list);
           }, function(err) {
-            console.error("Threads sync error:", err);
+            console.warn("Threads sync notice:", err);
           });
       }
     }, 150);
   },
 
-  // إرسال الرسائل مع التحقق الصارم في الـ Backend
   async sendSupportMessage(msgData) {
     var fb = getFirebase();
     var studentUid = String(msgData.studentUid || msgData.senderUid);
@@ -604,7 +669,6 @@ window.FirebaseService = {
     var now = new Date().toISOString();
     var senderRole = (msgData.senderRole || "STUDENT").toUpperCase();
 
-    // فحص إرسال الطلاب في السحابة
     if (senderRole === "STUDENT") {
       var cfgSnap = await fb.firestore().collection("system_settings").doc("chat_config").get();
       var isEnabled = cfgSnap.exists && cfgSnap.data().isStudentChatEnabled;
@@ -646,7 +710,6 @@ window.FirebaseService = {
     }
   },
 
-  // تحديث حالة التذكرة سحابياً
   async updateThreadStatus(studentUid, status, assignedTo) {
     var fb = getFirebase();
     if (fb && fb.firestore && studentUid) {

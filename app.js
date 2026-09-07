@@ -241,7 +241,7 @@ async function revokeDeviceSession(targetUid, deviceIdToRevoke) {
     var updatedDevices = (targetUser.devices || []).filter(function(d) { return d && d.deviceId !== deviceIdToRevoke; });
     targetUser.devices = updatedDevices;
 
-    if (user && user.uid === targetUid) {
+    if (user && (user.uid === targetUid || user.id === targetUid)) {
       user.devices = updatedDevices;
       localStorage.setItem("current_user", JSON.stringify(user));
       localStorage.setItem("edu_currentUser", JSON.stringify(user));
@@ -262,7 +262,7 @@ async function revokeDeviceSession(targetUid, deviceIdToRevoke) {
     showToast("تم إنهاء جلسة الجهاز بنجاح", "success");
 
     var thisDevId = getOrCreateDeviceId();
-    if (deviceIdToRevoke === thisDevId && (!user || user.uid === targetUid)) {
+    if (deviceIdToRevoke === thisDevId && (!user || user.uid === targetUid || user.id === targetUid)) {
       logout();
       return;
     }
@@ -307,7 +307,7 @@ function renderStudentDevicesList(containerId) {
           '</div>' +
         '</div>' +
         '<div>' +
-          (!isCurrent ? '<button onclick="revokeDeviceSession(\'' + user.uid + '\', \'' + dev.deviceId + '\')" style="background:#FEE2E2; color:#DC2626; border:1px solid #FCA5A5; padding:5px 10px; border-radius:6px; font-size:11.5px; font-weight:800; cursor:pointer;">إنهاء الجلسة</button>' : '') +
+          (!isCurrent ? '<button onclick="revokeDeviceSession(\'' + (user.uid || user.id) + '\', \'' + dev.deviceId + '\')" style="background:#FEE2E2; color:#DC2626; border:1px solid #FCA5A5; padding:5px 10px; border-radius:6px; font-size:11.5px; font-weight:800; cursor:pointer;">إنهاء الجلسة</button>' : '') +
         '</div>' +
       '</div>';
     });
@@ -379,7 +379,7 @@ function renderAdminOwnDevicesList(containerId) {
           '</div>' +
         '</div>' +
         '<div>' +
-          (!isCurrent ? '<button onclick="revokeDeviceSession(\'' + user.uid + '\', \'' + dev.deviceId + '\')" style="background:#FEE2E2; color:#DC2626; border:1px solid #FCA5A5; padding:5px 11px; border-radius:6px; font-size:11.5px; font-weight:800; cursor:pointer;">إنهاء الجلسة</button>' : '') +
+          (!isCurrent ? '<button onclick="revokeDeviceSession(\'' + (user.uid || user.id) + '\', \'' + dev.deviceId + '\')" style="background:#FEE2E2; color:#DC2626; border:1px solid #FCA5A5; padding:5px 11px; border-radius:6px; font-size:11.5px; font-weight:800; cursor:pointer;">إنهاء الجلسة</button>' : '') +
         '</div>' +
       '</div>';
     });
@@ -445,7 +445,7 @@ function calculateStudentMetrics(userUid) {
 
     var submissions = JSON.parse(localStorage.getItem("edu_submissions")) || [];
     var userSubs = submissions.filter(function(s) { 
-      return (s.userUid && s.userUid === userUid) || 
+      return (s.userUid && (s.userUid === userUid || s.userUid === (targetUser && targetUser.id))) || 
              (s.userEmail && targetUser && s.userEmail.toLowerCase() === targetUser.email.toLowerCase()); 
     });
 
@@ -730,7 +730,6 @@ function initSupportChatWidget() {
     var currentPath = (window.location.pathname || "").toLowerCase();
     var user = getCurrentUser();
 
-    // الاستماع لحالة الشات العالمية من السيرفر
     if (window.FirebaseService && typeof window.FirebaseService.subscribeChatGlobalConfig === "function") {
       window.FirebaseService.subscribeChatGlobalConfig(function(cfg) {
         isStudentChatGlobalOpen = Boolean(cfg && cfg.isStudentChatEnabled);
@@ -738,7 +737,6 @@ function initSupportChatWidget() {
       });
     }
 
-    // 1. لوحة الإدارة (support.html)
     if (currentPath.indexOf("support.html") !== -1) {
       bindSupportPageElements();
       setAdminChatInputEnabled(false);
@@ -750,14 +748,12 @@ function initSupportChatWidget() {
         });
       }
     } 
-    // 2. واجهة الطلاب: قفل الشات وعرض رسالة التنبيه
     else if (user && (!user.role || user.role === "STUDENT")) {
       lockStudentChatWithNotice();
     }
   } catch (e) {}
 }
 
-// قفل الشات للطالب بطريقة آمنة مع الحفاظ على كافة البيانات
 function lockStudentChatWithNotice() {
   var chatInput = document.querySelector('input[placeholder*="اكتب سؤالك"], input[placeholder*="رسالتك"], input[placeholder*="استفسارك"]');
   var sendBtns = document.querySelectorAll("button");
@@ -778,7 +774,6 @@ function lockStudentChatWithNotice() {
     }
   });
 
-  // إضافة شريط تنبيه أنيق أعلى المحادثة دون لمس الرسائل السابقة
   if (messagesBox && !document.getElementById("studentChatLockBanner")) {
     var banner = document.createElement("div");
     banner.id = "studentChatLockBanner";
@@ -788,7 +783,6 @@ function lockStudentChatWithNotice() {
   }
 }
 
-// شريط أدوات السوبر أدمن في support.html
 function injectSuperAdminControlToolbar() {
   var user = getCurrentUser();
   if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "SUPERADMIN")) return;
@@ -900,7 +894,6 @@ function bindSupportPageElements() {
   }
 }
 
-// عرض استفسارات الطلاب في القائمة الجانبية مع العداد وحالات التذاكر
 function renderSupportThreadsList(threads) {
   var listContainer = document.querySelector(".threads-list, .chat-sidebar-list, .students-list, [class*='sidebar'] ul, [class*='thread']");
   if (!listContainer) {
@@ -922,7 +915,6 @@ function renderSupportThreadsList(threads) {
       ? '<span style="background:#EF4444; color:#ffffff; font-size:11px; font-weight:900; padding:2px 7px; border-radius:10px; box-shadow:0 0 8px rgba(239,68,68,0.6);">' + th.unreadCount + ' جديد</span>' 
       : '';
 
-    // بطاقة حالة المحادثة
     var statusText = "جديدة";
     var statusBg = "#EFF6FF";
     var statusColor = "#1D4ED8";
@@ -1000,7 +992,7 @@ window.deleteSupportThread = deleteSupportThread;
 
 function selectStudentThread(studentUid, studentName, studentPhone, currentStatus) {
   currentSelectedStudentUid = studentUid;
-  setAdminChatInputEnabled(true); // فتح إمكانية الرد للإدارة بعد اختيار الطالب
+  setAdminChatInputEnabled(true);
 
   var emptyState = document.querySelector(".empty-chat, [class*='empty']");
   if (emptyState) emptyState.style.display = "none";
@@ -1008,7 +1000,6 @@ function selectStudentThread(studentUid, studentName, studentPhone, currentStatu
   var items = document.querySelectorAll("#supportThreadsListContainer > div");
   items.forEach(function(item) { item.style.background = "#ffffff"; });
 
-  // تصفير العداد سحابياً عند فتح التذكرة
   if (typeof firebase !== "undefined" && firebase.firestore) {
     firebase.firestore().collection("support_threads").doc(studentUid).update({
       unreadCount: 0
@@ -1023,7 +1014,6 @@ function selectStudentThread(studentUid, studentName, studentPhone, currentStatu
 }
 window.selectStudentThread = selectStudentThread;
 
-// عرض الرسائل والردود بالتسلسل الزمني وأدوات التحكم في الحالة
 function renderActiveChatMessages(messages, studentName, studentPhone, currentStatus) {
   var messagesBox = document.querySelector(".chat-messages, .messages-body, [class*='chat-body'], [class*='messages-container']");
   
@@ -1034,8 +1024,7 @@ function renderActiveChatMessages(messages, studentName, studentPhone, currentSt
   if (!messagesBox) return;
 
   var user = getCurrentUser();
-  var myUid = user ? user.uid : "";
-  var isSuper = user && (user.role === "SUPER_ADMIN" || user.role === "SUPERADMIN");
+  var myUid = user ? (user.uid || user.id) : "";
 
   var headerInfo = 
     '<div style="padding:10px 16px; background:#F8FAFC; border-bottom:1px solid #E2E8F0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">' +
@@ -1088,7 +1077,6 @@ function renderActiveChatMessages(messages, studentName, studentPhone, currentSt
   containerBox.scrollTop = containerBox.scrollHeight;
 }
 
-// تغيير حالة التذكرة من واجهة الإدارة
 async function changeThreadStatusFromUI(newStatus) {
   if (!currentSelectedStudentUid) return;
   try {
@@ -1120,7 +1108,7 @@ async function sendActiveChatMessage() {
 
   var msgData = {
     text: text,
-    senderUid: user.uid,
+    senderUid: user.uid || user.id,
     senderName: user.fullName || "الأستاذ محمد السعيد (الدعم)",
     senderRole: user.role || "ADMIN",
     studentUid: currentSelectedStudentUid,
@@ -1149,15 +1137,17 @@ var lastHandledRole = null;
 function monitorCurrentUserStatus() {
   try {
     var user = getCurrentUser();
-    if (!user || !user.uid) return;
+    var uid = user ? (user.uid || user.id) : null;
+    if (!uid) return;
 
     if (typeof firebase !== "undefined" && firebase.firestore) {
-      firebase.firestore().collection("users").doc(user.uid)
+      firebase.firestore().collection("users").doc(uid)
         .onSnapshot(function(docSnap) {
           if (!docSnap || !docSnap.exists) return;
           var liveDoc = docSnap.data();
           if (!liveDoc) return;
           liveDoc.uid = docSnap.id;
+          liveDoc.id = docSnap.id;
 
           if (!liveDoc.role) return;
 
@@ -1246,8 +1236,9 @@ async function handleEnrollClick(courseId) {
       var newEnrolled = (user.enrolledCourses || []).map(String);
       if (!newEnrolled.includes(String(courseId))) newEnrolled.push(String(courseId));
 
-      if (window.FirebaseService && user.uid) {
-        await window.FirebaseService.updateUserEnrollmentsByUid(user.uid, newEnrolled, user.customAllowedLessons);
+      var targetUid = user.uid || user.id;
+      if (window.FirebaseService && targetUid) {
+        await window.FirebaseService.updateUserEnrollmentsByUid(targetUid, newEnrolled, user.customAllowedLessons);
       }
 
       user.enrolledCourses = newEnrolled;
@@ -1289,7 +1280,7 @@ function initGlobalRealtimeSync() {
             courses.forEach(function(c) {
               if (c.lessons && Array.isArray(c.lessons)) {
                 c.lessons.forEach(function(l) {
-                  l.videoUrl = formatYouTubeEmbedUrl(l.videoUrl);
+                  l.videoUrl = formatYouTubeEmbedUrl(l.videoUrl || "");
                 });
               }
             });
@@ -1308,17 +1299,23 @@ function initGlobalRealtimeSync() {
       if (typeof window.FirebaseService.subscribeUsers === "function") {
         window.FirebaseService.subscribeUsers(function(users) {
           if (typeof renderAdmin === "function") renderAdmin();
+          if (typeof renderAdminUsers === "function") renderAdminUsers();
+          if (typeof renderUsersTable === "function") renderUsersTable(users);
+          if (typeof renderStudentsSection === "function") renderStudentsSection(users);
+          if (typeof renderStudentDashboard === "function") renderStudentDashboard();
         });
       }
       if (typeof window.FirebaseService.subscribeSubmissions === "function") {
         window.FirebaseService.subscribeSubmissions(function(subs) {
           if (typeof renderStudentDashboard === "function") renderStudentDashboard();
           if (typeof renderAdmin === "function") renderAdmin();
+          if (typeof renderSubmissionsTable === "function") renderSubmissionsTable(subs);
         });
       }
       if (typeof window.FirebaseService.subscribePayments === "function") {
         window.FirebaseService.subscribePayments(function(pays) {
           if (typeof renderAdmin === "function") renderAdmin();
+          if (typeof renderPaymentsTable === "function") renderPaymentsTable(pays);
         });
       }
     } catch (e) {}

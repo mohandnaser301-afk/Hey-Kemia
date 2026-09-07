@@ -2147,8 +2147,7 @@
 
         if (isSuperAdmin) {
           if (!isTargetSuper) {
-            actionBtns = '<button class="btn-action btn-action-primary" onclick="openEditStaffRoleModal(\'' + uidKey + '\', \'' + s.fullName.replace(/'/g, "\\'") + '\', \'' + s.role + '\')" style="margin-left:4px;">تعديل الرتبة</button>' +
-                         '<button class="btn-action btn-action-danger" onclick="deleteUserByUidAction(\'' + uidKey + '\')">إلغاء الحساب</button>';
+actionBtns = '<button class="btn-action btn-action-primary" onclick="openEditStaffRoleModal(\'' + uidKey + '\', \'' + String(s.fullName || 'مستخدم').replace(/'/g, "\\'") + '\', \'' + (s.role || 'STUDENT') + '\')" style="margin-left:4px;">تعديل الرتبة</button>' +                         '<button class="btn-action btn-action-danger" onclick="deleteUserByUidAction(\'' + uidKey + '\')">إلغاء الحساب</button>';
           } else {
             actionBtns = '<span style="color:var(--cyan-accent); font-weight:bold; font-size:12px;">المشرف العام</span>';
           }
