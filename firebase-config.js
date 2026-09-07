@@ -2,6 +2,7 @@
 // إعدادات وتهيئة Firebase لمنصة هي كيميا !
 // =========================================================
 
+// استخدام var لمنع خطأ "already been declared" نهائياً
 var firebaseConfig = {
   apiKey: "AIzaSyDwUdbxMJmGlQctBuZWgxFbJqdHwqYUzzs",
   authDomain: "hey-kemia-a8f6c.firebaseapp.com",
@@ -513,16 +514,46 @@ window.FirebaseService = {
     }
   },
 
-  // ==========================================
-  // شات الدعم الفني السحابي 100% (بدون localStorage)
-  // ==========================================
+  // =========================================================
+  // منظومة الشات السحابية: صلاحيات Backend وحفظ سحابي 100%
+  // =========================================================
 
+  // استماع لحالة قفل وفتح الشات من السيرفر
+  subscribeChatGlobalConfig(callback) {
+    var check = setInterval(function() {
+      var fb = getFirebase();
+      if (fb && fb.firestore) {
+        clearInterval(check);
+        fb.firestore().collection("system_settings").doc("chat_config")
+          .onSnapshot(function(doc) {
+            var cfg = doc && doc.exists ? doc.data() : { isStudentChatEnabled: false };
+            if (callback) callback(cfg);
+          }, function() {
+            if (callback) callback({ isStudentChatEnabled: false });
+          });
+      }
+    }, 150);
+  },
+
+  // تغيير حالة الشات سحابياً (سوبر أدمن فقط)
+  async setChatGlobalStatus(isEnabled, adminUid) {
+    var fb = getFirebase();
+    if (fb && fb.firestore) {
+      await fb.firestore().collection("system_settings").doc("chat_config").set({
+        isStudentChatEnabled: Boolean(isEnabled),
+        updatedBy: adminUid || "SUPER_ADMIN",
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    }
+  },
+
+  // استماع لرسائل محادثة معينة بدون localStorage نهائياً
   subscribeStudentChat(studentUid, callback) {
     if (!studentUid) return;
 
     var check = setInterval(function() {
       var fb = getFirebase();
-      if (fb && fb.firestore) {
+      if (fb && fb.firestore && studentUid) {
         clearInterval(check);
         fb.firestore().collection("support_threads").doc(studentUid).collection("messages")
           .orderBy("createdAt", "asc")
@@ -533,12 +564,13 @@ window.FirebaseService = {
             });
             if (callback) callback(list);
           }, function(err) {
-            console.error("Cloud Chat Sync Error:", err);
+            console.error("Chat sync error:", err);
           });
       }
     }, 150);
   },
 
+  // استماع لجميع المحادثات من السحابة مرتبة زمنياً
   subscribeAllSupportThreads(callback) {
     var check = setInterval(function() {
       var fb = getFirebase();
@@ -550,7 +582,6 @@ window.FirebaseService = {
             snap.forEach(function(doc) { 
               list.push(Object.assign({ id: doc.id }, doc.data())); 
             });
-            // ترتيب سحابي فوري من الأحدث للأقدم
             list.sort(function(a, b) {
               var tA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
               var tB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
@@ -558,31 +589,41 @@ window.FirebaseService = {
             });
             if (callback) callback(list);
           }, function(err) {
-            console.error("Threads Sync Error:", err);
+            console.error("Threads sync error:", err);
           });
       }
     }, 150);
   },
 
+  // إرسال الرسائل مع التحقق الصارم في الـ Backend
   async sendSupportMessage(msgData) {
     var fb = getFirebase();
     var studentUid = String(msgData.studentUid || msgData.senderUid);
-    if (!studentUid) throw new Error("Missing studentUid");
+    if (!studentUid) throw new Error("معرّف المحادثة غير صالح");
+
     var now = new Date().toISOString();
+    var senderRole = (msgData.senderRole || "STUDENT").toUpperCase();
+
+    // فحص إرسال الطلاب في السحابة
+    if (senderRole === "STUDENT") {
+      var cfgSnap = await fb.firestore().collection("system_settings").doc("chat_config").get();
+      var isEnabled = cfgSnap.exists && cfgSnap.data().isStudentChatEnabled;
+      if (!isEnabled) {
+        throw new Error("عذراً، الشات غير متاح للطلاب حالياً بتعليمات الإدارة.");
+      }
+    }
 
     var messageDoc = {
-      text: msgData.text,
+      text: String(msgData.text).trim(),
       senderUid: msgData.senderUid,
       senderName: msgData.senderName,
-      senderRole: msgData.senderRole || "STUDENT",
+      senderRole: senderRole,
       createdAt: now
     };
 
     if (fb && fb.firestore) {
-      // 1. إضافة الرسالة مباشرة لمجموعة المحادثة في Firestore
       await fb.firestore().collection("support_threads").doc(studentUid).collection("messages").add(messageDoc);
 
-      // 2. تحديث وثيقة الخيط وعدّاد غير المقروء سحابياً
       var threadUpdate = {
         studentUid: studentUid,
         studentName: msgData.studentName || "طالب",
@@ -590,16 +631,28 @@ window.FirebaseService = {
         studentEmail: msgData.studentEmail || "",
         lastMessage: msgData.text,
         lastMessageTime: now,
-        lastSenderRole: msgData.senderRole || "STUDENT"
+        lastSenderRole: senderRole
       };
 
-      if (msgData.senderRole === "STUDENT") {
+      if (senderRole === "STUDENT") {
+        threadUpdate.status = "PENDING";
         threadUpdate.unreadCount = firebase.firestore.FieldValue.increment(1);
       } else {
+        threadUpdate.status = "RESOLVED";
         threadUpdate.unreadCount = 0;
       }
 
       await fb.firestore().collection("support_threads").doc(studentUid).set(threadUpdate, { merge: true });
+    }
+  },
+
+  // تحديث حالة التذكرة سحابياً
+  async updateThreadStatus(studentUid, status, assignedTo) {
+    var fb = getFirebase();
+    if (fb && fb.firestore && studentUid) {
+      var update = { status: status, updatedAt: new Date().toISOString() };
+      if (assignedTo !== undefined) update.assignedTo = assignedTo;
+      await fb.firestore().collection("support_threads").doc(studentUid).update(update);
     }
   }
 };
