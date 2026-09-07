@@ -761,7 +761,7 @@ function initSupportChatWidget() {
 
 function enableStudentDirectChat() {
   var user = getCurrentUser();
-  var studentUid = user ? (user.uid || user.id) : null;
+  var studentUid = user ? String(user.uid || user.id) : null;
 
   var chatInput = document.querySelector('input[placeholder*="اكتب"], input[placeholder*="رسالتك"], input[placeholder*="استفسارك"]');
   var sendBtns = document.querySelectorAll("button");
@@ -841,7 +841,7 @@ async function sendStudentSupportMessage(inputElement) {
   inputElement.value = "";
 
   // إضافة الرسالة في الواجهة أمام الطالب لحظياً
-  var messagesBox = document.querySelector(".chat-messages, .messages-body, [class*='chat-body'], [class*='messages-container']");
+  var messagesBox = document.querySelector("#activeMessagesTargetContainer, .chat-messages, .messages-body, [class*='chat-body'], [class*='messages-container']");
   if (messagesBox) {
     var newBubble = document.createElement("div");
     newBubble.style.cssText = "max-width:75%; padding:10px 14px; border-radius:12px; font-size:13.5px; line-height:1.5; word-break:break-word; margin-right:0; margin-left:auto; background:#F1F5F9; color:#0E1338; border-bottom-right-radius:3px; margin-bottom:8px;";
@@ -861,7 +861,7 @@ async function sendStudentSupportMessage(inputElement) {
 }
 
 function renderStudentSideChat(messages) {
-  var messagesBox = document.querySelector(".chat-messages, .messages-body, [class*='chat-body'], [class*='messages-container']");
+  var messagesBox = document.querySelector("#activeMessagesTargetContainer, .chat-messages, .messages-body, [class*='chat-body'], [class*='messages-container']");
   if (!messagesBox || !Array.isArray(messages)) return;
 
   var user = getCurrentUser();
