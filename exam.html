@@ -48,35 +48,43 @@
 
     <form id="examForm">
       <div id="questionsContainer"></div>
-      <button type="submit" class="btn btn-primary" style="width:100%; padding:14px; font-size:16px; margin-top:10px;">تسليم الإجابات واعتماد النتيجة</button>
+      <button type="submit" id="btnSubmitExam" class="btn btn-primary" style="width:100%; padding:14px; font-size:16px; margin-top:10px;">تسليم الإجابات واعتماد النتيجة</button>
     </form>
   </div>
 
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
   <script src="app.js"></script>
   <script>
     var user = getCurrentUser();
     if (!user) window.location.href = "login.html";
 
     var urlParams = new URLSearchParams(window.location.search);
-    var examId = urlParams.get("examId") || "e1";
+    var examId = urlParams.get("id") || urlParams.get("examId") || "e1";
     var exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
-    var exam = exams.find(function(e) { return e.id == examId; }) || exams[0];
+    var exam = exams.find(function(e) { return String(e.id) === String(examId); }) || exams[0];
 
     if (!exam) {
       showToast("الامتحان غير متاح", "error");
       setTimeout(function() { window.location.href = "dashboard.html"; }, 1000);
     }
 
+    var uidKey = user ? String(user.uid || user.id || "") : "";
     var maxAttempts = Number(exam.maxAttempts) || 1;
     var submissions = JSON.parse(localStorage.getItem("edu_submissions")) || [];
-    var myExamSubmissions = submissions.filter(function(s) { return s.userEmail === user.email && s.examId == exam.id; });
+    var myExamSubmissions = submissions.filter(function(s) { 
+      return (String(s.examId) === String(exam.id)) && 
+             ((s.userUid && String(s.userUid) === uidKey) || (s.userEmail && String(s.userEmail).toLowerCase() === String(user.email).toLowerCase())); 
+    });
     var usedAttempts = myExamSubmissions.length;
 
     if (usedAttempts >= maxAttempts) {
       document.getElementById("examLayout").style.display = "none";
       document.getElementById("blockedScreen").style.display = "block";
-      var highestScore = Math.max.apply(Math, myExamSubmissions.map(function(s) { return s.percentage; }));
-      document.getElementById("blockedDetails").innerHTML = "الحد الأقصى المسموح به: <strong>" + maxAttempts + " محاولة</strong><br>عدد مرات خوضك للاختبار: <strong>" + usedAttempts + " مرات</strong><br>أعلى نسبة حققتها: <strong style='color:var(--chem-gold);'>" + highestScore + "%</strong>";
+      var highestScore = Math.max.apply(Math, myExamSubmissions.map(function(s) { return Number(s.percentage) || 0; }));
+      document.getElementById("blockedDetails").innerHTML = "الحد الأقصى المسموح به: <strong>" + maxAttempts + " محاولة</strong><br>عدد مرات خوضك للاختبار: <strong>" + usedAttempts + " مرات</strong><br>أعلى نسبة حققتها: <strong style='color:#0284C7;'>" + highestScore + "%</strong>";
       document.getElementById("attemptsDisplay").innerText = "المحاولات: (" + usedAttempts + "/" + maxAttempts + ")";
     } else {
       var currentAttemptNumber = usedAttempts + 1;
@@ -115,9 +123,19 @@
       '</div>';
     }).join('');
 
-    document.getElementById("examForm").addEventListener("submit", function(e) {
+    var isSubmittingExam = false;
+    document.getElementById("examForm").addEventListener("submit", async function(e) {
       e.preventDefault();
+      if (isSubmittingExam) return;
+      isSubmittingExam = true;
+
       clearInterval(timerInterval);
+
+      var btn = document.getElementById("btnSubmitExam");
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = "جاري رصد النتيجة وحفظها...";
+      }
 
       var score = 0;
       questions.forEach(function(q, qIdx) {
@@ -125,24 +143,44 @@
         if (selected && parseInt(selected.value) === q.correct) score++;
       });
 
-      var total = questions.length;
+      var total = questions.length || 1;
       var percentage = Math.round((score / total) * 100);
 
-      var allSubs = JSON.parse(localStorage.getItem("edu_submissions")) || [];
-      allSubs.push({
-        id: Date.now(),
-        examId: exam.id,
-        userEmail: user.email,
-        userName: user.fullName,
+      var studentFullName = user.fullName || user.name || "طالب مسجل";
+
+      var subDoc = {
+        id: "sub_" + Date.now(),
+        examId: String(exam.id),
+        userUid: uidKey,
+        userId: uidKey,
+        userEmail: user.email ? user.email.toLowerCase().trim() : "",
+        userName: studentFullName,
+        fullName: studentFullName,
+        studentPhone: user.studentPhone || user.phone || "",
+        governorate: user.governorate || "كفر الشيخ",
         examTitle: exam.title,
         subject: exam.subject || "كيمياء",
         score: score,
         total: total,
         percentage: percentage,
         attemptNumber: usedAttempts + 1,
+        createdAt: new Date().toISOString(),
         date: new Date().toLocaleDateString('ar-EG')
-      });
+      };
+
+      // حفظ محلي لسرعة الاستجابة
+      var allSubs = JSON.parse(localStorage.getItem("edu_submissions")) || [];
+      allSubs.push(subDoc);
       localStorage.setItem("edu_submissions", JSON.stringify(allSubs));
+
+      // حفظ سحابي في Firestore
+      if (window.FirebaseService && typeof window.FirebaseService.saveSubmission === "function") {
+        try {
+          await window.FirebaseService.saveSubmission(subDoc);
+        } catch (err) {
+          console.warn("حفظ سحابي للامتحان:", err);
+        }
+      }
 
       showToast("الدرجة: " + score + " من " + total + " (" + percentage + "%)", "success", "تم إنهاء الامتحان");
       setTimeout(function() {

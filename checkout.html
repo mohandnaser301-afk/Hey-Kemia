@@ -76,11 +76,14 @@
           <input type="file" id="chkReceiptFile" accept="image/*" required>
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width:100%; padding:12px; margin-top:10px;">إرسال طلب التفعيل للأدمن ✓</button>
+        <button type="submit" id="btnSubmitPaymentAction" class="btn btn-primary" style="width:100%; padding:12px; margin-top:10px;">إرسال طلب التفعيل للأدمن ✓</button>
       </form>
     </div>
   </div>
 
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script src="app.js"></script>
   <script>
@@ -97,7 +100,7 @@
       var urlParams = new URLSearchParams(window.location.search);
       var courseId = urlParams.get("course");
       var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-      selectedCourse = courses.find(c => c.id == courseId);
+      selectedCourse = courses.find(c => String(c.id) === String(courseId));
 
       if (!selectedCourse) {
         showToast("الكورس غير موجود", "error");
@@ -107,8 +110,8 @@
 
       document.getElementById("checkoutCourseTitleDisplay").innerText = selectedCourse.title;
       document.getElementById("checkoutPriceDisplay").innerText = selectedCourse.price + " ج.م";
-      document.getElementById("chkStudentName").value = currentUser.fullName;
-      document.getElementById("chkStudentPhone").value = currentUser.studentPhone;
+      document.getElementById("chkStudentName").value = currentUser.fullName || currentUser.name || "طالب مسجل";
+      document.getElementById("chkStudentPhone").value = currentUser.studentPhone || currentUser.phone || "";
     });
 
     document.getElementById("checkoutSubmitForm").addEventListener("submit", async function(e) {
@@ -118,30 +121,52 @@
         return showToast("يرجى إرفاق صورة الإيصال", "error");
       }
 
+      var submitBtn = document.getElementById("btnSubmitPaymentAction");
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerText = "جاري رفع الإيصال وإرسال الطلب...";
+      }
+
       var file = fileInput.files[0];
       var reader = new FileReader();
 
-      showToast("جاري إرسال الطلب سحابياً...", "info");
+      showToast("جاري إرسال الطلب سحابياً للإدارة...", "info");
 
       reader.onload = async function(event) {
         try {
-          var compressedReceipt = await compressImageBase64(event.target.result, 400, 400, 0.4);
+          var compressedReceipt = window.compressImageBase64 
+            ? await window.compressImageBase64(event.target.result, 450, 450, 0.45)
+            : event.target.result;
+
+          var uidKey = String(currentUser.uid || currentUser.id || "");
+          var studentFullName = currentUser.fullName || currentUser.name || "طالب مسجل";
 
           var paymentData = {
-            userId: currentUser.uid,
-            userName: currentUser.fullName,
-            userEmail: currentUser.email.toLowerCase().trim(),
-            studentPhone: currentUser.studentPhone,
-            courseId: selectedCourse.id,
+            userUid: uidKey,
+            userId: uidKey,
+            userName: studentFullName,
+            fullName: studentFullName,
+            userEmail: currentUser.email ? currentUser.email.toLowerCase().trim() : "",
+            studentPhone: currentUser.studentPhone || currentUser.phone || "",
+            courseId: String(selectedCourse.id),
             courseTitle: selectedCourse.title,
-            amount: selectedCourse.price,
-            receipt: compressedReceipt
+            amount: Number(selectedCourse.price) || 0,
+            receipt: compressedReceipt,
+            status: "PENDING",
+            createdAt: new Date().toISOString()
           };
 
-          await window.FirebaseService.submitPayment(paymentData);
+          if (window.FirebaseService && typeof window.FirebaseService.submitPayment === "function") {
+            await window.FirebaseService.submitPayment(paymentData);
+          }
+
           showToast("تم إرسال طلب الدفع بنجاح وسيتم تفعيل الكورس فور المراجعة", "success");
           setTimeout(() => window.location.href = "dashboard.html", 1200);
         } catch (err) {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerText = "إرسال طلب التفعيل للأدمن ✓";
+          }
           showToast("فشل إرسال الطلب: " + err.message, "error");
         }
       };
