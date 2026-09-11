@@ -133,6 +133,7 @@ function showVerificationPrompt(email, fbUser, pendingDoc) {
             finalDoc.uid = fbUser.uid;
             finalDoc.id = fbUser.uid;
 
+            // إنشاء وحفظ وثيقة الطالب في Firestore فقط عند التأكيد الفعلي
             if (fb && fb.firestore) {
               await fb.firestore().collection("users").doc(fbUser.uid).set(finalDoc, { merge: true });
             }
@@ -165,7 +166,8 @@ function showVerificationPrompt(email, fbUser, pendingDoc) {
 window.showVerificationPrompt = showVerificationPrompt;
 
 window.FirebaseService = {
-  validateRegistrationData(userData) {
+  // التحقق المسبق الصارم من صحة وتفرد البيانات
+  async validateRegistrationData(userData) {
     userData = userData || {};
 
     var cleanFullName = String(
@@ -194,36 +196,82 @@ window.FirebaseService = {
       ""
     ).trim();
 
+    // 1. التحقق من الحروف العربية والمسافات فقط[cite: 5]
     var arabicRegex = /^[\u0621-\u064A\s]+$/;
     if (!cleanFullName || !arabicRegex.test(cleanFullName)) {
-      throw new Error("يجب كتابة الاسم باللغة العربية فقط (يمنع تماماً كتابة الحروف الإنجليزية أو الأرقام).");
+      throw new Error("يجب كتابة الاسم باللغة العربية فقط (ممنوع كتابة الأحرف الإنجليزية أو الأرقام أو الرموز).");
     }
+
     var nameParts = cleanFullName.split(/\s+/).filter(Boolean);
     if (nameParts.length < 3) {
-      throw new Error("يرجى كتابة الاسم ثلاثياً باللغة العربية على الأقل.");
+      throw new Error("يرجى إدخال الاسم ثلاثياً باللغة العربية على الأقل.");
     }
 
+    // 2. التحقق من صيغة البريد الإلكتروني[cite: 5]
     var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!cleanEmail || !emailRegex.test(cleanEmail)) {
-      throw new Error("يرجى إدخال صيغة بريد إلكتروني صحيحة.");
+      throw new Error("يرجى إدخال بريد إلكتروني صحيح ومعتمد.");
     }
 
+    // 3. التحقق من أرقام الهواتف المصرية (11 رقم)[cite: 5]
     var egyptianPhoneRegex = /^01[0125][0-9]{8}$/;
 
     if (!cleanStudentPhone || !egyptianPhoneRegex.test(cleanStudentPhone)) {
-      throw new Error("رقم هاتف الطالب غير صحيح، يجب أن يكون رقماً مصرياً مكوناً من 11 رقماً يبدأ بـ (010, 011, 012, 015).");
+      throw new Error("رقم هاتف الطالب غير صحيح، يجب أن يكون رقماً مصرياً مكوناً من 11 رقماً ويبدأ بـ (010, 011, 012, 015).");
     }
 
     if (!cleanParentPhone || !egyptianPhoneRegex.test(cleanParentPhone)) {
-      throw new Error("رقم ولي الأمر غير صحيح، يجب أن يكون رقماً مصرياً مكوناً من 11 رقماً يبدأ بـ (010, 011, 012, 015).");
+      throw new Error("رقم ولي الأمر غير صحيح، يجب أن يكون رقماً مصرياً مكوناً من 11 رقماً ويبدأ بـ (010, 011, 012, 015).");
     }
 
+    // 4. اختلاف رقم الطالب عن ولي الأمر[cite: 5]
     if (cleanStudentPhone === cleanParentPhone) {
       throw new Error("يجب أن يكون رقم ولي الأمر مختلفاً تماماً عن رقم هاتف الطالب.");
     }
 
     if (!cleanPassword || cleanPassword.length < 6) {
-      throw new Error("كلمة المرور يجب ألا تقل عن 6 خانات.");
+      throw new Error("يجب ألا تقل كلمة المرور عن 6 خانات.");
+    }
+
+    // 5. فحص قاعدة البيانات السحابية (الاسم ثلاثي/رباعي، ورقم الهاتف، والبريد)
+    var fb = getFirebase();
+    if (fb && fb.firestore) {
+      // فحص البريد الإلكتروني
+      var emailCheck = await fb.firestore().collection("users").where("email", "==", cleanEmail).get();
+      if (!emailCheck.empty) {
+        throw new Error("هذا البريد الإلكتروني مسجل بالفعل بحساب آخر.");
+      }
+
+      // فحص رقم هاتف الطالب
+      var phoneCheck = await fb.firestore().collection("users").where("studentPhone", "==", cleanStudentPhone).get();
+      if (!phoneCheck.empty) {
+        throw new Error("رقم هاتف الطالب مسجل بالفعل بحساب آخر.");
+      }
+
+      // فحص تطابق الأسماء: إذا كان الاسم ثلاثياً ومسجلاً مسبقاً، يطلب إدخاله رباعياً
+      var allUsersSnap = await fb.firestore().collection("users").get();
+      allUsersSnap.forEach(function(doc) {
+        var existingData = doc.data() || {};
+        var existingName = String(existingData.fullName || existingData.name || "").trim();
+        var existingParts = existingName.split(/\s+/).filter(Boolean);
+
+        // إذا كان الاسم المدخل مطابقاً تماماً لاسم مسجل مسبقاً
+        if (existingName === cleanFullName) {
+          if (nameParts.length === 3) {
+            throw new Error("هذا الاسم الثلاثي مسجل بالفعل مسبقاً في المنصة، يرجى كتابة اسمك رباعياً للمتابعة.");
+          } else {
+            throw new Error("هذا الاسم مسجل بالفعل بحساب آخر، يرجى التأكد من كتابة اسمك بالكامل وبشكل دقيق.");
+          }
+        }
+
+        // إذا أدخل الطالب اسماً ثلاثياً يطابق بداية اسم رباعي مسجل مسبقاً
+        if (nameParts.length === 3 && existingParts.length >= 3) {
+          var firstThreeExisting = existingParts.slice(0, 3).join(" ");
+          if (firstThreeExisting === cleanFullName) {
+            throw new Error("الاسم الثلاثي (" + cleanFullName + ") مسجل بالفعل لطالب آخر، يرجى كتابة اسمك رباعياً لتفادي التشابه.");
+          }
+        }
+      });
     }
 
     return {
@@ -244,26 +292,14 @@ window.FirebaseService = {
   },
 
   async registerStudent(userData) {
-    var valid = this.validateRegistrationData(userData);
+    // التحقق من القواعد وشروط الاسم والأرقام قبل أي خطوة
+    var valid = await this.validateRegistrationData(userData);
     var fb = getFirebase();
-
-    if (fb && fb.firestore) {
-      try {
-        var emailCheck = await fb.firestore().collection("users").where("email", "==", valid.email).get();
-        if (!emailCheck.empty) throw new Error("هذا البريد الإلكتروني مسجل بالفعل بحساب آخر.");
-
-        var phoneCheck = await fb.firestore().collection("users").where("studentPhone", "==", valid.studentPhone).get();
-        if (!phoneCheck.empty) throw new Error("رقم هاتف الطالب مسجل بالفعل بحساب آخر.");
-      } catch (errCheck) {
-        if (errCheck.message && (errCheck.message.includes("مسجل بالفعل") || errCheck.message.includes("البريد الإلكتروني") || errCheck.message.includes("رقم هاتف"))) {
-          throw errCheck;
-        }
-      }
-    }
 
     var uid = "u_" + Date.now();
     var createdFbUser = null;
 
+    // إنشاء مستخدم المصادقة وإرسال رابط التفعيل بالبريد الإلكتروني[cite: 5]
     if (fb && fb.auth) {
       try {
         var userCredential = await fb.auth().createUserWithEmailAndPassword(valid.email, valid.password);
@@ -280,6 +316,7 @@ window.FirebaseService = {
       }
     }
 
+    // تجهيز الوثيقة كاملة الحقول (دون حفظها في Firestore إلا بعد تأكيد البريد)
     var userDoc = {
       uid: uid,
       id: uid,
@@ -320,10 +357,11 @@ window.FirebaseService = {
         var fbUser = userCredential.user;
         var uid = fbUser.uid;
 
+        // منع تسجيل الدخول نهائياً قبل تفعيل البريد الإلكتروني[cite: 5]
         await fbUser.reload();
         if (!fbUser.emailVerified) {
           showVerificationPrompt(fbUser.email, fbUser, null);
-          throw new Error("يرجى تفعيل حسابك أولاً من خلال رابط التحقق المرسل إلى بريدك الإلكتروني.");
+          throw new Error("لا يمكن تسجيل الدخول؛ يرجى تفعيل حسابك أولاً عبر الرابط المرسل لبريدك الإلكتروني.");
         }
 
         if (fb.firestore) {
@@ -449,7 +487,7 @@ window.FirebaseService = {
             uData.uid = docId;
             uData.id = docId;
 
-            // توحيد قراءة الاسم ورقم الهاتف والمحافظة لمنع ظهور "طالب" أو حقول مفقودة
+            // توحيد قراءة الحقول لضمان عدم ظهور أي حقل فارغ
             var resolvedName = String(uData.fullName || uData.name || uData.studentName || "طالب");
             var resolvedPhone = String(uData.studentPhone || uData.phone || uData.mobile || "");
             var resolvedParentPhone = String(uData.parentPhone || uData.guardianPhone || "غير مسجل");
@@ -844,7 +882,7 @@ window.FirebaseService = {
             list.sort(function(a, b) {
               var tA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
               var tB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
-              return tB - tA;
+              return timeB - timeA;
             });
             if (callback) callback(list);
           }, function(err) {
