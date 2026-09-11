@@ -93,7 +93,7 @@ document.addEventListener("input", function(e) {
   }
 });
 
-// واجهة تأكيد البريد الإلكتروني الأنيقة والمتكاملة مع السحابة
+// واجهة تأكيد البريد الإلكتروني الأنيقة
 function showVerificationPrompt(email, fbUser, pendingDoc) {
   try {
     var oldModal = document.getElementById("hkEmailVerificationModal");
@@ -128,13 +128,19 @@ function showVerificationPrompt(email, fbUser, pendingDoc) {
           await fbUser.reload();
           if (fbUser.emailVerified) {
             var fb = getFirebase();
-            // إنشاء وحفظ وثيقة الطالب في Firestore فقط عند التأكيد الفعلي
-            if (fb && fb.firestore && pendingDoc) {
-              pendingDoc.emailVerified = true;
-              await fb.firestore().collection("users").doc(fbUser.uid).set(pendingDoc, { merge: true });
-              localStorage.setItem("current_user", JSON.stringify(pendingDoc));
-              localStorage.setItem("edu_currentUser", JSON.stringify(pendingDoc));
+            var finalDoc = pendingDoc || JSON.parse(localStorage.getItem("hk_pending_reg_doc") || "{}");
+            finalDoc.emailVerified = true;
+            finalDoc.uid = fbUser.uid;
+            finalDoc.id = fbUser.uid;
+
+            if (fb && fb.firestore) {
+              await fb.firestore().collection("users").doc(fbUser.uid).set(finalDoc, { merge: true });
             }
+
+            localStorage.setItem("current_user", JSON.stringify(finalDoc));
+            localStorage.setItem("edu_currentUser", JSON.stringify(finalDoc));
+            localStorage.removeItem("hk_pending_reg_doc");
+
             modal.remove();
             window.location.replace("dashboard.html");
             return;
@@ -159,17 +165,35 @@ function showVerificationPrompt(email, fbUser, pendingDoc) {
 window.showVerificationPrompt = showVerificationPrompt;
 
 window.FirebaseService = {
-  // التحقق المسبق الصارم من كافة الحقول ومنع الانتقال بين المراحل إذا وُجد خطأ
   validateRegistrationData(userData) {
     userData = userData || {};
 
-    var cleanFullName = String(userData.fullName || userData.name || userData.studentName || "").trim();
+    var cleanFullName = String(
+      userData.fullName || 
+      userData.name || 
+      userData.studentName || 
+      userData.userName || 
+      ""
+    ).trim();
+
     var cleanEmail = String(userData.email || "").toLowerCase().trim();
     var cleanPassword = String(userData.password || "");
-    var cleanStudentPhone = String(userData.studentPhone || userData.phone || userData.mobile || "").trim();
-    var cleanParentPhone = String(userData.parentPhone || userData.guardianPhone || userData.fatherPhone || "").trim();
 
-    // 1. الاسم عربي فقط وثلاثي على الأقل وبدون أي أحرف إنجليزية
+    var cleanStudentPhone = String(
+      userData.studentPhone || 
+      userData.phone || 
+      userData.mobile || 
+      userData.telephone || 
+      ""
+    ).trim();
+
+    var cleanParentPhone = String(
+      userData.parentPhone || 
+      userData.guardianPhone || 
+      userData.fatherPhone || 
+      ""
+    ).trim();
+
     var arabicRegex = /^[\u0621-\u064A\s]+$/;
     if (!cleanFullName || !arabicRegex.test(cleanFullName)) {
       throw new Error("يجب كتابة الاسم باللغة العربية فقط (يمنع تماماً كتابة الحروف الإنجليزية أو الأرقام).");
@@ -179,13 +203,11 @@ window.FirebaseService = {
       throw new Error("يرجى كتابة الاسم ثلاثياً باللغة العربية على الأقل.");
     }
 
-    // 2. التحقق من صحة البريد الإلكتروني
     var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!cleanEmail || !emailRegex.test(cleanEmail)) {
       throw new Error("يرجى إدخال صيغة بريد إلكتروني صحيحة.");
     }
 
-    // 3. أرقام هواتف مصرية مكونة من 11 رقماً وتبدأ بـ 010, 011, 012, 015
     var egyptianPhoneRegex = /^01[0125][0-9]{8}$/;
 
     if (!cleanStudentPhone || !egyptianPhoneRegex.test(cleanStudentPhone)) {
@@ -196,12 +218,10 @@ window.FirebaseService = {
       throw new Error("رقم ولي الأمر غير صحيح، يجب أن يكون رقماً مصرياً مكوناً من 11 رقماً يبدأ بـ (010, 011, 012, 015).");
     }
 
-    // 4. التحقق من اختلاف رقم ولي الأمر عن رقم الطالب
     if (cleanStudentPhone === cleanParentPhone) {
       throw new Error("يجب أن يكون رقم ولي الأمر مختلفاً تماماً عن رقم هاتف الطالب.");
     }
 
-    // 5. كلمة المرور
     if (!cleanPassword || cleanPassword.length < 6) {
       throw new Error("كلمة المرور يجب ألا تقل عن 6 خانات.");
     }
@@ -209,11 +229,14 @@ window.FirebaseService = {
     return {
       fullName: cleanFullName,
       name: cleanFullName,
+      studentName: cleanFullName,
       email: cleanEmail,
       password: cleanPassword,
       studentPhone: cleanStudentPhone,
       phone: cleanStudentPhone,
+      mobile: cleanStudentPhone,
       parentPhone: cleanParentPhone,
+      guardianPhone: cleanParentPhone,
       governorate: userData.governorate || "غير محدد",
       educationType: userData.educationType || "GENERAL",
       schoolName: userData.schoolName || "غير محدد"
@@ -221,7 +244,6 @@ window.FirebaseService = {
   },
 
   async registerStudent(userData) {
-    // التحقق من كافة الشروط أولاً ومنع المتابعة في حال وجود أي نقص
     var valid = this.validateRegistrationData(userData);
     var fb = getFirebase();
 
@@ -242,7 +264,6 @@ window.FirebaseService = {
     var uid = "u_" + Date.now();
     var createdFbUser = null;
 
-    // إنشاء الحساب في Auth وإرسال رابط التفعيل
     if (fb && fb.auth) {
       try {
         var userCredential = await fb.auth().createUserWithEmailAndPassword(valid.email, valid.password);
@@ -259,16 +280,18 @@ window.FirebaseService = {
       }
     }
 
-    // تجهيز الوثيقة الكاملة وتأجيل الحفظ السحابي في users لحين الضغط على الرابط
     var userDoc = {
       uid: uid,
       id: uid,
       fullName: valid.fullName,
       name: valid.fullName,
+      studentName: valid.fullName,
       email: valid.email,
       studentPhone: valid.studentPhone,
       phone: valid.studentPhone,
+      mobile: valid.studentPhone,
       parentPhone: valid.parentPhone,
+      guardianPhone: valid.parentPhone,
       governorate: valid.governorate,
       educationType: valid.educationType,
       schoolName: valid.schoolName,
@@ -281,7 +304,7 @@ window.FirebaseService = {
       createdAt: new Date().toISOString()
     };
 
-    // إظهار نافذة تأكيد البريد الإلكتروني ومنع النزول في Firestore بدون تأكيد
+    localStorage.setItem("hk_pending_reg_doc", JSON.stringify(userDoc));
     showVerificationPrompt(valid.email, createdFbUser, userDoc);
     return userDoc;
   },
@@ -297,7 +320,6 @@ window.FirebaseService = {
         var fbUser = userCredential.user;
         var uid = fbUser.uid;
 
-        // التحقق من تفعيل البريد الإلكتروني عبر فايربيز ومنع الدخول بدونه
         await fbUser.reload();
         if (!fbUser.emailVerified) {
           showVerificationPrompt(fbUser.email, fbUser, null);
@@ -321,6 +343,7 @@ window.FirebaseService = {
             id: uid,
             email: cleanEmail,
             fullName: fbUser.displayName || "طالب",
+            name: fbUser.displayName || "طالب",
             role: "STUDENT",
             enrolledCourses: ["c1"],
             devices: []
@@ -351,8 +374,12 @@ window.FirebaseService = {
     if (foundUser) {
       foundUser.uid = foundUser.uid || foundUser.id;
       foundUser.id = foundUser.uid;
-      foundUser.fullName = foundUser.fullName || foundUser.name || "طالب";
-      foundUser.studentPhone = foundUser.studentPhone || foundUser.phone || "";
+      var unifiedName = foundUser.fullName || foundUser.name || foundUser.studentName || "طالب";
+      foundUser.fullName = unifiedName;
+      foundUser.name = unifiedName;
+      var unifiedPhone = foundUser.studentPhone || foundUser.phone || foundUser.mobile || "";
+      foundUser.studentPhone = unifiedPhone;
+      foundUser.phone = unifiedPhone;
       foundUser.email = foundUser.email || cleanEmail;
       foundUser.role = (foundUser.role || "STUDENT").toUpperCase();
       foundUser.enrolledCourses = (foundUser.enrolledCourses || []).map(String);
@@ -402,6 +429,7 @@ window.FirebaseService = {
     }
     localStorage.removeItem("current_user");
     localStorage.removeItem("edu_currentUser");
+    localStorage.removeItem("hk_pending_reg_doc");
     window.location.replace("login.html");
   },
 
@@ -420,9 +448,21 @@ window.FirebaseService = {
             var docId = String(doc.id || "");
             uData.uid = docId;
             uData.id = docId;
-            uData.fullName = String(uData.fullName || uData.name || uData.studentName || "طالب");
+
+            // توحيد قراءة الاسم ورقم الهاتف والمحافظة لمنع ظهور "طالب" أو حقول مفقودة
+            var resolvedName = String(uData.fullName || uData.name || uData.studentName || "طالب");
+            var resolvedPhone = String(uData.studentPhone || uData.phone || uData.mobile || "");
+            var resolvedParentPhone = String(uData.parentPhone || uData.guardianPhone || "غير مسجل");
+
+            uData.fullName = resolvedName;
+            uData.name = resolvedName;
+            uData.studentName = resolvedName;
             uData.email = String(uData.email || "");
-            uData.studentPhone = String(uData.studentPhone || uData.phone || "");
+            uData.studentPhone = resolvedPhone;
+            uData.phone = resolvedPhone;
+            uData.mobile = resolvedPhone;
+            uData.parentPhone = resolvedParentPhone;
+            uData.governorate = String(uData.governorate || "غير محدد");
             uData.role = String(uData.role || "STUDENT").toUpperCase();
             uData.enrolledCourses = Array.isArray(uData.enrolledCourses) ? uData.enrolledCourses.map(String) : [];
             uData.devices = Array.isArray(uData.devices) ? uData.devices : [];
@@ -735,7 +775,7 @@ window.FirebaseService = {
   },
 
   // =========================================================
-  // شات الدعم الفني: سحابي 100% بدون الاعتماد على localStorage[cite: 6]
+  // شات الدعم الفني: سحابي 100% بدون الاعتماد على localStorage
   // =========================================================
 
   subscribeChatGlobalConfig(callback) {
