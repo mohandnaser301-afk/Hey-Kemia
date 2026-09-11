@@ -543,7 +543,7 @@
         <div class="messages-stream-box" id="messagesStreamBox"></div>
 
         <form class="chat-input-bar-form" id="chatSendMessageForm">
-          <input type="text" id="chatMessageInput" placeholder="اكتب سؤالك أو استفسارك هنا..." required autocomplete="off">
+          <input type="text" id="chatMessageInput" placeholder="اكتب ردك أو استفسارك هنا..." required autocomplete="off">
           <button type="submit" id="chatSendBtn">
             <span>إرسال</span>
           </button>
@@ -615,13 +615,24 @@
       var myUid = user ? String(user.uid || user.id || "") : "";
       var isStaff = user && (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "SUPPORT");
       var form = document.getElementById("chatSendMessageForm");
+      var input = document.getElementById("chatMessageInput");
+      var sendBtn = document.getElementById("chatSendBtn");
 
       if (isStaff && !currentSelectedStudentUid) {
-        if (form) form.style.display = "none";
-        box.innerHTML = '<div class="empty-select-chat-notice"><div style="font-size:32px;">💬</div><strong>لا توجد محادثة مفتوحة حالياً</strong><span>اختر طالباً من القائمة الجانبية لبدء المحادثة</span></div>';
+        if (input) {
+          input.disabled = true;
+          input.placeholder = "اختر طالباً من القائمة أولاً للرد عليه...";
+        }
+        if (sendBtn) sendBtn.disabled = true;
+        box.innerHTML = '<div class="empty-select-chat-notice"><div style="font-size:32px;">💬</div><strong>لا توجد محادثة مفتوحة حالياً</strong><span>اختر طالباً من القائمة الجانبية لبدء المحادثة والرد</span></div>';
         return;
       }
 
+      if (input) {
+        input.disabled = false;
+        input.placeholder = isStaff ? "اكتب رد الإدارة على الطالب..." : "اكتب سؤالك أو استفسارك هنا...";
+      }
+      if (sendBtn) sendBtn.disabled = false;
       if (form) form.style.display = "flex";
 
       if (!list || list.length === 0) {
@@ -634,7 +645,7 @@
       box.innerHTML = list.map(function(m) {
         var isMe = (myUid && String(m.senderUid) === myUid) || (user && user.email && m.senderEmail && m.senderEmail.toLowerCase() === user.email.toLowerCase());
         var isStaffSender = m.senderRole === "SUPER_ADMIN" || m.senderRole === "ADMIN" || m.senderRole === "SUPPORT";
-        var bubbleClass = isMe ? (isStaff ? "staff" : "student") : (isStaffSender ? "staff" : "student");
+        var bubbleClass = isMe ? "staff" : "student";
         var senderLabel = isMe ? "أنت" : sanitize(m.senderName || (isStaffSender ? "فريق أ/ محمد السعيد" : "الطالب"));
 
         return '<div class="chat-bubble ' + bubbleClass + '">' +
@@ -675,6 +686,16 @@
       var isStaff = user && (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "SUPPORT");
       var clearBtn = document.getElementById("btnClearCurrentChat");
       if (clearBtn) clearBtn.style.display = isStaff ? "inline-flex" : "none";
+
+      // فك قفل الحقل فور اختيار أي طالب
+      var input = document.getElementById("chatMessageInput");
+      var sendBtn = document.getElementById("chatSendBtn");
+      if (input) {
+        input.disabled = false;
+        input.placeholder = "اكتب رد الإدارة على " + name + "...";
+        input.focus();
+      }
+      if (sendBtn) sendBtn.disabled = false;
 
       document.querySelectorAll(".thread-item-row").forEach(function(el) { el.classList.remove("active"); });
       var activeEl = document.getElementById("threadRow_" + studentUid);
@@ -814,7 +835,6 @@
         });
       }
 
-      // معالجة نموذج الإرسال مع العرض المحلي الفوري للطالب
       var chatForm = document.getElementById("chatSendMessageForm");
       if (chatForm) {
         chatForm.addEventListener("submit", async function(e) {
@@ -835,8 +855,8 @@
             id: "m_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
             studentUid: targetUid,
             senderUid: userUid,
-            senderName: currentUser.fullName || currentUser.name || "مستخدم",
-            senderRole: currentUser.role || "STUDENT",
+            senderName: isStaff ? "فريق أ/ محمد السعيد" : (currentUser.fullName || currentUser.name || "طالب"),
+            senderRole: currentUser.role || (isStaff ? "ADMIN" : "STUDENT"),
             studentName: (isStaff && currentSelectedStudentUid) ? (nameDisplay ? nameDisplay.innerText : "طالب") : (currentUser.fullName || currentUser.name || "طالب"),
             studentPhone: currentUser.studentPhone || currentUser.phone || "",
             studentEmail: currentUser.email || "",
@@ -846,7 +866,6 @@
 
           input.value = "";
 
-          // إضافة فورية للرسالة أمام الطالب في الشاشة
           var box = document.getElementById("messagesStreamBox");
           if (box) {
             var newBubble = document.createElement("div");
@@ -858,7 +877,6 @@
             scrollToBottom();
           }
 
-          // إرسال سحابي فوري
           if (window.FirebaseService && typeof window.FirebaseService.sendSupportMessage === "function") {
             try {
               await window.FirebaseService.sendSupportMessage(msg);
@@ -880,6 +898,7 @@
               cachedThreads = threads || [];
               renderThreadsListDom(cachedThreads);
 
+              // تحديد المحادثة الأولى تلقائياً وفتح حقل الرد للإداري
               if (!currentSelectedStudentUid && cachedThreads.length > 0) {
                 selectThread(cachedThreads[0].studentUid, cachedThreads[0].studentName, cachedThreads[0].studentPhone);
               }
