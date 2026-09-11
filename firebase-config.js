@@ -133,7 +133,6 @@ function showVerificationPrompt(email, fbUser, pendingDoc) {
             finalDoc.uid = fbUser.uid;
             finalDoc.id = fbUser.uid;
 
-            // إنشاء وحفظ وثيقة الطالب في Firestore فقط عند التأكيد الفعلي
             if (fb && fb.firestore) {
               await fb.firestore().collection("users").doc(fbUser.uid).set(finalDoc, { merge: true });
             }
@@ -166,7 +165,6 @@ function showVerificationPrompt(email, fbUser, pendingDoc) {
 window.showVerificationPrompt = showVerificationPrompt;
 
 window.FirebaseService = {
-  // التحقق المسبق الصارم من صحة وتفرد البيانات
   async validateRegistrationData(userData) {
     userData = userData || {};
 
@@ -196,7 +194,6 @@ window.FirebaseService = {
       ""
     ).trim();
 
-    // 1. التحقق من الحروف العربية والمسافات فقط[cite: 5]
     var arabicRegex = /^[\u0621-\u064A\s]+$/;
     if (!cleanFullName || !arabicRegex.test(cleanFullName)) {
       throw new Error("يجب كتابة الاسم باللغة العربية فقط (ممنوع كتابة الأحرف الإنجليزية أو الأرقام أو الرموز).");
@@ -207,13 +204,11 @@ window.FirebaseService = {
       throw new Error("يرجى إدخال الاسم ثلاثياً باللغة العربية على الأقل.");
     }
 
-    // 2. التحقق من صيغة البريد الإلكتروني[cite: 5]
     var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!cleanEmail || !emailRegex.test(cleanEmail)) {
       throw new Error("يرجى إدخال بريد إلكتروني صحيح ومعتمد.");
     }
 
-    // 3. التحقق من أرقام الهواتف المصرية (11 رقم)[cite: 5]
     var egyptianPhoneRegex = /^01[0125][0-9]{8}$/;
 
     if (!cleanStudentPhone || !egyptianPhoneRegex.test(cleanStudentPhone)) {
@@ -224,7 +219,6 @@ window.FirebaseService = {
       throw new Error("رقم ولي الأمر غير صحيح، يجب أن يكون رقماً مصرياً مكوناً من 11 رقماً ويبدأ بـ (010, 011, 012, 015).");
     }
 
-    // 4. اختلاف رقم الطالب عن ولي الأمر[cite: 5]
     if (cleanStudentPhone === cleanParentPhone) {
       throw new Error("يجب أن يكون رقم ولي الأمر مختلفاً تماماً عن رقم هاتف الطالب.");
     }
@@ -233,29 +227,24 @@ window.FirebaseService = {
       throw new Error("يجب ألا تقل كلمة المرور عن 6 خانات.");
     }
 
-    // 5. فحص قاعدة البيانات السحابية (الاسم ثلاثي/رباعي، ورقم الهاتف، والبريد)
     var fb = getFirebase();
     if (fb && fb.firestore) {
-      // فحص البريد الإلكتروني
       var emailCheck = await fb.firestore().collection("users").where("email", "==", cleanEmail).get();
       if (!emailCheck.empty) {
         throw new Error("هذا البريد الإلكتروني مسجل بالفعل بحساب آخر.");
       }
 
-      // فحص رقم هاتف الطالب
       var phoneCheck = await fb.firestore().collection("users").where("studentPhone", "==", cleanStudentPhone).get();
       if (!phoneCheck.empty) {
         throw new Error("رقم هاتف الطالب مسجل بالفعل بحساب آخر.");
       }
 
-      // فحص تطابق الأسماء: إذا كان الاسم ثلاثياً ومسجلاً مسبقاً، يطلب إدخاله رباعياً
       var allUsersSnap = await fb.firestore().collection("users").get();
       allUsersSnap.forEach(function(doc) {
         var existingData = doc.data() || {};
         var existingName = String(existingData.fullName || existingData.name || "").trim();
         var existingParts = existingName.split(/\s+/).filter(Boolean);
 
-        // إذا كان الاسم المدخل مطابقاً تماماً لاسم مسجل مسبقاً
         if (existingName === cleanFullName) {
           if (nameParts.length === 3) {
             throw new Error("هذا الاسم الثلاثي مسجل بالفعل مسبقاً في المنصة، يرجى كتابة اسمك رباعياً للمتابعة.");
@@ -264,7 +253,6 @@ window.FirebaseService = {
           }
         }
 
-        // إذا أدخل الطالب اسماً ثلاثياً يطابق بداية اسم رباعي مسجل مسبقاً
         if (nameParts.length === 3 && existingParts.length >= 3) {
           var firstThreeExisting = existingParts.slice(0, 3).join(" ");
           if (firstThreeExisting === cleanFullName) {
@@ -292,14 +280,12 @@ window.FirebaseService = {
   },
 
   async registerStudent(userData) {
-    // التحقق من القواعد وشروط الاسم والأرقام قبل أي خطوة
     var valid = await this.validateRegistrationData(userData);
     var fb = getFirebase();
 
     var uid = "u_" + Date.now();
     var createdFbUser = null;
 
-    // إنشاء مستخدم المصادقة وإرسال رابط التفعيل بالبريد الإلكتروني[cite: 5]
     if (fb && fb.auth) {
       try {
         var userCredential = await fb.auth().createUserWithEmailAndPassword(valid.email, valid.password);
@@ -316,7 +302,6 @@ window.FirebaseService = {
       }
     }
 
-    // تجهيز الوثيقة كاملة الحقول (دون حفظها في Firestore إلا بعد تأكيد البريد)
     var userDoc = {
       uid: uid,
       id: uid,
@@ -357,7 +342,6 @@ window.FirebaseService = {
         var fbUser = userCredential.user;
         var uid = fbUser.uid;
 
-        // منع تسجيل الدخول نهائياً قبل تفعيل البريد الإلكتروني[cite: 5]
         await fbUser.reload();
         if (!fbUser.emailVerified) {
           showVerificationPrompt(fbUser.email, fbUser, null);
@@ -487,7 +471,6 @@ window.FirebaseService = {
             uData.uid = docId;
             uData.id = docId;
 
-            // توحيد قراءة الحقول لضمان عدم ظهور أي حقل فارغ
             var resolvedName = String(uData.fullName || uData.name || uData.studentName || "طالب");
             var resolvedPhone = String(uData.studentPhone || uData.phone || uData.mobile || "");
             var resolvedParentPhone = String(uData.parentPhone || uData.guardianPhone || "غير مسجل");
@@ -813,7 +796,7 @@ window.FirebaseService = {
   },
 
   // =========================================================
-  // شات الدعم الفني: سحابي 100% بدون الاعتماد على localStorage
+  // شات الدعم الفني: استماع فوري فائق الدقة بدون فقدان أي رسالة
   // =========================================================
 
   subscribeChatGlobalConfig(callback) {
@@ -844,25 +827,37 @@ window.FirebaseService = {
   },
 
   subscribeStudentChat(studentUid, callback) {
-    if (!studentUid) return;
+    if (!studentUid) return function() {};
 
+    var unsub = null;
     var check = setInterval(function() {
       var fb = getFirebase();
       if (fb && fb.firestore && studentUid) {
         clearInterval(check);
-        fb.firestore().collection("support_threads").doc(studentUid).collection("messages")
-          .orderBy("createdAt", "asc")
+        unsub = fb.firestore().collection("support_threads").doc(studentUid).collection("messages")
           .onSnapshot(function(snap) {
             var list = [];
             snap.forEach(function(doc) { 
               list.push(Object.assign({ id: doc.id }, doc.data())); 
             });
+            // فرز الرسائل محلياً لضمان عدم توقف الاستعلام عند غياب الـ Index السحابي
+            list.sort(function(a, b) {
+              var tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+              var tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+              return tA - tB;
+            });
+            localStorage.setItem("edu_chat_" + studentUid, JSON.stringify(list));
             if (callback) callback(list);
           }, function(err) {
             console.warn("Chat sync notice:", err);
           });
       }
-    }, 150);
+    }, 120);
+
+    return function() {
+      clearInterval(check);
+      if (unsub) unsub();
+    };
   },
 
   subscribeAllSupportThreads(callback) {
@@ -882,8 +877,9 @@ window.FirebaseService = {
             list.sort(function(a, b) {
               var tA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
               var tB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
-              return timeB - timeA;
+              return tB - tA;
             });
+            localStorage.setItem("edu_support_threads", JSON.stringify(list));
             if (callback) callback(list);
           }, function(err) {
             console.warn("Threads sync notice:", err);
@@ -934,6 +930,22 @@ window.FirebaseService = {
       } catch (e) {}
 
       await fb.firestore().collection("support_threads").doc(studentUid).set(threadUpdate, { merge: true });
+    }
+  },
+
+  async deleteSupportThread(studentUid, name) {
+    var fb = getFirebase();
+    if (fb && fb.firestore && studentUid) {
+      try {
+        var msgs = await fb.firestore().collection("support_threads").doc(studentUid).collection("messages").get();
+        var batch = fb.firestore().batch();
+        msgs.forEach(function(d) { batch.delete(d.ref); });
+        batch.delete(fb.firestore().collection("support_threads").doc(studentUid));
+        await batch.commit();
+        localStorage.removeItem("edu_chat_" + studentUid);
+      } catch (e) {
+        console.warn("حذف المحادثة:", e);
+      }
     }
   },
 

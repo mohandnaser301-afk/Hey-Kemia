@@ -15,7 +15,6 @@
       background: #F0F4FC;
     }
 
-    /* ضبط مكان الـ Navbar ليظل بالأعلى دون إخفاء أي أزرار */
     .navbar-capsule-wrapper {
       position: fixed;
       top: 10px;
@@ -98,7 +97,6 @@
       border: 1px solid rgba(255, 255, 255, 0.25);
     }
 
-    /* حاوية الشات - إزاحة كافية تمنع نزول الـ Navbar فوق الشات */
     .support-chat-container {
       max-width: 1140px;
       width: 100%;
@@ -431,7 +429,6 @@
       gap: 10px;
     }
 
-    /* التجاوب الكامل مع الموبايل */
     @media (max-width: 768px) {
       .navbar-capsule-wrapper {
         top: 6px;
@@ -459,7 +456,7 @@
 
       .support-chat-container {
         height: calc(100dvh - 78px);
-        margin-top: 68px; /* مسافة أمان كاملة لمنع تداخل الهيدر */
+        margin-top: 68px;
         margin-bottom: 4px;
         padding: 0 6px;
       }
@@ -506,7 +503,6 @@
 </head>
 <body>
 
-  <!-- شريط الـ Navbar متضمن الأزرار وشعار المنصة -->
   <div class="navbar-capsule-wrapper">
     <nav class="navbar-capsule">
       <a href="index.html" class="capsule-brand">
@@ -523,7 +519,6 @@
   <main class="support-chat-container">
     <div class="support-chat-card">
       
-      <!-- القائمة الجانبية للإدارة -->
       <div class="support-threads-sidebar" id="supportThreadsSidebar" style="display:none;">
         <div class="threads-header">
           <h3>استفسارات الطلاب</h3>
@@ -532,7 +527,6 @@
         <div class="threads-list" id="supportThreadsListContainer"></div>
       </div>
 
-      <!-- نافذة المحادثة -->
       <div class="chat-conversation-area" id="chatConvoArea">
         <div class="chat-convo-header">
           <div>
@@ -559,13 +553,15 @@
     </div>
   </main>
 
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script src="app.js"></script>
   <script>
     var currentSelectedStudentUid = null;
     var unsubscribeChat = null;
     var cachedThreads = [];
-    var lastKnownMsgCount = 0;
 
     function getAppUser() {
       if (typeof window["getCurrentUser"] === "function") {
@@ -638,7 +634,7 @@
       box.innerHTML = list.map(function(m) {
         var isMe = (myUid && String(m.senderUid) === myUid) || (user && user.email && m.senderEmail && m.senderEmail.toLowerCase() === user.email.toLowerCase());
         var isStaffSender = m.senderRole === "SUPER_ADMIN" || m.senderRole === "ADMIN" || m.senderRole === "SUPPORT";
-        var bubbleClass = isMe ? "staff" : "student";
+        var bubbleClass = isMe ? (isStaff ? "staff" : "student") : (isStaffSender ? "staff" : "student");
         var senderLabel = isMe ? "أنت" : sanitize(m.senderName || (isStaffSender ? "فريق أ/ محمد السعيد" : "الطالب"));
 
         return '<div class="chat-bubble ' + bubbleClass + '">' +
@@ -660,11 +656,9 @@
       var key = String(studentUid);
       var localList = JSON.parse(localStorage.getItem("edu_chat_" + key) || "[]");
       renderChatMessages(localList);
-      lastKnownMsgCount = localList.length;
 
       if (window.FirebaseService && typeof window.FirebaseService.subscribeStudentChat === "function") {
         unsubscribeChat = window.FirebaseService.subscribeStudentChat(key, function(msgs) {
-          lastKnownMsgCount = (msgs || []).length;
           renderChatMessages(msgs);
         });
       }
@@ -714,7 +708,7 @@
       var sanitize = typeof window.sanitizeText === "function" ? window.sanitizeText : function(s) { return s || ""; };
 
       container.innerHTML = list.map(function(t) {
-        var unreadBadge = (t.unreadCount && t.unreadCount > 0) 
+        var unreadBadge = (t.unreadCount && Number(t.unreadCount) > 0) 
           ? '<span style="background:#ef4444; color:#fff; font-size:10px; font-weight:900; padding:2px 6px; border-radius:10px;">' + t.unreadCount + '</span>' 
           : '';
         var isActive = currentSelectedStudentUid === String(t.studentUid) ? "active" : "";
@@ -785,7 +779,8 @@
 
       syncNavButtons();
 
-      var isStaff = user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "SUPPORT";
+      var userRole = String(user.role || "STUDENT").toUpperCase();
+      var isStaff = userRole === "SUPER_ADMIN" || userRole === "ADMIN" || userRole === "SUPPORT";
       var sidebar = document.getElementById("supportThreadsSidebar");
       var convo = document.getElementById("chatConvoArea");
 
@@ -819,17 +814,20 @@
         });
       }
 
+      // معالجة نموذج الإرسال مع العرض المحلي الفوري للطالب
       var chatForm = document.getElementById("chatSendMessageForm");
       if (chatForm) {
-        chatForm.addEventListener("submit", function(e) {
+        chatForm.addEventListener("submit", async function(e) {
           e.preventDefault();
+          e.stopPropagation();
+
           var input = document.getElementById("chatMessageInput");
           var text = input ? input.value.trim() : "";
           if (!text) return;
 
           var currentUser = getAppUser();
           var userUid = String(currentUser.uid || currentUser.id || "");
-          var targetUid = currentSelectedStudentUid ? String(currentSelectedStudentUid) : userUid;
+          var targetUid = (isStaff && currentSelectedStudentUid) ? String(currentSelectedStudentUid) : userUid;
           var now = new Date().toISOString();
           var nameDisplay = document.getElementById("chatTargetNameDisplay");
 
@@ -837,21 +835,36 @@
             id: "m_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
             studentUid: targetUid,
             senderUid: userUid,
-            senderName: currentUser.fullName || "مستخدم",
+            senderName: currentUser.fullName || currentUser.name || "مستخدم",
             senderRole: currentUser.role || "STUDENT",
-            studentName: (currentSelectedStudentUid && currentUser.role !== "STUDENT") ? (nameDisplay ? nameDisplay.innerText : "طالب") : (currentUser.fullName || "طالب"),
+            studentName: (isStaff && currentSelectedStudentUid) ? (nameDisplay ? nameDisplay.innerText : "طالب") : (currentUser.fullName || currentUser.name || "طالب"),
             studentPhone: currentUser.studentPhone || currentUser.phone || "",
             studentEmail: currentUser.email || "",
             text: text,
             createdAt: now
           };
 
-          if (input) input.value = "";
+          input.value = "";
 
+          // إضافة فورية للرسالة أمام الطالب في الشاشة
+          var box = document.getElementById("messagesStreamBox");
+          if (box) {
+            var newBubble = document.createElement("div");
+            newBubble.className = "chat-bubble " + (isStaff ? "staff" : "student");
+            newBubble.innerHTML = '<div class="bubble-sender">' + (isStaff ? "أنت" : (currentUser.fullName || "أنت")) + '</div>' +
+                                  '<div>' + (window.sanitizeText ? window.sanitizeText(msg.text) : msg.text) + '</div>' +
+                                  '<span class="bubble-time">الآن</span>';
+            box.appendChild(newBubble);
+            scrollToBottom();
+          }
+
+          // إرسال سحابي فوري
           if (window.FirebaseService && typeof window.FirebaseService.sendSupportMessage === "function") {
-            window.FirebaseService.sendSupportMessage(msg).then(function() {
-              scrollToBottom();
-            });
+            try {
+              await window.FirebaseService.sendSupportMessage(msg);
+            } catch (err) {
+              console.warn("إرسال الشات:", err);
+            }
           }
         });
       }
@@ -872,7 +885,7 @@
               }
             });
           }
-        }, 150);
+        }, 120);
       } else {
         var userUid = String(user.uid || user.id || "");
         currentSelectedStudentUid = userUid;
@@ -891,7 +904,7 @@
             clearInterval(timerStudent);
             startChatStream(userUid);
           }
-        }, 150);
+        }, 120);
       }
     });
   </script>

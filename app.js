@@ -328,7 +328,7 @@ function renderStudentDevicesList(containerId) {
 }
 window.renderStudentDevicesList = renderStudentDevicesList;
 
-// قصر ظهور قسم الأجهزة الإدارية على صفحة الإدارة فقط ومنع الحقن التلقائي في باقي الصفحات
+// قصر ظهور قسم الأجهزة الإدارية على صفحة الإدارة فقط ومنع الحقن التلقائي في باقي الصفحات[cite: 8, 21]
 function renderAdminOwnDevicesList(containerId) {
   try {
     var user = getCurrentUser();
@@ -339,7 +339,7 @@ function renderAdminOwnDevicesList(containerId) {
     if (!isAdmin) return;
 
     var currentPath = (window.location.pathname || "").toLowerCase();
-    // منع الظهور في أي صفحة غير صفحة الإدارة نهائياً
+    // منع الظهور في أي صفحة غير صفحة الإدارة نهائياً[cite: 8]
     if (currentPath.indexOf("admin.html") === -1) {
       var foreignCard = document.getElementById("adminAutoInjectedDevicesCard");
       if (foreignCard) foreignCard.remove();
@@ -425,7 +425,7 @@ function renderAdminUserDevices(targetUid, containerId) {
 }
 window.renderAdminUserDevices = renderAdminUserDevices;
 
-// الحساب الدقيق للمؤشرات واستثناء الحسابات الإدارية من بيانات الطلاب
+// الحساب الدقيق للمؤشرات واستثناء الحسابات الإدارية من بيانات الطلاب[cite: 21]
 function calculateStudentMetrics(userUid) {
   if (!userUid) return { enrolledCount: 0, completedExams: 0, avgScore: 0, totalHours: 0, enrolledList: [], submissionsList: [] };
 
@@ -745,6 +745,12 @@ function initSupportChatWidget() {
 }
 
 function enableStudentDirectChat() {
+  // إذا كنا داخل صفحة الدعم الرسمية، نترك الصفحة تدير الشات بنفسها لمنع التعارض المزدوج[cite: 8]
+  var currentPath = (window.location.pathname || "").toLowerCase();
+  if (currentPath.indexOf("support.html") !== -1) {
+    return;
+  }
+
   var user = getCurrentUser();
   var studentUid = user ? String(user.uid || user.id) : null;
 
@@ -810,24 +816,28 @@ async function sendStudentSupportMessage(inputElement) {
   }
 
   var studentId = String(user.uid || user.id);
+  var studentName = user.fullName || user.name || "طالب";
+
   var msgData = {
     text: text,
     senderUid: studentId,
-    senderName: user.fullName || "طالب",
+    senderName: studentName,
     senderRole: "STUDENT",
     studentUid: studentId,
-    studentName: user.fullName || "طالب",
-    studentPhone: user.studentPhone || "",
+    studentName: studentName,
+    studentPhone: user.studentPhone || user.phone || "",
     studentEmail: user.email || ""
   };
 
   inputElement.value = "";
 
-  var messagesBox = document.querySelector("#activeMessagesTargetContainer, .chat-messages, .messages-body, [class*='chat-body'], [class*='messages-container']");
+  // استهداف حاوية الرسائل الصحيحة سواء كانت في support.html أو أي صفحة أخرى[cite: 8]
+  var messagesBox = document.querySelector("#messagesStreamBox, #activeMessagesTargetContainer, .chat-messages, .messages-body");
   if (messagesBox) {
     var newBubble = document.createElement("div");
-    newBubble.style.cssText = "max-width:75%; padding:10px 14px; border-radius:12px; font-size:13.5px; line-height:1.5; word-break:break-word; margin-right:0; margin-left:auto; background:#F1F5F9; color:#0E1338; border-bottom-right-radius:3px; margin-bottom:8px;";
-    newBubble.innerHTML = '<div style="font-size:11px; font-weight:800; margin-bottom:3px; opacity:0.85;">' + sanitizeText(msgData.senderName) + '</div><div>' + sanitizeText(msgData.text) + '</div><div style="font-size:10px; text-align:left; margin-top:4px; opacity:0.75;">الآن</div>';
+    newBubble.className = "chat-bubble student";
+    newBubble.style.cssText = "max-width:80%; padding:10px 14px; border-radius:14px; font-size:13.5px; line-height:1.5; word-break:break-word; margin-right:0; margin-left:auto; background:#F1F5F9; color:#0E1338; border-bottom-right-radius:3px; margin-bottom:8px;";
+    newBubble.innerHTML = '<div style="font-size:11px; font-weight:800; margin-bottom:3px; color:#0284C7;">' + sanitizeText(msgData.senderName) + '</div><div>' + sanitizeText(msgData.text) + '</div><div style="font-size:10px; text-align:left; margin-top:4px; opacity:0.75;">الآن</div>';
     messagesBox.appendChild(newBubble);
     messagesBox.scrollTop = messagesBox.scrollHeight;
   }
@@ -842,7 +852,7 @@ async function sendStudentSupportMessage(inputElement) {
 }
 
 function renderStudentSideChat(messages) {
-  var messagesBox = document.querySelector("#activeMessagesTargetContainer, .chat-messages, .messages-body, [class*='chat-body'], [class*='messages-container']");
+  var messagesBox = document.querySelector("#messagesStreamBox, #activeMessagesTargetContainer, .chat-messages, .messages-body");
   if (!messagesBox || !Array.isArray(messages)) return;
 
   var user = getCurrentUser();
@@ -850,16 +860,17 @@ function renderStudentSideChat(messages) {
 
   var html = "";
   messages.forEach(function(msg) {
-    var isMe = msg.senderUid === myUid || msg.senderRole === "STUDENT";
+    var isMe = String(msg.senderUid) === myUid || msg.senderRole === "STUDENT";
+    var bubbleClass = isMe ? "student" : "staff";
     var alignStyle = isMe 
       ? "margin-right:0; margin-left:auto; background:#F1F5F9; color:#0E1338; border-bottom-right-radius:3px;" 
-      : "margin-left:0; margin-right:auto; background:linear-gradient(135deg, #00D2FF, #0284C7); color:#fff; border-bottom-left-radius:3px;";
+      : "margin-left:0; margin-right:auto; background:linear-gradient(135deg, #0E1338, #1D255E); color:#fff; border-bottom-left-radius:3px;";
 
     var timeStr = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }) : "";
 
     html += 
-      '<div style="max-width:75%; padding:10px 14px; border-radius:12px; font-size:13.5px; line-height:1.5; word-break:break-word; ' + alignStyle + ' margin-bottom:8px;">' +
-        '<div style="font-size:11px; font-weight:800; margin-bottom:3px; opacity:0.85;">' + sanitizeText(msg.senderName) + '</div>' +
+      '<div class="chat-bubble ' + bubbleClass + '" style="max-width:80%; padding:10px 14px; border-radius:14px; font-size:13.5px; line-height:1.5; word-break:break-word; ' + alignStyle + ' margin-bottom:8px;">' +
+        '<div style="font-size:11px; font-weight:800; margin-bottom:3px; color:' + (isMe ? '#0284C7' : '#00D2FF') + ';">' + sanitizeText(msg.senderName) + '</div>' +
         '<div>' + sanitizeText(msg.text) + '</div>' +
         (timeStr ? '<div style="font-size:10px; text-align:left; margin-top:4px; opacity:0.75;">' + timeStr + '</div>' : '') +
       '</div>';
