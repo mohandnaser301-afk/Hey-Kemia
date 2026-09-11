@@ -1027,6 +1027,9 @@
     </div>
   </div>
 
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script src="app.js"></script>
   <script>
@@ -1723,7 +1726,6 @@
       reader.readAsDataURL(file);
     }
 
-    // الاعتماد والرفض المباشر للدفع
     async function approvePayment(id, userUid, courseId, courseTitle, userEmail) {
       var confirmed = await customConfirm("هل تؤكد قبول وتفعيل هذا الطلب وتفعيل الكورس للطالب فوراً؟", "اعتماد الدفع");
       if (!confirmed) return;
@@ -2046,7 +2048,10 @@
       var subs = JSON.parse(localStorage.getItem("edu_submissions")) || [];
       var supportThreads = JSON.parse(localStorage.getItem("edu_support_threads")) || [];
 
-      allStudentsCache = users.filter(function(u) { return u.role === "STUDENT"; });
+      // تصفية وعرض الطلاب المسجلين والنشطين فقط
+      allStudentsCache = users.filter(function(u) { 
+        return (u.role === "STUDENT" || !u.role); 
+      });
 
       updateNotificationBadges(payments, JSON.parse(localStorage.getItem("edu_hacker_logs")) || [], supportThreads);
 
@@ -2097,7 +2102,7 @@
         "</tr>";
       }).join("");
 
-      // جدول المدفوعات مع زري القبول والرفض
+      // جدول المدفوعات
       document.getElementById("paymentsTableBody").innerHTML = payments.map(function(p) {
         var actionBtns = "";
         if (p.status === "PENDING") {
@@ -2140,14 +2145,15 @@
       }
 
       // جدول الطاقم
-      document.getElementById("staffTableBody").innerHTML = users.filter(function(u) { return u.role !== "STUDENT"; }).map(function(s) {
+      document.getElementById("staffTableBody").innerHTML = users.filter(function(u) { return u.role && u.role !== "STUDENT"; }).map(function(s) {
         var isTargetSuper = s.role === "SUPER_ADMIN";
         var uidKey = s.uid || s.id;
         var actionBtns = "";
 
         if (isSuperAdmin) {
           if (!isTargetSuper) {
-actionBtns = '<button class="btn-action btn-action-primary" onclick="openEditStaffRoleModal(\'' + uidKey + '\', \'' + String(s.fullName || 'مستخدم').replace(/'/g, "\\'") + '\', \'' + (s.role || 'STUDENT') + '\')" style="margin-left:4px;">تعديل الرتبة</button>' +                         '<button class="btn-action btn-action-danger" onclick="deleteUserByUidAction(\'' + uidKey + '\')">إلغاء الحساب</button>';
+            actionBtns = '<button class="btn-action btn-action-primary" onclick="openEditStaffRoleModal(\'' + uidKey + '\', \'' + String(s.fullName || 'مستخدم').replace(/'/g, "\\'") + '\', \'' + (s.role || 'STUDENT') + '\')" style="margin-left:4px;">تعديل الرتبة</button>' +                         
+                         '<button class="btn-action btn-action-danger" onclick="deleteUserByUidAction(\'' + uidKey + '\')">إلغاء الحساب</button>';
           } else {
             actionBtns = '<span style="color:var(--cyan-accent); font-weight:bold; font-size:12px;">المشرف العام</span>';
           }
@@ -2158,7 +2164,7 @@ actionBtns = '<button class="btn-action btn-action-primary" onclick="openEditSta
         return "<tr>" +
           "<td><strong>" + s.fullName + "</strong></td>" +
           "<td>" + s.email + "</td>" +
-          "<td>" + s.studentPhone + "</td>" +
+          "<td>" + (s.studentPhone || s.phone || "غير مسجل") + "</td>" +
           "<td><span class=\"badge-success\">" + s.role + "</span></td>" +
           "<td>" + actionBtns + "</td>" +
         "</tr>";
@@ -2172,6 +2178,7 @@ actionBtns = '<button class="btn-action btn-action-primary" onclick="openEditSta
       renderCharts();
     }
 
+    // تصحيح واستخراج كافة البيانات بمرونة في جدول الطلاب
     function renderStudentsTable(studentsList) {
       var tbody = document.getElementById("studentsTableBody");
       if (!tbody) return;
@@ -2182,18 +2189,24 @@ actionBtns = '<button class="btn-action btn-action-primary" onclick="openEditSta
 
       tbody.innerHTML = studentsList.map(function(s) {
         var uidKey = s.uid || s.id;
+        var nameDisplay = String(s.fullName || s.name || s.studentName || "طالب مسجل");
+        var phoneDisplay = String(s.studentPhone || s.phone || s.mobile || "غير مسجل");
+        var emailDisplay = String(s.email || "غير مسجل");
+        var govDisplay = String(s.governorate || "غير محدد");
+
         var m = window.calculateStudentMetrics ? window.calculateStudentMetrics(uidKey) : { enrolledCount: (s.enrolledCourses || []).length, completedExams: 0, avgScore: 0, totalHours: 0 };
+
         return "<tr>" +
-          "<td><strong>" + s.fullName + "</strong></td>" +
-          "<td>" + s.email + "</td>" +
-          "<td>" + s.studentPhone + "</td>" +
-          "<td>" + (s.governorate || "غير محدد") + "</td>" +
+          "<td><strong>" + nameDisplay + "</strong></td>" +
+          "<td>" + emailDisplay + "</td>" +
+          "<td>" + phoneDisplay + "</td>" +
+          "<td>" + govDisplay + "</td>" +
           "<td>" + m.enrolledCount + " كورسات</td>" +
           "<td>" + m.completedExams + " امتحانات</td>" +
           "<td><strong>" + m.avgScore + "%</strong></td>" +
           "<td>" + m.totalHours + " ساعة</td>" +
           "<td>" +
-            '<button type="button" class="btn-action btn-action-success" onclick="openStudentCoursePermissionsModal(\'' + uidKey + '\', \'' + s.fullName.replace(/'/g, "\\'") + '\')" style="margin-left:4px;">إدارة الكورسات</button>' +
+            '<button type="button" class="btn-action btn-action-success" onclick="openStudentCoursePermissionsModal(\'' + uidKey + '\', \'' + nameDisplay.replace(/'/g, "\\'") + '\')" style="margin-left:4px;">إدارة الكورسات</button>' +
             '<button type="button" class="btn-action btn-action-primary" onclick="viewStudentDetails(\'' + uidKey + '\')" style="margin-left:4px;">الملف</button>' +
             '<button type="button" class="btn-action btn-action-danger" onclick="deleteUserByUidAction(\'' + uidKey + '\')">حذف شامل</button>' +
           "</td>" +
@@ -2206,9 +2219,11 @@ actionBtns = '<button class="btn-action btn-action-primary" onclick="openEditSta
       var gov = document.getElementById("studentGovFilter").value;
 
       var filtered = allStudentsCache.filter(function(s) {
-        var matchQuery = s.fullName.toLowerCase().includes(query) || 
-                         s.email.toLowerCase().includes(query) || 
-                         (s.studentPhone && s.studentPhone.includes(query));
+        var sName = String(s.fullName || s.name || s.studentName || "").toLowerCase();
+        var sEmail = String(s.email || "").toLowerCase();
+        var sPhone = String(s.studentPhone || s.phone || "");
+
+        var matchQuery = sName.includes(query) || sEmail.includes(query) || sPhone.includes(query);
         var matchGov = !gov || s.governorate === gov;
         return matchQuery && matchGov;
       });
@@ -2228,12 +2243,16 @@ actionBtns = '<button class="btn-action btn-action-primary" onclick="openEditSta
         .filter(function(c) { return student.enrolledCourses && student.enrolledCourses.map(String).includes(String(c.id)); })
         .map(function(c) { return c.title; });
 
+      var nameDisplay = student.fullName || student.name || "طالب مسجل";
+      var phoneDisplay = student.studentPhone || student.phone || "غير مسجل";
+      var parentPhoneDisplay = student.parentPhone || student.guardianPhone || "غير مسجل";
+
       var html = 
         '<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:18px;">' +
-          '<div class="student-detail-row"><span>اسم الطالب:</span><span>' + student.fullName + '</span></div>' +
-          '<div class="student-detail-row"><span>البريد الإلكتروني:</span><span>' + student.email + '</span></div>' +
-          '<div class="student-detail-row"><span>هاتف الطالب:</span><span>' + student.studentPhone + '</span></div>' +
-          '<div class="student-detail-row"><span>هاتف ولي الأمر:</span><span>' + (student.parentPhone || "غير مسجل") + '</span></div>' +
+          '<div class="student-detail-row"><span>اسم الطالب:</span><span>' + nameDisplay + '</span></div>' +
+          '<div class="student-detail-row"><span>البريد الإلكتروني:</span><span>' + (student.email || "-") + '</span></div>' +
+          '<div class="student-detail-row"><span>هاتف الطالب:</span><span>' + phoneDisplay + '</span></div>' +
+          '<div class="student-detail-row"><span>هاتف ولي الأمر:</span><span>' + parentPhoneDisplay + '</span></div>' +
           '<div class="student-detail-row"><span>المحافظة:</span><span>' + (student.governorate || "مصر") + '</span></div>' +
           '<div class="student-detail-row"><span>المدرسة:</span><span>' + (student.schoolName || "غير محدد") + '</span></div>' +
           '<div class="student-detail-row"><span>نوع التعليم:</span><span>' + (student.educationType === "AZHAR" ? "ثانوي أزهر" : "ثانوي عام") + '</span></div>' +
@@ -2256,7 +2275,6 @@ actionBtns = '<button class="btn-action btn-action-primary" onclick="openEditSta
 
       document.getElementById("studentModalDetailsBody").innerHTML = html;
 
-      // حقن وعرض أجهزة الطالب داخل المودال
       if (typeof renderAdminUserDevices === "function") {
         renderAdminUserDevices(uid, "adminUserDevicesContainer");
       }
@@ -2295,17 +2313,5 @@ actionBtns = '<button class="btn-action btn-action-primary" onclick="openEditSta
       renderAdmin();
     });
   </script>
-  <!-- 1. مكتبات Firebase الأساسية من السيرفر مباشرة (إلزامية في البداية) -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
-
-  <!-- 2. ملف الإعدادات وخدمات المنصة السحابية -->
-  <script src="firebase-config.js"></script>
-
-  <!-- 3. ملف المنظومة البرمجية وتشغيل الواجهات -->
-  <script src="app.js"></script>
-</body>
 </body>
 </html>
