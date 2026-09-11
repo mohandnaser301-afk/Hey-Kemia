@@ -328,7 +328,7 @@ function renderStudentDevicesList(containerId) {
 }
 window.renderStudentDevicesList = renderStudentDevicesList;
 
-// قصر ظهور قسم الأجهزة الإدارية على صفحة الإدارة فقط ومنع الحقن التلقائي في باقي الصفحات[cite: 8, 20]
+// قصر ظهور قسم الأجهزة الإدارية على صفحة الإدارة فقط ومنع الحقن التلقائي في باقي الصفحات[cite: 9]
 function renderAdminOwnDevicesList(containerId) {
   try {
     var user = getCurrentUser();
@@ -339,7 +339,7 @@ function renderAdminOwnDevicesList(containerId) {
     if (!isAdmin) return;
 
     var currentPath = (window.location.pathname || "").toLowerCase();
-    // منع الظهور في أي صفحة غير صفحة الإدارة نهائياً[cite: 8]
+    // منع الظهور في أي صفحة غير صفحة الإدارة نهائياً[cite: 9]
     if (currentPath.indexOf("admin.html") === -1) {
       var foreignCard = document.getElementById("adminAutoInjectedDevicesCard");
       if (foreignCard) foreignCard.remove();
@@ -425,7 +425,7 @@ function renderAdminUserDevices(targetUid, containerId) {
 }
 window.renderAdminUserDevices = renderAdminUserDevices;
 
-// الحساب الدقيق للمؤشرات واستثناء الحسابات الإدارية من بيانات الطلاب
+// الحساب الدقيق للمؤشرات واستثناء الحسابات الإدارية من بيانات الطلاب[cite: 9]
 function calculateStudentMetrics(userUid) {
   if (!userUid) return { enrolledCount: 0, completedExams: 0, avgScore: 0, totalHours: 0, enrolledList: [], submissionsList: [] };
 
@@ -745,7 +745,7 @@ function initSupportChatWidget() {
 }
 
 function enableStudentDirectChat() {
-  // إذا كنا داخل صفحة الدعم الرسمية، نترك الصفحة تدير الشات بنفسها لمنع التعارض المزدوج[cite: 8]
+  // إذا كنا داخل صفحة الدعم الرسمية، نترك الصفحة تدير الشات بنفسها لمنع التعارض المزدوج[cite: 9]
   var currentPath = (window.location.pathname || "").toLowerCase();
   if (currentPath.indexOf("support.html") !== -1) {
     return;
@@ -831,7 +831,7 @@ async function sendStudentSupportMessage(inputElement) {
 
   inputElement.value = "";
 
-  // استهداف حاوية الرسائل الصحيحة سواء كانت في support.html أو أي صفحة أخرى[cite: 8]
+  // استهداف حاوية الرسائل الصحيحة سواء كانت في support.html أو أي صفحة أخرى[cite: 9]
   var messagesBox = document.querySelector("#messagesStreamBox, #activeMessagesTargetContainer, .chat-messages, .messages-body");
   if (messagesBox) {
     var newBubble = document.createElement("div");
@@ -1358,6 +1358,84 @@ function initGlobalRealtimeSync() {
   }
 }
 
+// =========================================================
+// شريط تفاعلي لطلب إذن الإشعارات وتوليد وحفظ رمز FCM للجهاز
+// =========================================================
+function showPushNotificationPrompt() {
+  if (!("Notification" in window) || !("serviceWorker" in navigator)) return;
+
+  var user = getCurrentUser();
+  if (!user || !user.uid) return;
+
+  // إذا تم منح الإذن مسبقاً، نتأكد من ربط رمز الجهاز في السحابة
+  if (Notification.permission === "granted") {
+    registerFCMDeviceAutomatically();
+    return;
+  }
+
+  // إذا كان الإذن ما زال في الوضع الافتراضي (default) ولم يتم رفضه
+  if (Notification.permission === "default" && !document.getElementById("hkNotifPromptBar")) {
+    var banner = document.createElement("div");
+    banner.id = "hkNotifPromptBar";
+    banner.style.cssText = "position:fixed; bottom:20px; left:20px; right:20px; max-width:440px; margin:0 auto; background:#0E1338; color:#fff; padding:14px 18px; border-radius:16px; border:1px solid rgba(0,210,255,0.4); box-shadow:0 15px 35px rgba(0,0,0,0.35); z-index:9999999; display:flex; align-items:center; justify-content:space-between; gap:12px; font-family:inherit;";
+    
+    banner.innerHTML = 
+      '<div style="display:flex; align-items:center; gap:10px;">' +
+        '<span style="font-size:22px;">🔔</span>' +
+        '<div style="text-align:right;">' +
+          '<strong style="display:block; font-size:13.5px; color:#fff;">تفعيل إشعارات المنصة</strong>' +
+          '<span style="font-size:11.5px; color:#94A3B8;">ليصلك تنبيه فوري بموعد المحاضرات والامتحانات</span>' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex; gap:6px;">' +
+        '<button id="btnAcceptNotifs" style="background:#00D2FF; color:#0E1338; border:none; padding:7px 14px; border-radius:8px; font-weight:900; font-size:12px; cursor:pointer;">تفعيل</button>' +
+        '<button onclick="this.closest(\'#hkNotifPromptBar\').remove()" style="background:transparent; color:#94A3B8; border:none; padding:7px; font-size:14px; cursor:pointer;">✕</button>' +
+      '</div>';
+
+    document.body.appendChild(banner);
+
+    document.getElementById("btnAcceptNotifs").onclick = async function() {
+      banner.remove();
+      var perm = await Notification.requestPermission();
+      if (perm === "granted") {
+        showToast("تم تفعيل استقبال الإشعارات بنجاح ✓", "success");
+        registerFCMDeviceAutomatically();
+      } else {
+        showToast("تم إلغاء تفعيل الإشعارات", "info");
+      }
+    };
+  }
+}
+
+// دالة تسجيل توكن FCM في Firestore تلقائياً
+async function registerFCMDeviceAutomatically() {
+  try {
+    var reg = await navigator.serviceWorker.register("firebase-messaging-sw.js");
+    await navigator.serviceWorker.ready;
+
+    if (typeof firebase !== "undefined" && firebase.messaging) {
+      var messaging = firebase.messaging();
+      var token = await messaging.getToken({ serviceWorkerRegistration: reg });
+      var user = getCurrentUser();
+
+      if (token && user && user.uid && firebase.firestore) {
+        await firebase.firestore().collection("users").doc(user.uid).set({
+          fcmTokens: firebase.firestore.FieldValue.arrayUnion(token),
+          lastActiveDeviceToken: token
+        }, { merge: true });
+      }
+
+      messaging.onMessage(function(payload) {
+        var title = payload.notification ? payload.notification.title : (payload.data ? payload.data.title : "تنبيه جديد 🧪");
+        var body = payload.notification ? payload.notification.body : (payload.data ? payload.data.body : "");
+        showToast(body, "info", title);
+      });
+    }
+  } catch (err) {
+    console.warn("FCM Auto Reg Notice:", err);
+  }
+}
+
 document.addEventListener("DOMContentLoaded", function() {
   injectChemicalPreloader();
   injectChemicalDecorations();
@@ -1374,54 +1452,8 @@ document.addEventListener("DOMContentLoaded", function() {
     if (typeof renderAdmin === "function") renderAdmin();
     if (typeof renderStudentDevicesList === "function") renderStudentDevicesList();
     if (typeof renderAdminOwnDevicesList === "function") renderAdminOwnDevicesList();
+    
+    // استدعاء شريط تفعيل الإشعارات بعد اكتمال التحميل
+    showPushNotificationPrompt();
   }, 100);
-});
-// =========================================================
-// التفعيل التلقائي لاستقبال إشعارات FCM وحفظ رمز الجهاز
-// =========================================================
-async function registerFCMDeviceAutomatically() {
-  if (!("Notification" in window) || !("serviceWorker" in navigator)) return;
-
-  var user = getCurrentUser();
-  if (!user || !user.uid) return;
-
-  try {
-    var reg = await navigator.serviceWorker.register("firebase-messaging-sw.js");
-    await navigator.serviceWorker.ready;
-
-    if (typeof firebase !== "undefined" && firebase.messaging) {
-      var messaging = firebase.messaging();
-      
-      // طلب الإذن إذا لم يكن ممنوحاً
-      if (Notification.permission === "default") {
-        await Notification.requestPermission();
-      }
-
-      if (Notification.permission === "granted") {
-        var token = await messaging.getToken({ serviceWorkerRegistration: reg });
-        
-        if (token && firebase.firestore) {
-          // حفظ الرمز داخل بيانات الطالب في Firestore
-          await firebase.firestore().collection("users").doc(user.uid).set({
-            fcmTokens: firebase.firestore.FieldValue.arrayUnion(token),
-            lastActiveDeviceToken: token
-          }, { merge: true });
-        }
-      }
-
-      // إظهار الإشعار إذا كان الطالب فاتح الموقع حالياً
-      messaging.onMessage(function(payload) {
-        var title = payload.notification ? payload.notification.title : (payload.data ? payload.data.title : "تنبيه جديد 🧪");
-        var body = payload.notification ? payload.notification.body : (payload.data ? payload.data.body : "");
-        showToast(body, "info", title);
-      });
-    }
-  } catch (err) {
-    console.warn("FCM auto-register notice:", err);
-  }
-}
-
-// تشغيل التسجيل التلقائي بعد تحميل الصفحة
-document.addEventListener("DOMContentLoaded", function() {
-  setTimeout(registerFCMDeviceAutomatically, 1200);
 });
