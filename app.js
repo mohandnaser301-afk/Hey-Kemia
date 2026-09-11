@@ -1376,3 +1376,52 @@ document.addEventListener("DOMContentLoaded", function() {
     if (typeof renderAdminOwnDevicesList === "function") renderAdminOwnDevicesList();
   }, 100);
 });
+// =========================================================
+// التفعيل التلقائي لاستقبال إشعارات FCM وحفظ رمز الجهاز
+// =========================================================
+async function registerFCMDeviceAutomatically() {
+  if (!("Notification" in window) || !("serviceWorker" in navigator)) return;
+
+  var user = getCurrentUser();
+  if (!user || !user.uid) return;
+
+  try {
+    var reg = await navigator.serviceWorker.register("firebase-messaging-sw.js");
+    await navigator.serviceWorker.ready;
+
+    if (typeof firebase !== "undefined" && firebase.messaging) {
+      var messaging = firebase.messaging();
+      
+      // طلب الإذن إذا لم يكن ممنوحاً
+      if (Notification.permission === "default") {
+        await Notification.requestPermission();
+      }
+
+      if (Notification.permission === "granted") {
+        var token = await messaging.getToken({ serviceWorkerRegistration: reg });
+        
+        if (token && firebase.firestore) {
+          // حفظ الرمز داخل بيانات الطالب في Firestore
+          await firebase.firestore().collection("users").doc(user.uid).set({
+            fcmTokens: firebase.firestore.FieldValue.arrayUnion(token),
+            lastActiveDeviceToken: token
+          }, { merge: true });
+        }
+      }
+
+      // إظهار الإشعار إذا كان الطالب فاتح الموقع حالياً
+      messaging.onMessage(function(payload) {
+        var title = payload.notification ? payload.notification.title : (payload.data ? payload.data.title : "تنبيه جديد 🧪");
+        var body = payload.notification ? payload.notification.body : (payload.data ? payload.data.body : "");
+        showToast(body, "info", title);
+      });
+    }
+  } catch (err) {
+    console.warn("FCM auto-register notice:", err);
+  }
+}
+
+// تشغيل التسجيل التلقائي بعد تحميل الصفحة
+document.addEventListener("DOMContentLoaded", function() {
+  setTimeout(registerFCMDeviceAutomatically, 1200);
+});
