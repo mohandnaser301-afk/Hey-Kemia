@@ -442,12 +442,13 @@ function renderAdminUserDevices(targetUid, containerId) {
 }
 window.renderAdminUserDevices = renderAdminUserDevices;
 
+// الحساب الدقيق للمؤشرات الأكاديمية ومدة المشاهدة والامتحانات
 function calculateStudentMetrics(userUid) {
   if (!userUid) return { enrolledCount: 0, completedExams: 0, avgScore: 0, totalHours: 0, enrolledList: [], submissionsList: [] };
 
   try {
     var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-    var targetUser = users.find(function(u) { return (u.uid && u.uid === userUid) || (u.id && u.id === userUid); });
+    var targetUser = users.find(function(u) { return (u.uid && String(u.uid) === String(userUid)) || (u.id && String(u.id) === String(userUid)); });
 
     var allCourses = JSON.parse(localStorage.getItem("edu_courses")) || [];
     var enrolledIds = (targetUser && targetUser.enrolledCourses) ? targetUser.enrolledCourses.map(String) : [];
@@ -455,8 +456,9 @@ function calculateStudentMetrics(userUid) {
 
     var submissions = JSON.parse(localStorage.getItem("edu_submissions")) || [];
     var userSubs = submissions.filter(function(s) { 
-      return (s.userUid && (s.userUid === userUid || s.userUid === (targetUser && targetUser.id))) || 
-             (s.userEmail && targetUser && s.userEmail.toLowerCase() === targetUser.email.toLowerCase()); 
+      return (s.userUid && String(s.userUid) === String(userUid)) || 
+             (s.userId && String(s.userId) === String(userUid)) ||
+             (s.userEmail && targetUser && String(s.userEmail).toLowerCase() === String(targetUser.email).toLowerCase()); 
     });
 
     var avgScore = 0;
@@ -468,12 +470,16 @@ function calculateStudentMetrics(userUid) {
     var tracking = JSON.parse(localStorage.getItem("edu_course_watch_logs")) || {};
     var totalSec = 0;
     Object.keys(tracking).forEach(function(cId) {
-      if (tracking[cId] && tracking[cId][userUid]) {
-        totalSec += tracking[cId][userUid].totalSeconds || 0;
-      } else if (targetUser && tracking[cId][targetUser.email]) {
-        totalSec += tracking[cId][targetUser.email].totalSeconds || 0;
+      if (tracking[cId]) {
+        if (tracking[cId][userUid]) {
+          totalSec += (tracking[cId][userUid].totalSeconds || 0);
+        } else if (targetUser && targetUser.email && tracking[cId][targetUser.email]) {
+          totalSec += (tracking[cId][targetUser.email].totalSeconds || 0);
+        }
       }
     });
+
+    var totalHours = (totalSec / 3600).toFixed(1);
 
     return {
       enrolledCount: enrolledCoursesList.length,
@@ -481,7 +487,7 @@ function calculateStudentMetrics(userUid) {
       completedExams: userSubs.length,
       submissionsList: userSubs,
       avgScore: avgScore,
-      totalHours: Math.round(totalSec / 3600),
+      totalHours: Number(totalHours) || 0,
       totalSeconds: totalSec
     };
   } catch (err) {
@@ -723,10 +729,7 @@ function injectChemicalDecorations() {
   } catch (e) {}
 }
 
-// =========================================================
-// شات الدعم الفني: تمييز صارم بين واجهة الطالب ولوحة الإدارة
-// =========================================================
-
+// شات الدعم الفني والمراسلة
 var currentSelectedStudentUid = null;
 
 function initSupportChatWidget() {
@@ -741,7 +744,6 @@ function initSupportChatWidget() {
     var role = (user && user.role ? String(user.role) : "STUDENT").toUpperCase();
     var isAdminOrSupport = role === "ADMIN" || role === "SUPER_ADMIN" || role === "SUPERADMIN" || role === "MANAGER" || role === "SUPPORT";
 
-    // 1. إذا كان المستخدم إداري في صفحة الدعم الرسمية
     if (currentPath.indexOf("support.html") !== -1 && isAdminOrSupport) {
       bindSupportPageElements();
       setAdminChatInputEnabled(false);
@@ -751,9 +753,7 @@ function initSupportChatWidget() {
           renderSupportThreadsList(threads);
         });
       }
-    } 
-    // 2. إذا كان المستخدم طالباً في أي مكان
-    else {
+    } else {
       enableStudentDirectChat();
     }
   } catch (e) {}
@@ -813,11 +813,10 @@ function enableStudentDirectChat() {
   }
 }
 
-// دالة إرسال الطالب مع منع مسح الحقل إلا بعد ضمان حفظ النص
 async function sendStudentSupportMessage(inputElement) {
   if (!inputElement) return;
   var text = String(inputElement.value || "").trim();
-  if (!text) return; // الحماية من إرسال فراغ
+  if (!text) return;
 
   var user = getCurrentUser();
   if (!user) {
@@ -837,10 +836,8 @@ async function sendStudentSupportMessage(inputElement) {
     studentEmail: user.email || ""
   };
 
-  // تفريغ الحقل بأمان بعد حفظ النص في المتغير msgData
   inputElement.value = "";
 
-  // إضافة الرسالة في الواجهة أمام الطالب لحظياً
   var messagesBox = document.querySelector("#activeMessagesTargetContainer, .chat-messages, .messages-body, [class*='chat-body'], [class*='messages-container']");
   if (messagesBox) {
     var newBubble = document.createElement("div");
@@ -850,7 +847,6 @@ async function sendStudentSupportMessage(inputElement) {
     messagesBox.scrollTop = messagesBox.scrollHeight;
   }
 
-  // إرسال سحابي مباشر إلى Firestore
   if (window.FirebaseService && typeof window.FirebaseService.sendSupportMessage === "function") {
     try {
       await window.FirebaseService.sendSupportMessage(msgData);

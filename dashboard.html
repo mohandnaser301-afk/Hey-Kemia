@@ -31,7 +31,6 @@
     .tab-content-section.active { display: block; animation: fadeInTab 0.3s ease; }
     @keyframes fadeInTab { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* شبكة الإحصائيات الحديثة */
     .student-stats-row {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -89,7 +88,6 @@
     .icon-purple { background: rgba(147, 51, 234, 0.12); color: #7e22ce; }
     .icon-amber { background: rgba(245, 158, 11, 0.12); color: #d97706; }
 
-    /* بانر الترحيب والإنجاز */
     .student-welcome-banner {
       background: linear-gradient(135deg, #0E1338 0%, #1D255E 100%);
       color: #fff;
@@ -127,7 +125,6 @@
       color: #94A3B8;
     }
 
-    /* شبكة الكورسات الاحترافية */
     .courses-grid-student {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
@@ -439,6 +436,9 @@
     </main>
   </div>
 
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script src="app.js"></script>
   <script>
@@ -484,21 +484,21 @@
         return;
       }
 
-      var firstName = user.fullName ? user.fullName.split(" ")[0] : "طالب";
-      document.getElementById("studentFullNameDisplay").innerText = user.fullName || "طالب";
+      var fullName = user.fullName || user.name || "طالب";
+      var firstName = fullName.split(" ")[0];
+      document.getElementById("studentFullNameDisplay").innerText = fullName;
       document.getElementById("welcomeStudentName").innerText = firstName;
       document.getElementById("studentEduTypeBadge").innerText = user.educationType === "AZHAR" ? "الثانوية الأزهرية" : "الثانوية العامة";
 
-      document.getElementById("profNameHeading").innerText = user.fullName || "-";
+      document.getElementById("profNameHeading").innerText = fullName;
       document.getElementById("profEmailSub").innerText = user.email || "-";
-      document.getElementById("profFullName").innerText = user.fullName || "-";
-      document.getElementById("profStudentPhone").innerText = user.studentPhone || "-";
+      document.getElementById("profFullName").innerText = fullName;
+      document.getElementById("profStudentPhone").innerText = user.studentPhone || user.phone || "-";
       document.getElementById("profParentPhone").innerText = user.parentPhone || "غير مسجل";
       document.getElementById("profGov").innerText = user.governorate || "مصر";
       document.getElementById("profSchool").innerText = user.schoolName || "غير محدد";
       document.getElementById("profEduType").innerText = user.educationType === "AZHAR" ? "ثانوي أزهري" : "ثانوي عام";
 
-      // الحساب الموحد الدقيق المعتمد على UID
       var uidKey = user.uid || user.id;
       var metrics = calculateStudentMetrics(uidKey);
 
@@ -506,14 +506,12 @@
       document.getElementById("statCompletedExamsCount").innerText = metrics.completedExams;
       document.getElementById("statAverageScoreDisplay").innerText = metrics.avgScore + "%";
       document.getElementById("statTotalWatchTime").innerText = metrics.totalHours + " س";
-      document.getElementById("enrolledCountBadge").innerText = metrics.enrolledCount + " كورس مفعل";
+      document.getElementById("enrolledCountBadge").innerText = metrics.enrolledCount + " كورس متاح";
 
-      // عرض الأجهزة المسجلة
       if (typeof renderStudentDevicesList === "function") {
         renderStudentDevicesList("studentDevicesContainer");
       }
 
-      // عرض الكورسات
       var container = document.getElementById("studentEnrolledCoursesGrid");
       if (metrics.enrolledList.length === 0) {
         container.innerHTML = '<div style="grid-column:1/-1; background:#fff; padding:40px 20px; text-align:center; border-radius:18px; border:1px solid var(--border-color); box-shadow:var(--card-shadow);">' +
@@ -544,7 +542,6 @@
         }).join("");
       }
 
-      // عرض سجل الامتحانات
       var examsTbody = document.getElementById("studentExamsHistoryTableBody");
       if (metrics.submissionsList.length === 0) {
         examsTbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-sub); padding:24px;">لم تقم بتسليم أي اختبارات بعد.</td></tr>';
@@ -575,17 +572,5 @@
       }, 250);
     });
   </script>
-  <!-- 1. مكتبات Firebase الأساسية من السيرفر مباشرة (إلزامية في البداية) -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
-
-  <!-- 2. ملف الإعدادات وخدمات المنصة السحابية -->
-  <script src="firebase-config.js"></script>
-
-  <!-- 3. ملف المنظومة البرمجية وتشغيل الواجهات -->
-  <script src="app.js"></script>
-</body>
 </body>
 </html>

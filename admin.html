@@ -327,6 +327,7 @@
             <h1 style="font-size:22px; font-weight:900; color:var(--royal-indigo-base);">التحليلات والمؤشرات البيانية</h1>
             <p class="subtitle" style="color:var(--text-muted); font-size:13px;">متابعة فورية للأداء المالي وتفاعل الطلاب</p>
           </div>
+          <button class="btn btn-primary" onclick="openHonorControlModal()">⚙️ ضبط لوحة الشرف يدوياً</button>
         </header>
 
         <section class="stats-grid">
@@ -625,6 +626,51 @@
       </div>
 
     </main>
+  </div>
+
+  <!-- مودال التحكم وتعديل لوحة الشرف يدوياً -->
+  <div id="honorControlModal" class="modal">
+    <div class="modal-content" style="max-width:550px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid var(--border-subtle); padding-bottom:10px;">
+        <h3 style="color:var(--royal-indigo-base); font-size:16px; font-weight:800;">التحكم اليدوي في لوحة أوائل الشهر</h3>
+        <button type="button" onclick="closeModal('honorControlModal')" style="background:none; border:none; font-size:16px; cursor:pointer;">✕</button>
+      </div>
+      <div>
+        <p style="font-size:12.5px; color:var(--text-muted); margin-bottom:14px;">تُحسب اللوحة تلقائياً من نتائج الاختبارات، ويمكنك هنا تصحيح أي طالب يدوياً إذا رغبت:</p>
+        
+        <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:12px; margin-bottom:12px;">
+          <h4 style="font-size:13px; font-weight:900; color:#0284C7; margin-bottom:8px;">المركز الأول (الذهبي)</h4>
+          <input type="text" id="hRank1Name" placeholder="اسم الطالب" style="margin-bottom:6px;">
+          <div class="form-row">
+            <input type="text" id="hRank1Gov" placeholder="المحافظة" style="flex:1;">
+            <input type="number" id="hRank1Avg" placeholder="النسبة المئوية %" style="flex:1;">
+          </div>
+        </div>
+
+        <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:12px; margin-bottom:12px;">
+          <h4 style="font-size:13px; font-weight:900; color:#475569; margin-bottom:8px;">المركز الثاني (الفضي)</h4>
+          <input type="text" id="hRank2Name" placeholder="اسم الطالب" style="margin-bottom:6px;">
+          <div class="form-row">
+            <input type="text" id="hRank2Gov" placeholder="المحافظة" style="flex:1;">
+            <input type="number" id="hRank2Avg" placeholder="النسبة المئوية %" style="flex:1;">
+          </div>
+        </div>
+
+        <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:12px; margin-bottom:12px;">
+          <h4 style="font-size:13px; font-weight:900; color:#92400E; margin-bottom:8px;">المركز الثالث (البرونزي)</h4>
+          <input type="text" id="hRank3Name" placeholder="اسم الطالب" style="margin-bottom:6px;">
+          <div class="form-row">
+            <input type="text" id="hRank3Gov" placeholder="المحافظة" style="flex:1;">
+            <input type="number" id="hRank3Avg" placeholder="النسبة المئوية %" style="flex:1;">
+          </div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:16px;">
+          <button type="button" class="btn btn-primary" style="flex:1;" onclick="saveManualHonorRoll()">حفظ وتثبيت اللوحة</button>
+          <button type="button" class="btn btn-outline" onclick="resetToAutoHonorRoll()">إعادة للاحتساب التلقائي</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- مودال إضافة كورس جديد -->
@@ -1108,12 +1154,83 @@
       }
 
       var totalUnreadSupport = 0;
-      (supportThreads || []).forEach(function(t) { totalUnreadSupport += (t.unreadCount || 0); });
+      (supportThreads || []).forEach(function(t) { totalUnreadSupport += (Number(t.unreadCount) || 0); });
       var badgeSup = document.getElementById("badgeSupportCount");
       if (badgeSup) {
         badgeSup.innerText = totalUnreadSupport;
         badgeSup.style.display = totalUnreadSupport > 0 ? "inline-block" : "none";
       }
+    }
+
+    // دوال التحكم في لوحة الأوائل يدوياً
+    function openHonorControlModal() {
+      var manualData = JSON.parse(localStorage.getItem("hk_manual_honor_roll")) || [];
+      if (manualData.length > 0) {
+        if (manualData[0]) {
+          document.getElementById("hRank1Name").value = manualData[0].name || "";
+          document.getElementById("hRank1Gov").value = manualData[0].gov || "";
+          document.getElementById("hRank1Avg").value = manualData[0].average || "";
+        }
+        if (manualData[1]) {
+          document.getElementById("hRank2Name").value = manualData[1].name || "";
+          document.getElementById("hRank2Gov").value = manualData[1].gov || "";
+          document.getElementById("hRank2Avg").value = manualData[1].average || "";
+        }
+        if (manualData[2]) {
+          document.getElementById("hRank3Name").value = manualData[2].name || "";
+          document.getElementById("hRank3Gov").value = manualData[2].gov || "";
+          document.getElementById("hRank3Avg").value = manualData[2].average || "";
+        }
+      }
+      openModal("honorControlModal");
+    }
+
+    async function saveManualHonorRoll() {
+      var r1Name = document.getElementById("hRank1Name").value.trim();
+      var r1Gov = document.getElementById("hRank1Gov").value.trim() || "كفر الشيخ";
+      var r1Avg = Number(document.getElementById("hRank1Avg").value) || 100;
+
+      var r2Name = document.getElementById("hRank2Name").value.trim();
+      var r2Gov = document.getElementById("hRank2Gov").value.trim() || "القاهرة";
+      var r2Avg = Number(document.getElementById("hRank2Avg").value) || 95;
+
+      var r3Name = document.getElementById("hRank3Name").value.trim();
+      var r3Gov = document.getElementById("hRank3Gov").value.trim() || "الغربية";
+      var r3Avg = Number(document.getElementById("hRank3Avg").value) || 90;
+
+      var list = [];
+      if (r1Name) list.push({ name: r1Name, gov: r1Gov, average: r1Avg });
+      if (r2Name) list.push({ name: r2Name, gov: r2Gov, average: r2Avg });
+      if (r3Name) list.push({ name: r3Name, gov: r3Gov, average: r3Avg });
+
+      localStorage.setItem("hk_manual_honor_roll", JSON.stringify(list));
+
+      if (window.firebase && firebase.firestore) {
+        try {
+          await firebase.firestore().collection("system_settings").doc("honor_roll").set({
+            list: list,
+            isManual: true,
+            updatedAt: new Date().toISOString()
+          }, { merge: true });
+        } catch(e) {}
+      }
+
+      closeModal("honorControlModal");
+      showToast("تم تحديث وتثبيت لوحة الشرف بنجاح", "success");
+    }
+
+    async function resetToAutoHonorRoll() {
+      localStorage.removeItem("hk_manual_honor_roll");
+      if (window.firebase && firebase.firestore) {
+        try {
+          await firebase.firestore().collection("system_settings").doc("honor_roll").set({
+            isManual: false,
+            updatedAt: new Date().toISOString()
+          }, { merge: true });
+        } catch(e) {}
+      }
+      closeModal("honorControlModal");
+      showToast("تمت إعادة ضبط لوحة الشرف للاحتساب التلقائي", "info");
     }
 
     function addLessonRow(mode, title, video, duration, pdfs) {
@@ -1196,7 +1313,7 @@
       document.getElementById("permStudentNameDisplay").innerText = name;
 
       var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-      var student = users.find(function(u) { return (u.uid && u.uid === uid) || (u.id && u.id === uid); });
+      var student = users.find(function(u) { return (u.uid && String(u.uid) === String(uid)) || (u.id && String(u.id) === String(uid)); });
       if (!student) {
         showToast("لم يتم العثور على بيانات الطالب", "error");
         return;
@@ -1249,7 +1366,7 @@
     async function saveStudentCoursePermissions() {
       var studentUid = document.getElementById("permStudentUidHidden").value;
       var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-      var uIdx = users.findIndex(function(u) { return (u.uid && u.uid === studentUid) || (u.id && u.id === studentUid); });
+      var uIdx = users.findIndex(function(u) { return (u.uid && String(u.uid) === String(studentUid)) || (u.id && String(u.id) === String(studentUid)); });
 
       if (uIdx !== -1) {
         var newEnrolled = [];
@@ -1726,6 +1843,7 @@
       reader.readAsDataURL(file);
     }
 
+    // الاعتماد والرفض المباشر للدفع
     async function approvePayment(id, userUid, courseId, courseTitle, userEmail) {
       var confirmed = await customConfirm("هل تؤكد قبول وتفعيل هذا الطلب وتفعيل الكورس للطالب فوراً؟", "اعتماد الدفع");
       if (!confirmed) return;
@@ -2102,13 +2220,17 @@
         "</tr>";
       }).join("");
 
-      // جدول المدفوعات
+      // جدول المدفوعات مع توحيد قراءة الحقول لضمان وصول وعرض طلبات الدفع
       document.getElementById("paymentsTableBody").innerHTML = payments.map(function(p) {
         var actionBtns = "";
+        var studentName = p.userName || p.fullName || "طالب مسجل";
+        var studentEmail = p.userEmail || p.email || "";
+        var studentPhone = p.studentPhone || p.phone || "غير مسجل";
+
         if (p.status === "PENDING") {
           actionBtns = 
-            '<button class="btn-action btn-action-success" onclick="approvePayment(\'' + p.id + '\', \'' + (p.userUid || '') + '\', \'' + p.courseId + '\', \'' + (p.courseTitle || '').replace(/'/g, "\\'") + '\', \'' + (p.userEmail || '') + '\')">قبول وتفعيل</button>' +
-            '<button class="btn-action btn-action-danger" onclick="rejectPayment(\'' + p.id + '\', \'' + (p.userUid || '') + '\', \'' + (p.courseTitle || '').replace(/'/g, "\\'") + '\')">رفض</button>';
+            '<button class="btn-action btn-action-success" onclick="approvePayment(\'' + p.id + '\', \'' + (p.userUid || p.userId || '') + '\', \'' + p.courseId + '\', \'' + (p.courseTitle || '').replace(/'/g, "\\'") + '\', \'' + studentEmail + '\')">قبول وتفعيل</button>' +
+            '<button class="btn-action btn-action-danger" onclick="rejectPayment(\'' + p.id + '\', \'' + (p.userUid || p.userId || '') + '\', \'' + (p.courseTitle || '').replace(/'/g, "\\'") + '\')">رفض</button>';
         } else if (p.status === "APPROVED") {
           actionBtns = '<span style="color:#059669; font-weight:800;">تم التفعيل ✓</span>';
         } else {
@@ -2116,10 +2238,10 @@
         }
 
         return "<tr>" +
-          "<td>" + p.userName + "<br><small style=\"color:#64748B;\">" + p.userEmail + "</small></td>" +
-          "<td>" + p.studentPhone + "</td>" +
-          "<td>" + p.courseTitle + "</td>" +
-          "<td>" + p.amount + " ج.م</td>" +
+          "<td>" + studentName + "<br><small style=\"color:#64748B;\">" + studentEmail + "</small></td>" +
+          "<td>" + studentPhone + "</td>" +
+          "<td>" + (p.courseTitle || "كورس تعليمي") + "</td>" +
+          "<td>" + (p.amount || 0) + " ج.م</td>" +
           '<td><button type="button" class="btn-action btn-action-primary" onclick="viewReceiptImage(\'' + p.receipt + '\')">معاينة الإيصال</button></td>' +
           "<td>" + actionBtns + "</td>" +
         "</tr>";
@@ -2232,12 +2354,16 @@
     }
 
     function viewStudentDetails(uid) {
-      var student = allStudentsCache.find(function(s) { return s.uid === uid || s.id === uid; });
+      var student = allStudentsCache.find(function(s) { return (s.uid && String(s.uid) === String(uid)) || (s.id && String(s.id) === String(uid)); });
       if (!student) return;
 
       var allCourses = JSON.parse(localStorage.getItem("edu_courses")) || [];
       var submissions = JSON.parse(localStorage.getItem("edu_submissions")) || [];
-      var studentSubs = submissions.filter(function(sub) { return sub.userUid === uid || sub.userEmail === student.email; });
+      var studentSubs = submissions.filter(function(sub) { 
+        return (sub.userUid && String(sub.userUid) === String(uid)) || 
+               (sub.userId && String(sub.userId) === String(uid)) || 
+               (sub.userEmail && student.email && String(sub.userEmail).toLowerCase() === String(student.email).toLowerCase()); 
+      });
 
       var enrolledCourseTitles = allCourses
         .filter(function(c) { return student.enrolledCourses && student.enrolledCourses.map(String).includes(String(c.id)); })
