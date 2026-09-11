@@ -2,17 +2,350 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>هي كيميا ! - منصة الاختبارات</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>هي كيميا ! - منصة الاختبارات التفاعلية</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    .exam-wrapper { max-width: 800px; margin: 40px auto; }
-    .question-card { background: #fff; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(12,7,84,0.03); }
-    .opt-label { display: flex; align-items: center; gap: 12px; background: #F8F9FC; border: 1px solid var(--border-subtle); padding: 14px 18px; border-radius: var(--radius-sm); margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
-    .opt-label:hover { border-color: var(--chem-gold); background: rgba(212, 175, 55, 0.08); }
-    .timer-badge { background: rgba(239, 68, 68, 0.1); border: 1px solid #EF4444; color: #EF4444; padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 13px; }
-    .attempts-badge { background: rgba(212, 175, 55, 0.12); border: 1px solid var(--chem-gold); color: #9E7D1C; padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 13px; }
-    .blocked-screen { display: none; text-align: center; padding: 50px 24px; background: #fff; border: 1px solid #EF4444; border-radius: 18px; max-width: 600px; margin: 60px auto; }
+    :root {
+      --exam-navy: #0E1338;
+      --exam-blue: #1D255E;
+      --exam-cyan: #00D2FF;
+      --exam-accent: #0284C7;
+      --exam-bg: #F0F4FC;
+      --exam-card-bg: #ffffff;
+      --exam-border: #E2E8F0;
+      --exam-text: #0F172A;
+      --exam-muted: #64748B;
+    }
+
+    body {
+      background: radial-gradient(circle at 10% 10%, rgba(0, 210, 255, 0.08) 0%, transparent 50%),
+                  radial-gradient(circle at 90% 90%, rgba(14, 19, 56, 0.07) 0%, transparent 50%),
+                  var(--exam-bg);
+      background-attachment: fixed;
+      min-height: 100vh;
+      color: var(--exam-text);
+      font-family: inherit;
+      padding-bottom: 50px;
+    }
+
+    .exam-header-banner {
+      background: linear-gradient(135deg, var(--exam-navy) 0%, var(--exam-blue) 100%);
+      color: #ffffff;
+      padding: 100px 20px 35px;
+      margin-bottom: 25px;
+      border-radius: 0 0 32px 32px;
+      box-shadow: 0 15px 35px rgba(14, 19, 56, 0.15);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .exam-header-banner::before {
+      content: "";
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 160px;
+      height: 160px;
+      background: radial-gradient(circle, rgba(0, 210, 255, 0.22) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .exam-header-content {
+      max-width: 860px;
+      margin: 0 auto;
+      text-align: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .exam-badge-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 210, 255, 0.15);
+      color: var(--exam-cyan);
+      border: 1px solid rgba(0, 210, 255, 0.35);
+      padding: 4px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .exam-main-title {
+      font-size: clamp(22px, 3.8vw, 30px);
+      font-weight: 900;
+      color: #ffffff;
+      margin: 0 0 10px;
+      line-height: 1.35;
+    }
+
+    .exam-meta-pills {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .exam-meta-pill {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 30px;
+      padding: 6px 14px;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #E2E8F0;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .exam-meta-pill.highlight {
+      border-color: var(--exam-cyan);
+      color: var(--exam-cyan);
+      background: rgba(0, 210, 255, 0.12);
+    }
+
+    .timer-floating-capsule {
+      position: sticky;
+      top: 14px;
+      z-index: 999;
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+      pointer-events: none;
+    }
+
+    .timer-inner-bar {
+      pointer-events: auto;
+      background: rgba(14, 19, 56, 0.94);
+      backdrop-filter: blur(20px);
+      border: 1.5px solid rgba(0, 210, 255, 0.3);
+      padding: 8px 22px;
+      border-radius: 50px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+    }
+
+    .timer-clock {
+      color: #EF4444;
+      font-size: 16px;
+      font-weight: 900;
+      font-family: monospace;
+      letter-spacing: 1px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .attempts-info {
+      color: #94A3B8;
+      font-size: 12.5px;
+      font-weight: 800;
+      border-right: 1px solid rgba(255, 255, 255, 0.2);
+      padding-right: 14px;
+    }
+
+    .exam-body-container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+
+    .question-pro-card {
+      background: var(--exam-card-bg);
+      border: 1px solid var(--exam-border);
+      border-radius: 20px;
+      padding: 26px 24px;
+      margin-bottom: 22px;
+      box-shadow: 0 10px 25px rgba(14, 19, 56, 0.04);
+      transition: all 0.25s ease;
+      position: relative;
+    }
+
+    .question-pro-card:hover {
+      box-shadow: 0 15px 35px rgba(14, 19, 56, 0.08);
+      border-color: rgba(0, 210, 255, 0.35);
+    }
+
+    .question-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #F1F5F9;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+
+    .question-index-badge {
+      background: linear-gradient(135deg, var(--exam-cyan) 0%, var(--exam-accent) 100%);
+      color: var(--exam-navy);
+      font-size: 12px;
+      font-weight: 900;
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+
+    .question-points-badge {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--exam-muted);
+    }
+
+    .question-text-title {
+      font-size: 16.5px;
+      font-weight: 900;
+      color: var(--exam-navy);
+      line-height: 1.65;
+      margin: 0 0 20px;
+    }
+
+    .answers-grid-options {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .option-modern-item {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: #F8FAFC;
+      border: 2px solid #E2E8F0;
+      border-radius: 14px;
+      padding: 14px 18px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .option-modern-item:hover {
+      background: #F0F9FF;
+      border-color: var(--exam-accent);
+      transform: translateX(-3px);
+    }
+
+    .option-modern-item input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .option-radio-dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid #CBD5E1;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+
+    .option-radio-dot::after {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--exam-accent);
+      opacity: 0;
+      transform: scale(0.4);
+      transition: all 0.2s ease;
+    }
+
+    .option-text-label {
+      font-size: 14.5px;
+      font-weight: 800;
+      color: var(--exam-text);
+      line-height: 1.5;
+      flex: 1;
+    }
+
+    .option-modern-item.selected {
+      background: rgba(0, 210, 255, 0.08);
+      border-color: var(--exam-cyan);
+      box-shadow: 0 4px 15px rgba(0, 210, 255, 0.12);
+    }
+
+    .option-modern-item.selected .option-radio-dot {
+      border-color: var(--exam-cyan);
+      background: #ffffff;
+    }
+
+    .option-modern-item.selected .option-radio-dot::after {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .exam-submit-wrapper {
+      margin-top: 30px;
+      text-align: center;
+    }
+
+    .btn-submit-exam-pro {
+      width: 100%;
+      max-width: 480px;
+      height: 52px;
+      background: linear-gradient(135deg, #0E1338 0%, #1D255E 100%);
+      color: #ffffff;
+      border: 1px solid rgba(0, 210, 255, 0.35);
+      border-radius: 16px;
+      font-weight: 900;
+      font-size: 15px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 15px 35px rgba(14, 19, 56, 0.2);
+      transition: all 0.25s ease;
+    }
+
+    .btn-submit-exam-pro:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 40px rgba(0, 210, 255, 0.3);
+      color: var(--exam-cyan);
+    }
+
+    .blocked-pro-screen {
+      display: none;
+      background: #ffffff;
+      border: 1px solid #FECACA;
+      border-radius: 24px;
+      padding: 40px 24px;
+      text-align: center;
+      max-width: 580px;
+      margin: 60px auto;
+      box-shadow: 0 20px 45px rgba(239, 68, 68, 0.08);
+    }
+
+    .blocked-icon-circle {
+      width: 72px;
+      height: 72px;
+      background: #FEE2E2;
+      color: #EF4444;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+      margin: 0 auto 16px;
+    }
+
+    @media (max-width: 600px) {
+      .question-pro-card { padding: 18px 16px; }
+      .option-modern-item { padding: 12px 14px; }
+      .option-text-label { font-size: 13.5px; }
+      .exam-main-title { font-size: 20px; }
+    }
   </style>
 </head>
 <body>
@@ -23,34 +356,54 @@
         <div class="capsule-logo">HK</div>
         <span class="brand-text">هي كيميا<span>!</span></span>
       </a>
-      <div style="display:flex; align-items:center; gap:12px;">
-        <span class="attempts-badge" id="attemptsDisplay">المحاولة: --</span>
-        <span class="timer-badge" id="timerDisplay">الوقت: --:--</span>
-        <a href="dashboard.html" class="nav-btn-link">خروج</a>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <a id="navBackRoleLink" href="dashboard.html" class="nav-btn-link">العودة للوحة التحكم</a>
       </div>
     </nav>
   </div>
 
-  <div class="container">
-    <div class="blocked-screen" id="blockedScreen">
-      <div style="font-size: 48px; margin-bottom: 15px;">🛑</div>
-      <h2 style="color: #EF4444; margin-bottom: 12px; font-size: 22px;">عذراً، لقد استنفدت عدد المحاولات المسموحة لهذا الامتحان</h2>
-      <p id="blockedDetails" style="color: var(--text-muted); font-size: 14px; margin-bottom: 25px; line-height: 1.8;"></p>
-      <a href="dashboard.html" class="btn btn-primary">العودة للوحة التحكم</a>
+  <header class="exam-header-banner">
+    <div class="exam-header-content">
+      <div class="exam-badge-tag">🧪 اختبار إلكتروني تفاعلي معتمد</div>
+      <h1 class="exam-main-title" id="examTitle">جاري تجهيز الامتحان...</h1>
+      <div class="exam-meta-pills" id="examHeaderMetaPills">
+        <span class="exam-meta-pill" id="pillQuestionsCount">📝 -- أسئلة</span>
+        <span class="exam-meta-pill" id="pillDuration">⏱️ -- دقيقة</span>
+        <span class="exam-meta-pill highlight" id="pillMaxAttempts">🔄 المحاولات: --</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="timer-floating-capsule" id="timerFloatingBox">
+    <div class="timer-inner-bar">
+      <span class="timer-clock">
+        <span>⏱️</span>
+        <span id="timerDisplay">--:--</span>
+      </span>
+      <span class="attempts-info" id="attemptsDisplay">المحاولة: --</span>
     </div>
   </div>
 
-  <div class="container exam-wrapper" id="examLayout">
-    <div style="margin-bottom:25px; text-align:center;">
-      <h1 id="examTitle" style="color:var(--royal-indigo-base); font-size:24px; font-weight:900; margin-bottom:6px;">جاري تحميل الامتحان...</h1>
-      <p id="examSubDetails" style="color:var(--text-muted); font-size:14px;"></p>
+  <div class="container">
+    <div class="blocked-pro-screen" id="blockedScreen">
+      <div class="blocked-icon-circle">🛑</div>
+      <h2 style="color:#EF4444; font-size:20px; font-weight:900; margin-bottom:10px;">استنفدت المحاولات المسموحة لهذا الامتحان</h2>
+      <p id="blockedDetails" style="color:var(--exam-muted); font-size:14px; line-height:1.7; margin-bottom:24px;"></p>
+      <a id="btnBlockedReturnLink" href="dashboard.html" class="btn btn-primary" style="padding:11px 28px; text-decoration:none;">العودة للوحة التحكم ←</a>
     </div>
+  </div>
 
+  <main class="exam-body-container" id="examLayout">
     <form id="examForm">
       <div id="questionsContainer"></div>
-      <button type="submit" id="btnSubmitExam" class="btn btn-primary" style="width:100%; padding:14px; font-size:16px; margin-top:10px;">تسليم الإجابات واعتماد النتيجة</button>
+      <div class="exam-submit-wrapper">
+        <button type="submit" id="btnSubmitExam" class="btn-submit-exam-pro">
+          <span>تسليم الإجابات واعتماد النتيجة النهائية</span>
+          <span>✓</span>
+        </button>
+      </div>
     </form>
-  </div>
+  </main>
 
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -61,6 +414,15 @@
     var user = getCurrentUser();
     if (!user) window.location.href = "login.html";
 
+    var userRole = (user && user.role ? String(user.role) : "STUDENT").toUpperCase();
+    var isStaffUser = userRole === "SUPER_ADMIN" || userRole === "ADMIN" || userRole === "SUPPORT";
+
+    // ضبط روابط العودة حسب الرتبة
+    var navBack = document.getElementById("navBackRoleLink");
+    var blockedReturn = document.getElementById("btnBlockedReturnLink");
+    if (navBack) navBack.href = isStaffUser ? "admin.html" : "dashboard.html";
+    if (blockedReturn) blockedReturn.href = isStaffUser ? "admin.html" : "dashboard.html";
+
     var urlParams = new URLSearchParams(window.location.search);
     var examId = urlParams.get("id") || urlParams.get("examId") || "e1";
     var exams = JSON.parse(localStorage.getItem("edu_exams")) || [];
@@ -68,41 +430,47 @@
 
     if (!exam) {
       showToast("الامتحان غير متاح", "error");
-      setTimeout(function() { window.location.href = "dashboard.html"; }, 1000);
+      setTimeout(function() { window.location.href = isStaffUser ? "admin.html" : "dashboard.html"; }, 1000);
     }
 
     var uidKey = user ? String(user.uid || user.id || "") : "";
     var maxAttempts = Number(exam.maxAttempts) || 1;
     var submissions = JSON.parse(localStorage.getItem("edu_submissions")) || [];
+    
+    // فحص المحاولات للطلاب فقط (الإداري يمكنه التجربة والمراجعة دون حظر)
     var myExamSubmissions = submissions.filter(function(s) { 
       return (String(s.examId) === String(exam.id)) && 
              ((s.userUid && String(s.userUid) === uidKey) || (s.userEmail && String(s.userEmail).toLowerCase() === String(user.email).toLowerCase())); 
     });
     var usedAttempts = myExamSubmissions.length;
 
-    if (usedAttempts >= maxAttempts) {
+    if (!isStaffUser && usedAttempts >= maxAttempts) {
       document.getElementById("examLayout").style.display = "none";
+      document.getElementById("timerFloatingBox").style.display = "none";
       document.getElementById("blockedScreen").style.display = "block";
       var highestScore = Math.max.apply(Math, myExamSubmissions.map(function(s) { return Number(s.percentage) || 0; }));
-      document.getElementById("blockedDetails").innerHTML = "الحد الأقصى المسموح به: <strong>" + maxAttempts + " محاولة</strong><br>عدد مرات خوضك للاختبار: <strong>" + usedAttempts + " مرات</strong><br>أعلى نسبة حققتها: <strong style='color:#0284C7;'>" + highestScore + "%</strong>";
-      document.getElementById("attemptsDisplay").innerText = "المحاولات: (" + usedAttempts + "/" + maxAttempts + ")";
+      document.getElementById("blockedDetails").innerHTML = "الحد الأقصى المسموح به: <strong>" + maxAttempts + " محاولات</strong><br>عدد مرات خوضك لهذا الاختبار: <strong>" + usedAttempts + " مرات</strong><br>أعلى نسبة مئوية حققتها: <strong style='color:#0284C7; font-size:16px;'>" + highestScore + "%</strong>";
     } else {
       var currentAttemptNumber = usedAttempts + 1;
-      document.getElementById("attemptsDisplay").innerText = "المحاولة (" + currentAttemptNumber + " من " + maxAttempts + ")";
+      document.getElementById("attemptsDisplay").innerText = isStaffUser 
+        ? "معاينة إدارية تجريبية" 
+        : "المحاولة (" + currentAttemptNumber + " من " + maxAttempts + ")";
     }
 
     document.getElementById("examTitle").innerText = exam.title;
-    document.getElementById("examSubDetails").innerText = "المدة: " + exam.durationMinutes + " دقيقة | عدد الأسئلة: " + (exam.questions || []).length + " | الحد الأقصى للمحاولات: " + maxAttempts;
+    document.getElementById("pillQuestionsCount").innerText = "📝 " + (exam.questions || []).length + " أسئلة";
+    document.getElementById("pillDuration").innerText = "⏱️ " + exam.durationMinutes + " دقيقة";
+    document.getElementById("pillMaxAttempts").innerText = isStaffUser ? "🔄 وضع المعاينة الإدارية" : "🔄 " + maxAttempts + " محاولات مسموحة";
 
-    var timeLeft = (exam.durationMinutes || 15) * 60;
+    var timeLeft = (Number(exam.durationMinutes) || 15) * 60;
     var timerElem = document.getElementById("timerDisplay");
     var timerInterval = setInterval(function() {
       var mins = Math.floor(timeLeft / 60);
       var secs = timeLeft % 60;
-      timerElem.innerText = "الوقت: " + mins.toString().padStart(2, '0') + ":" + secs.toString().padStart(2, '0');
+      timerElem.innerText = mins.toString().padStart(2, '0') + ":" + secs.toString().padStart(2, '0');
       if (timeLeft <= 0) {
         clearInterval(timerInterval);
-        showToast("انتهى وقت الامتحان، تم تسليم إجاباتك تلقائياً", "info");
+        showToast("انتهى وقت الامتحان المخصص، جاري تسليم إجاباتك تلقائياً...", "info");
         document.getElementById("examForm").requestSubmit();
       }
       timeLeft--;
@@ -110,18 +478,31 @@
 
     var questions = exam.questions || [];
     document.getElementById("questionsContainer").innerHTML = questions.map(function(q, qIdx) {
-      return '<div class="question-card">' +
-        '<h3 style="color:var(--royal-indigo-base); font-size:16px; font-weight:800; margin-bottom:15px; line-height:1.6;">' + (qIdx + 1) + '. ' + q.q + '</h3>' +
-        '<div>' +
+      return '<div class="question-pro-card">' +
+        '<div class="question-head">' +
+          '<span class="question-index-badge">السؤال رقم ' + (qIdx + 1) + '</span>' +
+          '<span class="question-points-badge">درجة واحدة</span>' +
+        '</div>' +
+        '<h3 class="question-text-title">' + q.q + '</h3>' +
+        '<div class="answers-grid-options">' +
           q.options.map(function(opt, oIdx) {
-            return '<label class="opt-label">' +
+            return '<label class="option-modern-item" onclick="selectOptionStyle(this)">' +
               '<input type="radio" name="q_' + qIdx + '" value="' + oIdx + '" required>' +
-              '<span style="color:var(--text-dark); font-size:14px; font-weight:700;">' + opt + '</span>' +
+              '<div class="option-radio-dot"></div>' +
+              '<span class="option-text-label">' + opt + '</span>' +
             '</label>';
           }).join('') +
         '</div>' +
       '</div>';
     }).join('');
+
+    function selectOptionStyle(labelEl) {
+      var parentGrid = labelEl.closest('.answers-grid-options');
+      parentGrid.querySelectorAll('.option-modern-item').forEach(function(item) {
+        item.classList.remove('selected');
+      });
+      labelEl.classList.add('selected');
+    }
 
     var isSubmittingExam = false;
     document.getElementById("examForm").addEventListener("submit", async function(e) {
@@ -134,7 +515,7 @@
       var btn = document.getElementById("btnSubmitExam");
       if (btn) {
         btn.disabled = true;
-        btn.innerText = "جاري رصد النتيجة وحفظها...";
+        btn.innerText = "جاري رصد النتيجة وتوثيقها سحابياً...";
       }
 
       var score = 0;
@@ -148,43 +529,46 @@
 
       var studentFullName = user.fullName || user.name || "طالب مسجل";
 
-      var subDoc = {
-        id: "sub_" + Date.now(),
-        examId: String(exam.id),
-        userUid: uidKey,
-        userId: uidKey,
-        userEmail: user.email ? user.email.toLowerCase().trim() : "",
-        userName: studentFullName,
-        fullName: studentFullName,
-        studentPhone: user.studentPhone || user.phone || "",
-        governorate: user.governorate || "كفر الشيخ",
-        examTitle: exam.title,
-        subject: exam.subject || "كيمياء",
-        score: score,
-        total: total,
-        percentage: percentage,
-        attemptNumber: usedAttempts + 1,
-        createdAt: new Date().toISOString(),
-        date: new Date().toLocaleDateString('ar-EG')
-      };
+      // إذا كان المستخدم طالباً فقط، يتم حفظ النتيجة وإرسالها للداشبورد ولوحة الشرف
+      if (!isStaffUser) {
+        var subDoc = {
+          id: "sub_" + Date.now(),
+          examId: String(exam.id),
+          userUid: uidKey,
+          userId: uidKey,
+          userEmail: user.email ? user.email.toLowerCase().trim() : "",
+          userName: studentFullName,
+          fullName: studentFullName,
+          studentPhone: user.studentPhone || user.phone || "",
+          governorate: user.governorate || "كفر الشيخ",
+          examTitle: exam.title,
+          subject: exam.subject || "كيمياء",
+          score: score,
+          total: total,
+          percentage: percentage,
+          attemptNumber: usedAttempts + 1,
+          createdAt: new Date().toISOString(),
+          date: new Date().toLocaleDateString('ar-EG')
+        };
 
-      // حفظ محلي لسرعة الاستجابة
-      var allSubs = JSON.parse(localStorage.getItem("edu_submissions")) || [];
-      allSubs.push(subDoc);
-      localStorage.setItem("edu_submissions", JSON.stringify(allSubs));
+        var allSubs = JSON.parse(localStorage.getItem("edu_submissions")) || [];
+        allSubs.push(subDoc);
+        localStorage.setItem("edu_submissions", JSON.stringify(allSubs));
 
-      // حفظ سحابي في Firestore
-      if (window.FirebaseService && typeof window.FirebaseService.saveSubmission === "function") {
-        try {
-          await window.FirebaseService.saveSubmission(subDoc);
-        } catch (err) {
-          console.warn("حفظ سحابي للامتحان:", err);
+        if (window.FirebaseService && typeof window.FirebaseService.saveSubmission === "function") {
+          try {
+            await window.FirebaseService.saveSubmission(subDoc);
+          } catch (err) {
+            console.warn("حفظ سحابي للامتحان:", err);
+          }
         }
       }
 
-      showToast("الدرجة: " + score + " من " + total + " (" + percentage + "%)", "success", "تم إنهاء الامتحان");
+      showToast("حققت نسبة " + percentage + "% (" + score + " من " + total + ")", "success", "تم إنهاء الاختبار بنجاح");
+      
       setTimeout(function() {
-        window.location.href = "dashboard.html";
+        // إذا كان إدارياً يعود للوحة الإدارة، وإذا كان طالباً يذهب للوحة الطالب
+        window.location.href = isStaffUser ? "admin.html" : "dashboard.html";
       }, 1500);
     });
   </script>

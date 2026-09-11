@@ -328,6 +328,7 @@ function renderStudentDevicesList(containerId) {
 }
 window.renderStudentDevicesList = renderStudentDevicesList;
 
+// قصر ظهور قسم الأجهزة الإدارية على صفحة الإدارة فقط ومنع الحقن التلقائي في باقي الصفحات
 function renderAdminOwnDevicesList(containerId) {
   try {
     var user = getCurrentUser();
@@ -337,34 +338,16 @@ function renderAdminOwnDevicesList(containerId) {
     var isAdmin = role === "ADMIN" || role === "SUPER_ADMIN" || role === "SUPERADMIN" || role === "MANAGER";
     if (!isAdmin) return;
 
+    var currentPath = (window.location.pathname || "").toLowerCase();
+    // منع الظهور في أي صفحة غير صفحة الإدارة نهائياً
+    if (currentPath.indexOf("admin.html") === -1) {
+      var foreignCard = document.getElementById("adminAutoInjectedDevicesCard");
+      if (foreignCard) foreignCard.remove();
+      return;
+    }
+
     var targetId = containerId || "adminOwnDevicesContainer";
     var container = document.getElementById(targetId);
-
-    if (!container) {
-      var currentPath = (window.location.pathname || "").toLowerCase();
-      if (currentPath.indexOf("admin.html") === -1) return;
-
-      var wrapper = document.createElement("div");
-      wrapper.id = "adminAutoInjectedDevicesCard";
-      wrapper.style.cssText = "background:#ffffff; border-radius:14px; border:1px solid rgba(0,210,255,0.3); padding:18px; margin:20px 0; box-shadow:0 10px 25px rgba(0,0,0,0.05); font-family:system-ui, -apple-system, sans-serif;";
-      wrapper.innerHTML = 
-        '<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; border-bottom:1px solid #F1F5F9; padding-bottom:10px;">' +
-          '<div style="display:flex; align-items:center; gap:8px;">' +
-            '<span style="font-size:20px;">🛡️</span>' +
-            '<h3 style="font-size:15.5px; font-weight:900; color:#0E1338; margin:0;">الأجهزة المسجلة لحسابك الإداري</h3>' +
-          '</div>' +
-          '<span style="font-size:11px; background:rgba(0,210,255,0.15); color:#0284C7; padding:3px 8px; border-radius:6px; font-weight:800;">أمان الحساب</span>' +
-        '</div>' +
-        '<div id="adminOwnDevicesContainer"></div>';
-
-      var targetParent = document.querySelector(".admin-content") || document.querySelector("main") || document.querySelector(".dashboard-container") || document.body;
-      if (targetParent === document.body) {
-        wrapper.style.maxWidth = "800px";
-        wrapper.style.margin = "20px auto";
-      }
-      targetParent.prepend(wrapper);
-      container = document.getElementById("adminOwnDevicesContainer");
-    }
 
     if (!container) return;
 
@@ -442,7 +425,7 @@ function renderAdminUserDevices(targetUid, containerId) {
 }
 window.renderAdminUserDevices = renderAdminUserDevices;
 
-// الحساب الدقيق للمؤشرات الأكاديمية ومدة المشاهدة والامتحانات
+// الحساب الدقيق للمؤشرات واستثناء الحسابات الإدارية من بيانات الطلاب
 function calculateStudentMetrics(userUid) {
   if (!userUid) return { enrolledCount: 0, completedExams: 0, avgScore: 0, totalHours: 0, enrolledList: [], submissionsList: [] };
 
@@ -729,7 +712,9 @@ function injectChemicalDecorations() {
   } catch (e) {}
 }
 
-// شات الدعم الفني والمراسلة
+// =========================================================
+// شات الدعم الفني
+// =========================================================
 var currentSelectedStudentUid = null;
 
 function initSupportChatWidget() {
@@ -1172,9 +1157,6 @@ async function sendActiveChatMessage() {
 }
 window.sendActiveChatMessage = sendActiveChatMessage;
 
-// =========================================================
-// المراقبة والتوجيه العام للمنصة
-// =========================================================
 var lastHandledRole = null;
 
 function monitorCurrentUserStatus() {

@@ -681,70 +681,22 @@
         <button type="button" onclick="closeModal('addCourseModal')" style="background:none; border:none; font-size:16px; cursor:pointer;">✕</button>
       </div>
       <div>
-        <div class="form-group">
-          <label>اسم الكورس:</label>
-          <input type="text" id="addCourseTitle" placeholder="مثال: كورس الباب الثاني: التحليل الكيميائي">
-        </div>
-        <div class="form-group">
-          <label>وصف ومحتوى الكورس:</label>
-          <textarea id="addCourseDesc" rows="3" placeholder="اكتب نبذة عن المحاضرات ومحتواها..."></textarea>
-        </div>
-        
+        <div class="form-group"><label>اسم الكورس:</label><input type="text" id="addCourseTitle" placeholder="مثال: كورس الباب الثاني: التحليل الكيميائي"></div>
+        <div class="form-group"><label>وصف ومحتوى الكورس:</label><textarea id="addCourseDesc" rows="3" placeholder="اكتب نبذة عن المحاضرات ومحتواها..."></textarea></div>
         <div class="form-row">
-          <div class="form-group" style="flex:1;">
-            <label>نوع الكورس:</label>
-            <select id="addCoursePricingType" onchange="togglePricingInput('add')">
-              <option value="paid" selected>كورس مدفوع</option>
-              <option value="free">كورس مجاني (0 ج.م)</option>
-            </select>
-          </div>
-          <div class="form-group" id="addCoursePriceGrp" style="flex:1;">
-            <label>سعر الكورس (ج.م):</label>
-            <input type="number" id="addCoursePrice" value="250">
-          </div>
+          <div class="form-group" style="flex:1;"><label>نوع الكورس:</label><select id="addCoursePricingType" onchange="togglePricingInput('add')"><option value="paid" selected>كورس مدفوع</option><option value="free">كورس مجاني (0 ج.م)</option></select></div>
+          <div class="form-group" id="addCoursePriceGrp" style="flex:1;"><label>سعر الكورس (ج.م):</label><input type="number" id="addCoursePrice" value="250"></div>
         </div>
-
         <div class="form-row">
-          <div class="form-group" style="flex:1;">
-            <label>نظام المشاهدة:</label>
-            <select id="addCourseViewsType" onchange="toggleViewsInput('add')">
-              <option value="limited" selected>مرات مشاهدة محددة</option>
-              <option value="unlimited">مشاهدة مفتوحة (غير محدودة)</option>
-            </select>
-          </div>
-          <div class="form-group" id="addCourseViewsGrp" style="flex:1;">
-            <label>أقصى عدد مرات مشاهدة:</label>
-            <input type="number" id="addCourseMaxViews" value="5" min="1">
-          </div>
+          <div class="form-group" style="flex:1;"><label>نظام المشاهدة:</label><select id="addCourseViewsType" onchange="toggleViewsInput('add')"><option value="limited" selected>مرات مشاهدة محددة</option><option value="unlimited">مشاهدة مفتوحة (غير محدودة)</option></select></div>
+          <div class="form-group" id="addCourseViewsGrp" style="flex:1;"><label>أقصى عدد مرات مشاهدة:</label><input type="number" id="addCourseMaxViews" value="5" min="1"></div>
         </div>
-
         <div class="form-row">
-          <div class="form-group" style="flex:1;">
-            <label>الصف الدراسي:</label>
-            <input type="text" id="addCourseTag" value="الصف الثالث الثانوي">
-          </div>
-          <div class="form-group" style="flex:1;">
-            <label>اختيار صورة الغلاف من جهازك:</label>
-            <div style="display:flex; gap:10px; align-items:center;">
-              <input type="file" id="addCourseFileInput" accept="image/*" onchange="handleImageUpload(event, 'add')">
-              <img id="addCourseImgPreview" src="https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80" class="image-preview-box" alt="معاينة الغلاف">
-            </div>
-            <input type="hidden" id="addCourseImageBase64" value="https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80">
-          </div>
+          <div class="form-group" style="flex:1;"><label>الصف الدراسي:</label><input type="text" id="addCourseTag" value="الصف الثالث الثانوي"></div>
+          <div class="form-group" style="flex:1;"><label>اختيار صورة الغلاف من جهازك:</label><div style="display:flex; gap:10px; align-items:center;"><input type="file" id="addCourseFileInput" accept="image/*" onchange="handleImageUpload(event, 'add')"><img id="addCourseImgPreview" src="https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80" class="image-preview-box" alt="معاينة الغلاف"></div><input type="hidden" id="addCourseImageBase64" value="https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80"></div>
         </div>
-        
-        <div style="background:#F8F9FC; border:1px solid var(--border-subtle); padding:16px; border-radius:10px; margin:14px 0;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <h4 style="font-size:13.5px; font-weight:800; color:var(--royal-indigo-base);">قائمة المحاضرات وملفات الـ PDF:</h4>
-            <button type="button" class="btn btn-outline" style="padding:4px 10px; font-size:11.5px;" onclick="addLessonRow('add')">+ إضافة محاضرة أخرى</button>
-          </div>
-          <div id="addLessonsContainer"></div>
-        </div>
-
-        <div style="display:flex; gap:10px; margin-top:15px;">
-          <button type="button" class="btn btn-primary" style="flex:1;" onclick="saveNewCourse()">حفظ ونشر الكورس</button>
-          <button type="button" class="btn btn-outline" onclick="closeModal('addCourseModal')">إلغاء</button>
-        </div>
+        <div style="background:#F8F9FC; border:1px solid var(--border-subtle); padding:16px; border-radius:10px; margin:14px 0;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><h4 style="font-size:13.5px; font-weight:800; color:var(--royal-indigo-base);">قائمة المحاضرات وملفات الـ PDF:</h4><button type="button" class="btn btn-outline" style="padding:4px 10px; font-size:11.5px;" onclick="addLessonRow('add')">+ إضافة محاضرة أخرى</button></div><div id="addLessonsContainer"></div></div>
+        <div style="display:flex; gap:10px; margin-top:15px;"><button type="button" class="btn btn-primary" style="flex:1;" onclick="saveNewCourse()">حفظ ونشر الكورس</button><button type="button" class="btn btn-outline" onclick="closeModal('addCourseModal')">إلغاء</button></div>
       </div>
     </div>
   </div>
@@ -752,325 +704,57 @@
   <!-- مودال تعديل كورس موجود -->
   <div id="editCourseModal" class="modal">
     <div class="modal-content">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h3 style="color:var(--royal-indigo-base); font-size:16px; font-weight:800;">تعديل بيانات ومحاضرات وملفات الكورس</h3>
-        <button type="button" onclick="closeModal('editCourseModal')" style="background:none; border:none; font-size:16px; cursor:pointer;">✕</button>
-      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h3 style="color:var(--royal-indigo-base); font-size:16px; font-weight:800;">تعديل بيانات ومحاضرات وملفات الكورس</h3><button type="button" onclick="closeModal('editCourseModal')" style="background:none; border:none; font-size:16px; cursor:pointer;">✕</button></div>
       <div>
-        <input type="hidden" id="editCourseId">
-        <div class="form-group">
-          <label>اسم الكورس:</label>
-          <input type="text" id="editCourseTitle">
-        </div>
-        <div class="form-group">
-          <label>الوصف:</label>
-          <textarea id="editCourseDesc" rows="3"></textarea>
-        </div>
-        
+        <input type="hidden" id="editCourseId"><div class="form-group"><label>اسم الكورس:</label><input type="text" id="editCourseTitle"></div><div class="form-group"><label>الوصف:</label><textarea id="editCourseDesc" rows="3"></textarea></div>
         <div class="form-row">
-          <div class="form-group" style="flex:1;">
-            <label>نوع الكورس:</label>
-            <select id="editCoursePricingType" onchange="togglePricingInput('edit')">
-              <option value="paid">كورس مدفوع</option>
-              <option value="free">كورس مجاني (0 ج.م)</option>
-            </select>
-          </div>
-          <div class="form-group" id="editCoursePriceGrp" style="flex:1;">
-            <label>السعر (ج.م):</label>
-            <input type="number" id="editCoursePrice">
-          </div>
+          <div class="form-group" style="flex:1;"><label>نوع الكورس:</label><select id="editCoursePricingType" onchange="togglePricingInput('edit')"><option value="paid">كورس مدفوع</option><option value="free">كورس مجاني (0 ج.م)</option></select></div>
+          <div class="form-group" id="editCoursePriceGrp" style="flex:1;"><label>السعر (ج.م):</label><input type="number" id="editCoursePrice"></div>
         </div>
-
         <div class="form-row">
-          <div class="form-group" style="flex:1;">
-            <label>نظام المشاهدة:</label>
-            <select id="editCourseViewsType" onchange="toggleViewsInput('edit')">
-              <option value="limited">مرات مشاهدة محددة</option>
-              <option value="unlimited">مشاهدة مفتوحة (غير محدودة)</option>
-            </select>
-          </div>
-          <div class="form-group" id="editCourseViewsGrp" style="flex:1;">
-            <label>مرات المشاهدة المسموحة:</label>
-            <input type="number" id="editCourseMaxViews" min="1">
-          </div>
+          <div class="form-group" style="flex:1;"><label>نظام المشاهدة:</label><select id="editCourseViewsType" onchange="toggleViewsInput('edit')"><option value="limited">مرات مشاهدة محددة</option><option value="unlimited">مشاهدة مفتوحة (غير محدودة)</option></select></div>
+          <div class="form-group" id="editCourseViewsGrp" style="flex:1;"><label>مرات المشاهدة المسموحة:</label><input type="number" id="editCourseMaxViews" min="1"></div>
         </div>
-
         <div class="form-row">
-          <div class="form-group" style="flex:1;">
-            <label>الصف:</label>
-            <input type="text" id="editCourseTag">
-          </div>
-          <div class="form-group" style="flex:1;">
-            <label>تغيير صورة الغلاف من جهازك:</label>
-            <div style="display:flex; gap:10px; align-items:center;">
-              <input type="file" id="editCourseFileInput" accept="image/*" onchange="handleImageUpload(event, 'edit')">
-              <img id="editCourseImgPreview" src="" class="image-preview-box" alt="معاينة الغلاف">
-            </div>
-            <input type="hidden" id="editCourseImageBase64">
-          </div>
+          <div class="form-group" style="flex:1;"><label>الصف:</label><input type="text" id="editCourseTag"></div>
+          <div class="form-group" style="flex:1;"><label>تغيير صورة الغلاف من جهازك:</label><div style="display:flex; gap:10px; align-items:center;"><input type="file" id="editCourseFileInput" accept="image/*" onchange="handleImageUpload(event, 'edit')"><img id="editCourseImgPreview" src="" class="image-preview-box" alt="معاينة الغلاف"></div><input type="hidden" id="editCourseImageBase64"></div>
         </div>
-
-        <div style="background:#F8F9FC; border:1px solid var(--border-subtle); padding:16px; border-radius:10px; margin:14px 0;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <h4 style="font-size:13.5px; font-weight:800; color:var(--royal-indigo-base);">محاضرات الكورس وملفات الـ PDF:</h4>
-            <button type="button" class="btn btn-outline" style="padding:4px 10px; font-size:11.5px;" onclick="addLessonRow('edit')">+ إضافة محاضرة أخرى</button>
-          </div>
-          <div id="editLessonsContainer"></div>
-        </div>
-
-        <div style="display:flex; gap:10px; margin-top:15px;">
-          <button type="button" class="btn btn-primary" style="flex:1;" onclick="saveEditedCourse()">حفظ التعديلات</button>
-          <button type="button" class="btn btn-outline" onclick="closeModal('editCourseModal')">إلغاء</button>
-        </div>
+        <div style="background:#F8F9FC; border:1px solid var(--border-subtle); padding:16px; border-radius:10px; margin:14px 0;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><h4 style="font-size:13.5px; font-weight:800; color:var(--royal-indigo-base);">محاضرات الكورس وملفات الـ PDF:</h4><button type="button" class="btn btn-outline" style="padding:4px 10px; font-size:11.5px;" onclick="addLessonRow('edit')">+ إضافة محاضرة أخرى</button></div><div id="editLessonsContainer"></div></div>
+        <div style="display:flex; gap:10px; margin-top:15px;"><button type="button" class="btn btn-primary" style="flex:1;" onclick="saveEditedCourse()">حفظ التعديلات</button><button type="button" class="btn btn-outline" onclick="closeModal('editCourseModal')">إلغاء</button></div>
       </div>
     </div>
   </div>
 
-  <!-- مودال ترقية حساب مسجل للإدارة -->
   <div id="addStaffModal" class="modal">
-    <div class="modal-content" style="max-width:500px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h3 style="color:var(--royal-indigo-base); font-size:16px;">إسناد رتبة إدارية لحساب مسجل</h3>
-        <button type="button" onclick="closeModal('addStaffModal')" style="background:none; border:none; font-size:16px; cursor:pointer;">✕</button>
-      </div>
-      <form id="assignStaffRoleForm">
-        <div class="form-group">
-          <label>اختر الحساب المسجل بالمنصة:</label>
-          <select id="staffRegisteredUserSelect" required></select>
-          <small style="color:var(--text-muted); margin-top:4px; font-size:11.5px;">* يجب أن يكون الشخص قد قام بإنشاء حساب في المنصة مسبقاً.</small>
-        </div>
-        <div class="form-group">
-          <label>الرتبة الإدارية المطلوب إسنادها:</label>
-          <select id="staffRoleAssignSelect" required>
-            <option value="ADMIN">مشرف محتوى وامتحانات (ADMIN)</option>
-            <option value="SUPPORT">مسؤول شات ودعم فني (SUPPORT)</option>
-          </select>
-        </div>
-        <div style="display:flex; gap:10px; margin-top:15px;">
-          <button type="submit" class="btn btn-primary" style="flex:1;">تأكيد الترقية الإدارية</button>
-          <button type="button" class="btn btn-outline" onclick="closeModal('addStaffModal')">إلغاء</button>
-        </div>
-      </form>
-    </div>
+    <div class="modal-content" style="max-width:500px;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h3 style="color:var(--royal-indigo-base); font-size:16px;">إسناد رتبة إدارية لحساب مسجل</h3><button type="button" onclick="closeModal('addStaffModal')" style="background:none; border:none; font-size:16px; cursor:pointer;">✕</button></div><form id="assignStaffRoleForm"><div class="form-group"><label>اختر الحساب المسجل بالمنصة:</label><select id="staffRegisteredUserSelect" required></select></div><div class="form-group"><label>الرتبة الإدارية المطلوب إسنادها:</label><select id="staffRoleAssignSelect" required><option value="ADMIN">مشرف محتوى وامتحانات (ADMIN)</option><option value="SUPPORT">مسؤول شات ودعم فني (SUPPORT)</option></select></div><div style="display:flex; gap:10px; margin-top:15px;"><button type="submit" class="btn btn-primary" style="flex:1;">تأكيد الترقية الإدارية</button><button type="button" class="btn btn-outline" onclick="closeModal('addStaffModal')">إلغاء</button></div></form></div>
   </div>
 
-  <!-- مودال تعديل رتبة فرد بالطاقم -->
   <div id="editStaffRoleModal" class="modal">
-    <div class="modal-content" style="max-width:450px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h3 style="color:var(--royal-indigo-base); font-size:16px;">تعديل رتبة وصلاحية المسؤول</h3>
-        <button type="button" onclick="closeModal('editStaffRoleModal')" style="background:none; border:none; font-size:16px; cursor:pointer;">✕</button>
-      </div>
-      <div>
-        <input type="hidden" id="editStaffTargetUid">
-        <p style="margin-bottom:12px; font-size:13.5px; color:var(--text-muted);">تعديل رتبة: <strong id="editStaffTargetName" style="color:var(--royal-indigo-base);"></strong></p>
-        <div class="form-group">
-          <label>الرتبة الجديدة:</label>
-          <select id="editStaffNewRoleSelect">
-            <option value="ADMIN">مشرف إدارة (ADMIN)</option>
-            <option value="SUPPORT">دعم فني وشات (SUPPORT)</option>
-            <option value="STUDENT">إلغاء الصلاحية وتحويله لطالب (STUDENT)</option>
-          </select>
-        </div>
-        <div style="display:flex; gap:10px; margin-top:15px;">
-          <button type="button" class="btn btn-primary" style="flex:1;" onclick="saveStaffRoleChange()">حفظ الرتبة</button>
-          <button type="button" class="btn btn-outline" onclick="closeModal('editStaffRoleModal')">إلغاء</button>
-        </div>
-      </div>
-    </div>
+    <div class="modal-content" style="max-width:450px;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h3 style="color:var(--royal-indigo-base); font-size:16px;">تعديل رتبة وصلاحية المسؤول</h3><button type="button" onclick="closeModal('editStaffRoleModal')" style="background:none; border:none; font-size:16px; cursor:pointer;">✕</button></div><div><input type="hidden" id="editStaffTargetUid"><p style="margin-bottom:12px; font-size:13.5px; color:var(--text-muted);">تعديل رتبة: <strong id="editStaffTargetName" style="color:var(--royal-indigo-base);"></strong></p><div class="form-group"><label>الرتبة الجديدة:</label><select id="editStaffNewRoleSelect"><option value="ADMIN">مشرف إدارة (ADMIN)</option><option value="SUPPORT">دعم فني وشات (SUPPORT)</option><option value="STUDENT">إلغاء الصلاحية وتحويله لطالب (STUDENT)</option></select></div><div style="display:flex; gap:10px; margin-top:15px;"><button type="button" class="btn btn-primary" style="flex:1;" onclick="saveStaffRoleChange()">حفظ الرتبة</button><button type="button" class="btn btn-outline" onclick="closeModal('editStaffRoleModal')">إلغاء</button></div></div></div>
   </div>
 
-  <!-- مودال التحكم في تفعيل الكورسات والمحاضرات الفردية للطالب -->
   <div id="studentCoursePermissionsModal" class="modal">
-    <div class="modal-content" style="max-width:650px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-subtle); padding-bottom:12px; margin-bottom:16px;">
-        <div>
-          <h3 style="color:var(--royal-indigo-base); font-size:17px; font-weight:900;">إدارة صلاحيات الكورسات والمحاضرات</h3>
-          <span style="font-size:12.5px; color:var(--text-muted);">للطالب: <strong id="permStudentNameDisplay" style="color:var(--cyan-accent);"></strong></span>
-        </div>
-        <button type="button" onclick="closeModal('studentCoursePermissionsModal')" style="background:none; border:none; font-size:18px; cursor:pointer;">✕</button>
-      </div>
-
-      <input type="hidden" id="permStudentUidHidden">
-      <div id="permissionsCoursesListContainer" style="max-height:55vh; overflow-y:auto; padding-left:4px;"></div>
-
-      <div style="display:flex; gap:10px; margin-top:18px; border-top:1px solid var(--border-subtle); padding-top:14px;">
-        <button type="button" class="btn btn-primary" style="flex:1;" onclick="saveStudentCoursePermissions()">حفظ الصلاحيات للطالب</button>
-        <button type="button" class="btn btn-outline" onclick="closeModal('studentCoursePermissionsModal')">إلغاء</button>
-      </div>
-    </div>
+    <div class="modal-content" style="max-width:650px;"><div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-subtle); padding-bottom:12px; margin-bottom:16px;"><div><h3 style="color:var(--royal-indigo-base); font-size:17px; font-weight:900;">إدارة صلاحيات الكورسات والمحاضرات</h3><span style="font-size:12.5px; color:var(--text-muted);">للطالب: <strong id="permStudentNameDisplay" style="color:var(--cyan-accent);"></strong></span></div><button type="button" onclick="closeModal('studentCoursePermissionsModal')" style="background:none; border:none; font-size:18px; cursor:pointer;">✕</button></div><input type="hidden" id="permStudentUidHidden"><div id="permissionsCoursesListContainer" style="max-height:55vh; overflow-y:auto; padding-left:4px;"></div><div style="display:flex; gap:10px; margin-top:18px; border-top:1px solid var(--border-subtle); padding-top:14px;"><button type="button" class="btn btn-primary" style="flex:1;" onclick="saveStudentCoursePermissions()">حفظ الصلاحيات للطالب</button><button type="button" class="btn btn-outline" onclick="closeModal('studentCoursePermissionsModal')">إلغاء</button></div></div>
   </div>
 
-  <!-- مودال إضافة امتحان جديد -->
   <div id="addExamModal" class="modal">
-    <div class="modal-content">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid var(--border-subtle); padding-bottom:10px;">
-        <h3 style="color:var(--royal-indigo-base); font-size:17px; font-weight:900;">إنشاء ونشر امتحان جديد</h3>
-        <button type="button" onclick="closeModal('addExamModal')" style="background:none; border:none; font-size:18px; cursor:pointer;">✕</button>
-      </div>
-
-      <form id="addExamSmoothForm">
-        <div class="form-group">
-          <label>عنوان الامتحان:</label>
-          <input type="text" id="newExamTitle" placeholder="مثال: امتحان الباب الأول: العناصر الانتقالية" required>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group" style="flex:1;">
-            <label>نطاق الامتحان:</label>
-            <select id="newExamTypeSelect" onchange="document.getElementById('newExamCourseSelectGrp').style.display = (this.value === 'COURSE') ? 'flex' : 'none';" required>
-              <option value="COURSE">امتحان مخصص لكورس معين</option>
-              <option value="GENERAL">امتحان شامل عام لجميع الطلاب</option>
-            </select>
-          </div>
-          <div class="form-group" id="newExamCourseSelectGrp" style="flex:1;">
-            <label>اختيار الكورس المرتبط:</label>
-            <select id="newExamCourseSelect"></select>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group" style="flex:1;">
-            <label>مدة الامتحان (بالدقائق):</label>
-            <input type="number" id="newExamDuration" value="25" min="5" required>
-          </div>
-          <div class="form-group" style="flex:1;">
-            <label>أقصى محاولات مسموحة لكل طالب:</label>
-            <input type="number" id="newExamMaxAttempts" value="2" min="1" required>
-          </div>
-        </div>
-
-        <div style="background:#f8f9fc; border:1px solid var(--border-subtle); padding:16px; border-radius:12px; margin:16px 0;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <h4 style="font-size:14px; font-weight:800; color:var(--royal-indigo-base);">بنك أسئلة الامتحان:</h4>
-            <button type="button" class="btn btn-outline" style="padding:5px 12px; font-size:12px;" onclick="appendNewExamQuestionBlock()">+ إضافة سؤال آخر</button>
-          </div>
-          <div id="newExamQuestionsContainer"></div>
-        </div>
-
-        <div style="display:flex; gap:10px; margin-top:15px;">
-          <button type="submit" class="btn btn-primary" style="flex:1; padding:12px; font-size:14px;">نشر الامتحان للطلاب</button>
-          <button type="button" class="btn btn-outline" onclick="closeModal('addExamModal')">إلغاء</button>
-        </div>
-      </form>
-    </div>
+    <div class="modal-content"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid var(--border-subtle); padding-bottom:10px;"><h3 style="color:var(--royal-indigo-base); font-size:17px; font-weight:900;">إنشاء ونشر امتحان جديد</h3><button type="button" onclick="closeModal('addExamModal')" style="background:none; border:none; font-size:18px; cursor:pointer;">✕</button></div><form id="addExamSmoothForm"><div class="form-group"><label>عنوان الامتحان:</label><input type="text" id="newExamTitle" placeholder="مثال: امتحان الباب الأول: العناصر الانتقالية" required></div><div class="form-row"><div class="form-group" style="flex:1;"><label>نطاق الامتحان:</label><select id="newExamTypeSelect" onchange="document.getElementById('newExamCourseSelectGrp').style.display = (this.value === 'COURSE') ? 'flex' : 'none';" required><option value="COURSE">امتحان مخصص لكورس معين</option><option value="GENERAL">امتحان شامل عام لجميع الطلاب</option></select></div><div class="form-group" id="newExamCourseSelectGrp" style="flex:1;"><label>اختيار الكورس المرتبط:</label><select id="newExamCourseSelect"></select></div></div><div class="form-row"><div class="form-group" style="flex:1;"><label>مدة الامتحان (بالدقائق):</label><input type="number" id="newExamDuration" value="25" min="5" required></div><div class="form-group" style="flex:1;"><label>أقصى محاولات مسموحة لكل طالب:</label><input type="number" id="newExamMaxAttempts" value="2" min="1" required></div></div><div style="background:#f8f9fc; border:1px solid var(--border-subtle); padding:16px; border-radius:12px; margin:16px 0;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;"><h4 style="font-size:14px; font-weight:800; color:var(--royal-indigo-base);">بنك أسئلة الامتحان:</h4><button type="button" class="btn btn-outline" style="padding:5px 12px; font-size:12px;" onclick="appendNewExamQuestionBlock()">+ إضافة سؤال آخر</button></div><div id="newExamQuestionsContainer"></div></div><div style="display:flex; gap:10px; margin-top:15px;"><button type="submit" class="btn btn-primary" style="flex:1; padding:12px; font-size:14px;">نشر الامتحان للطلاب</button><button type="button" class="btn btn-outline" onclick="closeModal('addExamModal')">إلغاء</button></div></form></div>
   </div>
 
-  <!-- مودال تعديل الامتحان -->
   <div id="editExamModal" class="modal">
-    <div class="modal-content">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid var(--border-subtle); padding-bottom:10px;">
-        <h3 style="color:var(--royal-indigo-base); font-size:17px; font-weight:900;">تعديل بيانات وأسئلة الامتحان</h3>
-        <button type="button" onclick="closeModal('editExamModal')" style="background:none; border:none; font-size:18px; cursor:pointer;">✕</button>
-      </div>
-      <div>
-        <input type="hidden" id="editExamIdHidden">
-        <div class="form-group">
-          <label>عنوان الامتحان:</label>
-          <input type="text" id="editExamTitleInput">
-        </div>
-        <div class="form-row">
-          <div class="form-group" style="flex:1;">
-            <label>المدة بالدقائق:</label>
-            <input type="number" id="editExamDurationInput" min="1">
-          </div>
-          <div class="form-group" style="flex:1;">
-            <label>المحاولات المسموحة للطالب:</label>
-            <input type="number" id="editExamMaxAttemptsInput" min="1">
-          </div>
-        </div>
-
-        <div style="background:#F8F9FC; border:1px solid var(--border-subtle); padding:15px; border-radius:10px; margin:14px 0;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <h4 style="font-size:13.5px; font-weight:800; color:var(--royal-indigo-base);">الأسئلة الحالية:</h4>
-            <button type="button" class="btn btn-outline" style="padding:4px 10px; font-size:11.5px;" onclick="appendEditExamQuestionRow()">+ إضافة سؤال إضافي</button>
-          </div>
-          <div id="editExamQuestionsContainer"></div>
-        </div>
-
-        <div style="display:flex; gap:10px; margin-top:15px;">
-          <button type="button" class="btn btn-primary" style="flex:1;" onclick="saveEditedExam()">حفظ تعديلات الامتحان</button>
-          <button type="button" class="btn btn-outline" onclick="closeModal('editExamModal')">إلغاء</button>
-        </div>
-      </div>
-    </div>
+    <div class="modal-content"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid var(--border-subtle); padding-bottom:10px;"><h3 style="color:var(--royal-indigo-base); font-size:17px; font-weight:900;">تعديل بيانات وأسئلة الامتحان</h3><button type="button" onclick="closeModal('editExamModal')" style="background:none; border:none; font-size:18px; cursor:pointer;">✕</button></div><div><input type="hidden" id="editExamIdHidden"><div class="form-group"><label>عنوان الامتحان:</label><input type="text" id="editExamTitleInput"></div><div class="form-row"><div class="form-group" style="flex:1;"><label>المدة بالدقائق:</label><input type="number" id="editExamDurationInput" min="1"></div><div class="form-group" style="flex:1;"><label>المحاولات المسموحة للطالب:</label><input type="number" id="editExamMaxAttemptsInput" min="1"></div></div><div style="background:#F8F9FC; border:1px solid var(--border-subtle); padding:15px; border-radius:10px; margin:14px 0;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><h4 style="font-size:13.5px; font-weight:800; color:var(--royal-indigo-base);">الأسئلة الحالية:</h4><button type="button" class="btn btn-outline" style="padding:4px 10px; font-size:11.5px;" onclick="appendEditExamQuestionRow()">+ إضافة سؤال إضافي</button></div><div id="editExamQuestionsContainer"></div></div><div style="display:flex; gap:10px; margin-top:15px;"><button type="button" class="btn btn-primary" style="flex:1;" onclick="saveEditedExam()">حفظ تعديلات الامتحان</button><button type="button" class="btn btn-outline" onclick="closeModal('editExamModal')">إلغاء</button></div></div></div>
   </div>
 
-  <!-- مودال عرض صورة الإيصال -->
   <div id="receiptViewerModal" class="modal">
-    <div class="modal-content" style="max-width:550px; text-align:center;">
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-subtle); padding-bottom:10px; margin-bottom:15px;">
-        <h3 style="color:var(--royal-indigo-base); font-size:16px;">معاينة إيصال التحويل</h3>
-        <button type="button" onclick="closeModal('receiptViewerModal')" style="background:none; border:none; font-size:16px; cursor:pointer;">✕</button>
-      </div>
-      <div style="background:#f8f9fc; border:1px solid var(--border-subtle); border-radius:10px; padding:10px; margin-bottom:15px;">
-        <img id="receiptModalImg" src="" style="width:100%; max-height:420px; object-fit:contain; border-radius:8px;" alt="صورة الإيصال">
-      </div>
-      <div style="display:flex; gap:10px;">
-        <a id="receiptDownloadLink" href="#" target="_blank" class="btn btn-primary" style="flex:1;">فتح الصورة الأصلية</a>
-        <button type="button" class="btn btn-outline" onclick="closeModal('receiptViewerModal')">إغلاق</button>
-      </div>
-    </div>
+    <div class="modal-content" style="max-width:550px; text-align:center;"><div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-subtle); padding-bottom:10px; margin-bottom:15px;"><h3 style="color:var(--royal-indigo-base); font-size:16px;">معاينة إيصال التحويل</h3><button type="button" onclick="closeModal('receiptViewerModal')" style="background:none; border:none; font-size:16px; cursor:pointer;">✕</button></div><div style="background:#f8f9fc; border:1px solid var(--border-subtle); border-radius:10px; padding:10px; margin-bottom:15px;"><img id="receiptModalImg" src="" style="width:100%; max-height:420px; object-fit:contain; border-radius:8px;" alt="صورة الإيصال"></div><div style="display:flex; gap:10px;"><a id="receiptDownloadLink" href="#" target="_blank" class="btn btn-primary" style="flex:1;">فتح الصورة الأصلية</a><button type="button" class="btn btn-outline" onclick="closeModal('receiptViewerModal')">إغلاق</button></div></div>
   </div>
 
-  <!-- مودال تفاصيل الطالب والطباعة -->
   <div id="studentDetailsModal" class="modal">
-    <div class="modal-content" id="printableStudentCard">
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--royal-indigo-base); padding-bottom:12px; margin-bottom:18px;">
-        <div>
-          <h2 style="color:var(--royal-indigo-base); font-size:18px; font-weight:900;">بطاقة بيانات الطالب الأكاديمية</h2>
-          <span style="font-size:12px; color:var(--text-muted);">منصة هي كيميا ! - أ/ محمد السعيد</span>
-        </div>
-        <div class="no-print" style="display:flex; gap:8px;">
-          <button class="btn btn-primary" onclick="window.print()" style="padding:6px 14px; font-size:12px;">طباعة البطاقة</button>
-          <button class="btn btn-outline" onclick="closeModal('studentDetailsModal')" style="padding:6px 14px; font-size:12px;">إغلاق</button>
-        </div>
-      </div>
-      <div id="studentModalDetailsBody"></div>
-      <div id="adminOwnDevicesContainer"></div>
-      <!-- قسم أجهزة الطالب للإدارة -->
-      <div class="no-print" style="margin-top: 20px; border-top: 1px solid var(--border-subtle); padding-top: 16px;">
-        <h4 style="font-size: 14.5px; font-weight: 800; color: var(--royal-indigo-base); margin-bottom: 12px; display:flex; align-items:center; gap:6px;">
-          📱 الأجهزة المسجلة لحساب هذا الطالب
-        </h4>
-        <div id="adminUserDevicesContainer"></div>
-      </div>
-    </div>
+    <div class="modal-content" id="printableStudentCard"><div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--royal-indigo-base); padding-bottom:12px; margin-bottom:18px;"><div><h2 style="color:var(--royal-indigo-base); font-size:18px; font-weight:900;">بطاقة بيانات الطالب الأكاديمية</h2><span style="font-size:12px; color:var(--text-muted);">منصة هي كيميا ! - أ/ محمد السعيد</span></div><div class="no-print" style="display:flex; gap:8px;"><button class="btn btn-primary" onclick="window.print()" style="padding:6px 14px; font-size:12px;">طباعة البطاقة</button><button class="btn btn-outline" onclick="closeModal('studentDetailsModal')" style="padding:6px 14px; font-size:12px;">إغلاق</button></div></div><div id="studentModalDetailsBody"></div><div class="no-print" style="margin-top: 20px; border-top: 1px solid var(--border-subtle); padding-top: 16px;"><h4 style="font-size: 14.5px; font-weight: 800; color: var(--royal-indigo-base); margin-bottom: 12px; display:flex; align-items:center; gap:6px;">📱 الأجهزة المسجلة لحساب هذا الطالب</h4><div id="adminUserDevicesContainer"></div></div></div>
   </div>
 
-  <!-- مودال تقرير مدة مشاهدات الطلاب للكورس -->
   <div id="courseWatchStatsModal" class="modal">
-    <div class="modal-content" id="printableWatchStats">
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--cyan-accent); padding-bottom:12px; margin-bottom:18px;">
-        <div>
-          <h2 style="color:var(--royal-indigo-base); font-size:18px; font-weight:900;" id="watchModalCourseTitle">تقرير مشاهدات الطلاب</h2>
-          <span style="font-size:12px; color:var(--text-muted);">متابعة وقت المشاهدة الفعلي وآخر ظهور للطلاب</span>
-        </div>
-        <div class="no-print" style="display:flex; gap:8px;">
-          <button class="btn btn-primary" onclick="window.print()" style="padding:6px 14px; font-size:12px;">طباعة التقرير</button>
-          <button class="btn btn-outline" onclick="closeModal('courseWatchStatsModal')" style="padding:6px 14px; font-size:12px;">إغلاق</button>
-        </div>
-      </div>
-
-      <div class="no-print" style="margin-bottom: 15px;">
-        <input type="text" id="watchStatsSearchInput" oninput="filterWatchStatsTable()" placeholder="ابحث في المشاهدات باسم الطالب أو رقم الهاتف..." style="width:100%; padding:10px 14px; background:#f8f9fc; border:1px solid var(--border-subtle); border-radius:8px;">
-      </div>
-
-      <div class="table-container">
-        <table class="exams-table">
-          <thead>
-            <tr>
-              <th>اسم الطالب</th>
-              <th>رقم الهاتف</th>
-              <th>إجمالي مدة المشاهدة</th>
-              <th>مرات الدخول</th>
-              <th>آخر ظهور بالكورس</th>
-            </tr>
-          </thead>
-          <tbody id="watchStatsTableBody"></tbody>
-        </table>
-      </div>
-    </div>
+    <div class="modal-content" id="printableWatchStats"><div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--cyan-accent); padding-bottom:12px; margin-bottom:18px;"><div><h2 style="color:var(--royal-indigo-base); font-size:18px; font-weight:900;" id="watchModalCourseTitle">تقرير مشاهدات الطلاب</h2><span style="font-size:12px; color:var(--text-muted);">متابعة وقت المشاهدة الفعلي وآخر ظهور للطلاب</span></div><div class="no-print" style="display:flex; gap:8px;"><button class="btn btn-primary" onclick="window.print()" style="padding:6px 14px; font-size:12px;">طباعة التقرير</button><button class="btn btn-outline" onclick="closeModal('courseWatchStatsModal')" style="padding:6px 14px; font-size:12px;">إغلاق</button></div></div><div class="no-print" style="margin-bottom: 15px;"><input type="text" id="watchStatsSearchInput" oninput="filterWatchStatsTable()" placeholder="ابحث في المشاهدات باسم الطالب أو رقم الهاتف..." style="width:100%; padding:10px 14px; background:#f8f9fc; border:1px solid var(--border-subtle); border-radius:8px;"></div><div class="table-container"><table class="exams-table"><thead><tr><th>اسم الطالب</th><th>رقم الهاتف</th><th>إجمالي مدة المشاهدة</th><th>مرات الدخول</th><th>آخر ظهور بالكورس</th></tr></thead><tbody id="watchStatsTableBody"></tbody></table></div></div>
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -1342,7 +1026,7 @@
             '</div>' +
             '<div class="course-lessons-group" id="lessonsGrp_' + c.id + '" style="padding-right:15px;">' +
               lessons.map(function(l) {
-                var isLessonAllowed = isCourseActive || allowedLessonIds.includes(l.id);
+                var isLessonAllowed = isCourseActive || allowedLessonIds.map(String).includes(String(l.id));
                 return '<label class="permission-lesson-checkbox-item">' +
                   '<input type="checkbox" class="lesson-single-checkbox lesson_cb_' + c.id + '" data-course-id="' + c.id + '" data-lesson-id="' + l.id + '" ' + (isLessonAllowed ? "checked" : "") + '>' +
                   '<span>المحاضرة ' + l.id + ': ' + l.title + ' (' + l.duration + ')</span>' +
@@ -1363,6 +1047,7 @@
       });
     }
 
+    // تصحيح وتثبيت صلاحيات الطالب سحابياً ومحلياً
     async function saveStudentCoursePermissions() {
       var studentUid = document.getElementById("permStudentUidHidden").value;
       var users = JSON.parse(localStorage.getItem("edu_users")) || [];
@@ -1381,7 +1066,7 @@
           var checkedLessonIds = [];
           lessonCheckboxes.forEach(function(lcb) {
             if (lcb.checked) {
-              checkedLessonIds.push(parseInt(lcb.getAttribute("data-lesson-id")));
+              checkedLessonIds.push(lcb.getAttribute("data-lesson-id"));
             }
           });
 
@@ -1394,25 +1079,36 @@
         users[uIdx].enrolledCourses = newEnrolled;
         users[uIdx].customAllowedLessons = newCustomLessons;
 
-        if (window.FirebaseService) {
+        // تحديث مباشر في Firestore لضمان الحفظ اللحظي
+        if (window.firebase && firebase.firestore) {
+          try {
+            await firebase.firestore().collection("users").doc(studentUid).set({
+              enrolledCourses: newEnrolled,
+              customAllowedLessons: newCustomLessons
+            }, { merge: true });
+          } catch (e) {
+            console.warn("تحديث السحابة المباشر:", e.message);
+          }
+        }
+
+        if (window.FirebaseService && typeof window.FirebaseService.updateUserEnrollmentsByUid === "function") {
           try {
             await window.FirebaseService.updateUserEnrollmentsByUid(studentUid, newEnrolled, newCustomLessons);
-          } catch (e) {
-            console.warn("تحديث السحابة:", e.message);
-          }
+          } catch (e) {}
         }
 
         localStorage.setItem("edu_users", JSON.stringify(users));
 
         var currentLoggedIn = getCurrentUser();
-        if (currentLoggedIn && (currentLoggedIn.uid === studentUid || currentLoggedIn.id === studentUid)) {
+        if (currentLoggedIn && (String(currentLoggedIn.uid) === String(studentUid) || String(currentLoggedIn.id) === String(studentUid))) {
           currentLoggedIn.enrolledCourses = newEnrolled;
           currentLoggedIn.customAllowedLessons = newCustomLessons;
           localStorage.setItem("current_user", JSON.stringify(currentLoggedIn));
+          localStorage.setItem("edu_currentUser", JSON.stringify(currentLoggedIn));
         }
 
-        logAdminAction("تعديل صلاحيات المحاضرات", "تم تحديث الكورسات والمحاضرات المسموحة للطالب: " + users[uIdx].fullName);
         closeModal("studentCoursePermissionsModal");
+        renderAdmin();
         showToast("تم تفعيل الكورسات والمحاضرات للطالب سحابياً بنجاح ✓", "success");
       }
     }
