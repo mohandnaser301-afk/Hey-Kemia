@@ -328,7 +328,7 @@ function renderStudentDevicesList(containerId) {
 }
 window.renderStudentDevicesList = renderStudentDevicesList;
 
-// قصر ظهور قسم الأجهزة الإدارية على صفحة الإدارة فقط ومنع الحقن التلقائي في باقي الصفحات[cite: 9]
+// قصر ظهور قسم الأجهزة الإدارية على صفحة الإدارة فقط ومنع الحقن التلقائي في باقي الصفحات[cite: 6]
 function renderAdminOwnDevicesList(containerId) {
   try {
     var user = getCurrentUser();
@@ -339,7 +339,7 @@ function renderAdminOwnDevicesList(containerId) {
     if (!isAdmin) return;
 
     var currentPath = (window.location.pathname || "").toLowerCase();
-    // منع الظهور في أي صفحة غير صفحة الإدارة نهائياً[cite: 9]
+    // منع الظهور في أي صفحة غير صفحة الإدارة نهائياً[cite: 6]
     if (currentPath.indexOf("admin.html") === -1) {
       var foreignCard = document.getElementById("adminAutoInjectedDevicesCard");
       if (foreignCard) foreignCard.remove();
@@ -425,7 +425,7 @@ function renderAdminUserDevices(targetUid, containerId) {
 }
 window.renderAdminUserDevices = renderAdminUserDevices;
 
-// الحساب الدقيق للمؤشرات واستثناء الحسابات الإدارية من بيانات الطلاب[cite: 9]
+// الحساب الدقيق للمؤشرات واستثناء الحسابات الإدارية من بيانات الطلاب[cite: 6]
 function calculateStudentMetrics(userUid) {
   if (!userUid) return { enrolledCount: 0, completedExams: 0, avgScore: 0, totalHours: 0, enrolledList: [], submissionsList: [] };
 
@@ -745,7 +745,7 @@ function initSupportChatWidget() {
 }
 
 function enableStudentDirectChat() {
-  // إذا كنا داخل صفحة الدعم الرسمية، نترك الصفحة تدير الشات بنفسها لمنع التعارض المزدوج[cite: 9]
+  // إذا كنا داخل صفحة الدعم الرسمية، نترك الصفحة تدير الشات بنفسها لمنع التعارض المزدوج[cite: 6]
   var currentPath = (window.location.pathname || "").toLowerCase();
   if (currentPath.indexOf("support.html") !== -1) {
     return;
@@ -831,7 +831,7 @@ async function sendStudentSupportMessage(inputElement) {
 
   inputElement.value = "";
 
-  // استهداف حاوية الرسائل الصحيحة سواء كانت في support.html أو أي صفحة أخرى[cite: 9]
+  // استهداف حاوية الرسائل الصحيحة سواء كانت في support.html أو أي صفحة أخرى[cite: 6]
   var messagesBox = document.querySelector("#messagesStreamBox, #activeMessagesTargetContainer, .chat-messages, .messages-body");
   if (messagesBox) {
     var newBubble = document.createElement("div");
@@ -1359,7 +1359,7 @@ function initGlobalRealtimeSync() {
 }
 
 // =========================================================
-// شريط تفاعلي لطلب إذن الإشعارات وتوليد وحفظ رمز FCM للجهاز
+// شريط تفاعلي لطلب إذن الإشعارات وتوليد وحفظ رمز FCM للجهاز[cite: 6]
 // =========================================================
 function showPushNotificationPrompt() {
   if (!("Notification" in window) || !("serviceWorker" in navigator)) return;
@@ -1367,13 +1367,13 @@ function showPushNotificationPrompt() {
   var user = getCurrentUser();
   if (!user || !user.uid) return;
 
-  // إذا تم منح الإذن مسبقاً، نتأكد من ربط رمز الجهاز في السحابة
+  // إذا تم منح الإذن مسبقاً، نتأكد من ربط رمز الجهاز في السحابة[cite: 6]
   if (Notification.permission === "granted") {
     registerFCMDeviceAutomatically();
     return;
   }
 
-  // إذا كان الإذن ما زال في الوضع الافتراضي (default) ولم يتم رفضه
+  // إذا كان الإذن ما زال في الوضع الافتراضي (default) ولم يتم رفضه[cite: 6]
   if (Notification.permission === "default" && !document.getElementById("hkNotifPromptBar")) {
     var banner = document.createElement("div");
     banner.id = "hkNotifPromptBar";
@@ -1407,7 +1407,7 @@ function showPushNotificationPrompt() {
   }
 }
 
-// دالة تسجيل توكن FCM في Firestore تلقائياً
+// دالة تسجيل توكن FCM في Firestore تلقائياً والاشتراك في مجموعة البث العام[cite: 6]
 async function registerFCMDeviceAutomatically() {
   try {
     var reg = await navigator.serviceWorker.register("firebase-messaging-sw.js");
@@ -1419,9 +1419,17 @@ async function registerFCMDeviceAutomatically() {
       var user = getCurrentUser();
 
       if (token && user && user.uid && firebase.firestore) {
+        // 1. حفظ التوكن داخل حساب الطالب في Firestore[cite: 6]
         await firebase.firestore().collection("users").doc(user.uid).set({
           fcmTokens: firebase.firestore.FieldValue.arrayUnion(token),
           lastActiveDeviceToken: token
+        }, { merge: true });
+
+        // 2. تسجيل التوكن في مجموعة عامة للمشتركين لضمان وصول حملات الإرسال العام
+        await firebase.firestore().collection("fcm_subscribers").doc(token).set({
+          userUid: user.uid,
+          token: token,
+          subscribedAt: new Date().toISOString()
         }, { merge: true });
       }
 
@@ -1453,7 +1461,7 @@ document.addEventListener("DOMContentLoaded", function() {
     if (typeof renderStudentDevicesList === "function") renderStudentDevicesList();
     if (typeof renderAdminOwnDevicesList === "function") renderAdminOwnDevicesList();
     
-    // استدعاء شريط تفعيل الإشعارات بعد اكتمال التحميل
+    // استدعاء شريط تفعيل الإشعارات بعد اكتمال التحميل[cite: 6]
     showPushNotificationPrompt();
   }, 100);
 });
