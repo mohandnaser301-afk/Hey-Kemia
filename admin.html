@@ -932,7 +932,7 @@
           '<button type="button" class="btn-action btn-action-danger" onclick="this.closest(\'.lesson-item-row\').remove()" style="padding:6px 10px;">حذف المحاضرة</button>' +
         '</div>' +
         '<div style="margin-top:8px; border-top:1px dashed #cbd5e1; padding-top:8px;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+          '<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">' +
             '<label style="font-size:12px; color:var(--text-muted); font-weight:bold;">ملفات PDF والمذكرات الخاصة بهذه المحاضرة (اختياري):</label>' +
             '<button type="button" class="btn btn-outline" style="padding:2px 8px; font-size:11px;" onclick="addPdfItemToLesson(\'' + lessonUid + '\')">+ إضافة ملف PDF</button>' +
           '</div>' +
@@ -954,10 +954,43 @@
       var item = document.createElement("div");
       item.className = "lesson-pdf-item";
       item.innerHTML = 
-        '<input type="text" class="pdf-name-input" placeholder="اسم الملف" value="' + (name || "") + '" style="flex:1; padding:6px 10px; font-size:12px;">' +
-        '<input type="text" class="pdf-url-input" placeholder="رابط الملف (PDF Link)" value="' + (url || "") + '" style="flex:2; padding:6px 10px; font-size:12px;">' +
+        '<input type="text" class="pdf-name-input" placeholder="اسم الملف" value="' + (name || "") + '" style="flex:1; padding:6px 10px; font-size:12px; min-width:120px;">' +
+        '<input type="text" class="pdf-url-input" placeholder="رابط الملف أو ارفعه من جهازك ⬅" value="' + (url || "") + '" style="flex:2; padding:6px 10px; font-size:12px; min-width:160px;">' +
+        '<label style="background:#F1F5F9; border:1px solid #CBD5E1; color:#0E1338; padding:5px 9px; border-radius:6px; font-size:11px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:4px; white-space:nowrap;">' +
+          '📄 رفع PDF' +
+          '<input type="file" accept="application/pdf" style="display:none;" onchange="handleLessonPdfFileUpload(event, this)">' +
+        '</label>' +
         '<button type="button" class="btn-action btn-action-danger" onclick="this.parentElement.remove()" style="padding:4px 8px; font-size:11px;">✕</button>';
       container.appendChild(item);
+    }
+
+    function handleLessonPdfFileUpload(event, inputElem) {
+      var file = event.target.files[0];
+      if (!file) return;
+
+      var parent = inputElem.closest(".lesson-pdf-item");
+      var nameInput = parent ? parent.querySelector(".pdf-name-input") : null;
+      var urlInput = parent ? parent.querySelector(".pdf-url-input") : null;
+
+      if (nameInput && !nameInput.value.trim()) {
+        nameInput.value = file.name.replace(/\.[^/.]+$/, "");
+      }
+
+      if (file.size > 8 * 1024 * 1024) {
+        showToast("حجم ملف الـ PDF كبير (الحد الأقصى المباشر 8 ميجابايت). يفضل استخدام رابط مباشر للملفات الضخمة.", "info");
+      }
+
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        if (urlInput) {
+          urlInput.value = e.target.result;
+          showToast("تم إرفاق ملف الـ PDF من جهازك بنجاح ✓", "success");
+        }
+      };
+      reader.onerror = function() {
+        showToast("تعذر قراءة ملف الـ PDF من جهازك", "error");
+      };
+      reader.readAsDataURL(file);
     }
 
     function extractLessonsFromContainer(containerId) {
@@ -1405,9 +1438,12 @@
         return;
       }
 
-      document.getElementById("editCourseId").value = courseIndex;
+      // تثبيت المعرف السحابي الحقيقي لضمان عدم توجيه المسار إلى undefined
+      document.getElementById("editCourseId").value = c.id || courseIndex;
+      document.getElementById("editCourseId").dataset.realId = String(c.id || "");
+      
       document.getElementById("editCourseTitle").value = c.title || "";
-      document.getElementById("editCourseDesc").value = c.desc || "";
+      document.getElementById("editCourseDesc").value = c.desc || c.description || "";
       
       var isFree = c.isFree || Number(c.price) === 0;
       document.getElementById("editCoursePricingType").value = isFree ? "free" : "paid";
@@ -1421,7 +1457,7 @@
 
       document.getElementById("editCourseTag").value = c.tag || "الصف الثالث الثانوي";
       document.getElementById("editCourseImageBase64").value = c.image || "";
-      document.getElementById("editCourseImgPreview").src = c.image || "";
+      document.getElementById("editCourseImgPreview").src = c.image || "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80";
       document.getElementById("editCourseFileInput").value = "";
 
       var container = document.getElementById("editLessonsContainer");
@@ -1439,11 +1475,10 @@
     }
 
     async function saveEditedCourse() {
-      var index = parseInt(document.getElementById("editCourseId").value);
-      var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-      var currentCourse = courses[index];
+      var idInput = document.getElementById("editCourseId");
+      var targetCourseId = idInput.dataset.realId || idInput.value;
       
-      if (!currentCourse) {
+      if (!targetCourseId) {
         showToast("حدث خطأ أثناء تحديد الكورس للتعديل", "error");
         return;
       }
@@ -1462,30 +1497,38 @@
 
       var isFree = document.getElementById("editCoursePricingType").value === "free";
       var viewsType = document.getElementById("editCourseViewsType").value;
-      var imageSrc = document.getElementById("editCourseImageBase64").value || currentCourse.image;
+      var imageSrc = document.getElementById("editCourseImageBase64").value || "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80";
 
+      // تصفية الكائن لضمان عدم إرسال أي قيمة undefined ترفضها قواعد Firestore
       var updatedCourse = {
         title: title,
-        desc: document.getElementById("editCourseDesc").value.trim(),
-        isFree: isFree,
-        price: isFree ? 0 : (Number(document.getElementById("editCoursePrice").value) || 0),
-        maxViewsType: viewsType,
+        description: document.getElementById("editCourseDesc").value.trim() || "محتوى تعليمي",
+        desc: document.getElementById("editCourseDesc").value.trim() || "محتوى تعليمي",
+        isFree: Boolean(isFree),
+        price: isFree ? "0" : String(document.getElementById("editCoursePrice").value || "0"),
+        maxViewsType: viewsType || "limited",
         maxViews: viewsType === "unlimited" ? 0 : (Number(document.getElementById("editCourseMaxViews").value) || 5),
-        tag: document.getElementById("editCourseTag").value.trim(),
+        tag: document.getElementById("editCourseTag").value.trim() || "الصف الثالث الثانوي",
         image: imageSrc,
-        lessons: lessonsArr
+        lessons: lessonsArr,
+        updatedAt: new Date().toISOString()
       };
 
       showToast("جاري حفظ التعديلات سحابياً...", "info");
 
       try {
-        if (window.FirebaseService && currentCourse.id) {
-          await window.FirebaseService.saveCourse(updatedCourse, currentCourse.id);
+        if (window.FirebaseService && typeof window.FirebaseService.saveCourse === "function") {
+          await window.FirebaseService.saveCourse(updatedCourse, targetCourseId);
+        } else if (window.firebase && firebase.firestore) {
+          await firebase.firestore().collection("courses").doc(String(targetCourseId)).set(updatedCourse, { merge: true });
         }
+
         logAdminAction("تعديل كورس", "تم حفظ وتعديل كورس: " + title);
         closeModal("editCourseModal");
         showToast("تم حفظ وتحديث الكورس للجميع بنجاح ✓", "success");
+        if (typeof renderAdmin === "function") renderAdmin();
       } catch (err) {
+        console.error("Save error details:", err);
         showToast("خطأ أثناء التحديث السحابي: " + err.message, "error");
       }
     }
