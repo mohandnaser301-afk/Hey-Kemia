@@ -83,7 +83,7 @@ function compressImageBase64(base64Str, maxWidth, maxHeight, quality) {
 }
 window.compressImageBase64 = compressImageBase64;
 
-// منع كتابة الأحرف الإنجليزية والأرقام والرموز في خانة الاسم لحظياً
+// منع كتابة الأحرف الإنجليزية والأرقام والرموز في خانة الاسم لحظياً[cite: 7]
 document.addEventListener("input", function(e) {
   if (e.target && (e.target.id === "fullName" || e.target.name === "fullName" || (e.target.placeholder && e.target.placeholder.indexOf("الاسم") !== -1))) {
     var cleanVal = e.target.value.replace(/[^\u0621-\u064A\s]/g, "");
@@ -93,7 +93,7 @@ document.addEventListener("input", function(e) {
   }
 });
 
-// واجهة تأكيد البريد الإلكتروني الأنيقة
+// واجهة تأكيد البريد الإلكتروني الأنيقة[cite: 7]
 function showVerificationPrompt(email, fbUser, pendingDoc) {
   try {
     var oldModal = document.getElementById("hkEmailVerificationModal");
@@ -796,7 +796,7 @@ window.FirebaseService = {
   },
 
   // =========================================================
-  // شات الدعم الفني: استماع فوري فائق الدقة بدون فقدان أي رسالة
+  // شات الدعم الفني: استماع فوري فائق الدقة بدون فقدان أي رسالة[cite: 7]
   // =========================================================
 
   subscribeChatGlobalConfig(callback) {
@@ -840,7 +840,7 @@ window.FirebaseService = {
             snap.forEach(function(doc) { 
               list.push(Object.assign({ id: doc.id }, doc.data())); 
             });
-            // فرز الرسائل محلياً لضمان عدم توقف الاستعلام عند غياب الـ Index السحابي
+            // فرز الرسائل محلياً لضمان عدم توقف الاستعلام عند غياب الـ Index السحابي[cite: 7]
             list.sort(function(a, b) {
               var tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
               var tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
@@ -940,7 +940,7 @@ window.FirebaseService = {
         var msgs = await fb.firestore().collection("support_threads").doc(studentUid).collection("messages").get();
         var batch = fb.firestore().batch();
         msgs.forEach(function(d) { batch.delete(d.ref); });
-        batch.delete(fb.firestore().collection("support_threads").doc(studentUid));
+        batch.delete(firebase.firestore().collection("support_threads").doc(studentUid));
         await batch.commit();
         localStorage.removeItem("edu_chat_" + studentUid);
       } catch (e) {
@@ -958,4 +958,3 @@ window.FirebaseService = {
     }
   }
 };
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>

@@ -84,10 +84,58 @@ function customConfirm(message, title, confirmText, cancelText) {
 }
 window.customConfirm = customConfirm;
 
+// نافذة التنبيهات المنبثقة (Toast) مع ضبط التنسيقات وعزل النصوص ومنع تشوه الخطوط
 function showToast(message, type, title) {
   try {
     type = type || "info";
     title = title || (type === "success" ? "تم بنجاح" : type === "error" ? "تنبيه" : "إشعار");
+
+    // حقن CSS الخاص بالتنبيهات تلقائياً لضمان عدم ظهورها كنصوص خام مبعثرة
+    if (!document.getElementById("hkToastNotificationStyles")) {
+      var st = document.createElement("style");
+      st.id = "hkToastNotificationStyles";
+      st.innerHTML = 
+        '#toastContainer {' +
+          'position: fixed !important;' +
+          'bottom: 24px !important;' +
+          'left: 24px !important;' +
+          'z-index: 99999999 !important;' +
+          'display: flex !important;' +
+          'flex-direction: column !important;' +
+          'gap: 10px !important;' +
+          'max-width: 420px !important;' +
+          'width: calc(100vw - 48px) !important;' +
+          'pointer-events: none !important;' +
+          'direction: rtl !important;' +
+        '}' +
+        '.toast-notification {' +
+          'pointer-events: auto !important;' +
+          'background: #0E1338 !important;' +
+          'color: #ffffff !important;' +
+          'border-radius: 14px !important;' +
+          'padding: 12px 16px !important;' +
+          'box-shadow: 0 10px 30px rgba(0,0,0,0.3) !important;' +
+          'display: flex !important;' +
+          'align-items: center !important;' +
+          'justify-content: space-between !important;' +
+          'gap: 12px !important;' +
+          'border: 1px solid rgba(0,210,255,0.3) !important;' +
+          'transition: all 0.3s ease !important;' +
+          'animation: toastSlideUp 0.3s ease-out forwards !important;' +
+          'overflow: hidden !important;' +
+        '}' +
+        '.toast-notification.success { border-color: #10B981 !important; border-right: 5px solid #10B981 !important; }' +
+        '.toast-notification.error { border-color: #EF4444 !important; border-right: 5px solid #EF4444 !important; }' +
+        '.toast-notification.info { border-color: #00D2FF !important; border-right: 5px solid #00D2FF !important; }' +
+        '.toast-content { display: flex !important; flex-direction: column !important; gap: 3px !important; flex: 1 !important; min-width: 0 !important; }' +
+        '.toast-title { font-size: 13px !important; font-weight: 900 !important; color: #00D2FF !important; display: block !important; }' +
+        '.toast-notification.success .toast-title { color: #10B981 !important; }' +
+        '.toast-notification.error .toast-title { color: #EF4444 !important; }' +
+        '.toast-message { font-size: 12px !important; font-weight: 700 !important; color: #E2E8F0 !important; line-height: 1.5 !important; word-break: break-word !important; display: block !important; }' +
+        '.toast-close { background: transparent !important; border: none !important; color: #94A3B8 !important; font-size: 16px !important; cursor: pointer !important; padding: 4px !important; }' +
+        '@keyframes toastSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }';
+      document.head.appendChild(st);
+    }
 
     var container = document.getElementById("toastContainer");
     if (!container) {
@@ -108,6 +156,7 @@ function showToast(message, type, title) {
     container.appendChild(toast);
     setTimeout(function() {
       toast.style.opacity = "0";
+      toast.style.transform = "translateY(10px)";
       setTimeout(function() { toast.remove(); }, 300);
     }, 4000);
   } catch (e) {}
@@ -328,7 +377,7 @@ function renderStudentDevicesList(containerId) {
 }
 window.renderStudentDevicesList = renderStudentDevicesList;
 
-// قصر ظهور قسم الأجهزة الإدارية على صفحة الإدارة فقط ومنع الحقن التلقائي في باقي الصفحات[cite: 6]
+// قصر ظهور قسم الأجهزة الإدارية على صفحة الإدارة فقط ومنع الحقن التلقائي في باقي الصفحات
 function renderAdminOwnDevicesList(containerId) {
   try {
     var user = getCurrentUser();
@@ -339,7 +388,6 @@ function renderAdminOwnDevicesList(containerId) {
     if (!isAdmin) return;
 
     var currentPath = (window.location.pathname || "").toLowerCase();
-    // منع الظهور في أي صفحة غير صفحة الإدارة نهائياً[cite: 6]
     if (currentPath.indexOf("admin.html") === -1) {
       var foreignCard = document.getElementById("adminAutoInjectedDevicesCard");
       if (foreignCard) foreignCard.remove();
@@ -425,7 +473,7 @@ function renderAdminUserDevices(targetUid, containerId) {
 }
 window.renderAdminUserDevices = renderAdminUserDevices;
 
-// الحساب الدقيق للمؤشرات واستثناء الحسابات الإدارية من بيانات الطلاب[cite: 6]
+// الحساب الدقيق للمؤشرات واستثناء الحسابات الإدارية من بيانات الطلاب
 function calculateStudentMetrics(userUid) {
   if (!userUid) return { enrolledCount: 0, completedExams: 0, avgScore: 0, totalHours: 0, enrolledList: [], submissionsList: [] };
 
@@ -675,13 +723,15 @@ function injectChemicalDecorations() {
         '}' +
         '.chem-floating-item {' +
           'animation: chemFloatAnim 7s ease-in-out infinite;' +
+          'z-index: 0 !important;' +
+          'pointer-events: none !important;' +
         '}';
       document.head.appendChild(s);
     }
 
     var container = document.createElement("div");
     container.id = "hkChemicalBackgroundDecorations";
-    container.style.cssText = "position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; opacity:0.35; font-family:system-ui, -apple-system, sans-serif;";
+    container.style.cssText = "position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; opacity:0.25; font-family:system-ui, -apple-system, sans-serif;";
 
     var flaskSvg = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#00D2FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.31L4.67 19.46A2 2 0 0 0 6.4 22h11.2a2 2 0 0 0 1.73-2.54L14 9.31V2h-4z"></path><line x1="8.5" y1="2" x2="15.5" y2="2"></line><line x1="7" y1="16" x2="17" y2="16"></line></svg>';
     var atomSvg = '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#00E5FF" stroke-width="2.2"><circle cx="12" cy="12" r="2.2" fill="#00E5FF"></circle><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(30 12 12)"></ellipse><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(90 12 12)"></ellipse><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(150 12 12)"></ellipse></svg>';
@@ -745,7 +795,6 @@ function initSupportChatWidget() {
 }
 
 function enableStudentDirectChat() {
-  // إذا كنا داخل صفحة الدعم الرسمية، نترك الصفحة تدير الشات بنفسها لمنع التعارض المزدوج[cite: 6]
   var currentPath = (window.location.pathname || "").toLowerCase();
   if (currentPath.indexOf("support.html") !== -1) {
     return;
@@ -831,7 +880,6 @@ async function sendStudentSupportMessage(inputElement) {
 
   inputElement.value = "";
 
-  // استهداف حاوية الرسائل الصحيحة سواء كانت في support.html أو أي صفحة أخرى[cite: 6]
   var messagesBox = document.querySelector("#messagesStreamBox, #activeMessagesTargetContainer, .chat-messages, .messages-body");
   if (messagesBox) {
     var newBubble = document.createElement("div");
@@ -1359,7 +1407,7 @@ function initGlobalRealtimeSync() {
 }
 
 // =========================================================
-// شريط تفاعلي لطلب إذن الإشعارات وتوليد وحفظ رمز FCM للجهاز[cite: 6]
+// شريط تفاعلي لطلب إذن الإشعارات وتوليد وحفظ رمز FCM للجهاز
 // =========================================================
 function showPushNotificationPrompt() {
   if (!("Notification" in window) || !("serviceWorker" in navigator)) return;
@@ -1367,13 +1415,11 @@ function showPushNotificationPrompt() {
   var user = getCurrentUser();
   if (!user || !user.uid) return;
 
-  // إذا تم منح الإذن مسبقاً، نتأكد من ربط رمز الجهاز في السحابة[cite: 6]
   if (Notification.permission === "granted") {
     registerFCMDeviceAutomatically();
     return;
   }
 
-  // إذا كان الإذن ما زال في الوضع الافتراضي (default) ولم يتم رفضه[cite: 6]
   if (Notification.permission === "default" && !document.getElementById("hkNotifPromptBar")) {
     var banner = document.createElement("div");
     banner.id = "hkNotifPromptBar";
@@ -1407,7 +1453,7 @@ function showPushNotificationPrompt() {
   }
 }
 
-// دالة تسجيل توكن FCM في Firestore تلقائياً والاشتراك في مجموعة البث العام[cite: 6]
+// دالة تسجيل توكن FCM في Firestore تلقائياً والاشتراك في مجموعة البث العام
 async function registerFCMDeviceAutomatically() {
   try {
     var reg = await navigator.serviceWorker.register("firebase-messaging-sw.js");
@@ -1419,13 +1465,11 @@ async function registerFCMDeviceAutomatically() {
       var user = getCurrentUser();
 
       if (token && user && user.uid && firebase.firestore) {
-        // 1. حفظ التوكن داخل حساب الطالب في Firestore[cite: 6]
         await firebase.firestore().collection("users").doc(user.uid).set({
           fcmTokens: firebase.firestore.FieldValue.arrayUnion(token),
           lastActiveDeviceToken: token
         }, { merge: true });
 
-        // 2. تسجيل التوكن في مجموعة عامة للمشتركين لضمان وصول حملات الإرسال العام
         await firebase.firestore().collection("fcm_subscribers").doc(token).set({
           userUid: user.uid,
           token: token,
@@ -1441,6 +1485,39 @@ async function registerFCMDeviceAutomatically() {
     }
   } catch (err) {
     console.warn("FCM Auto Reg Notice:", err);
+  }
+}
+
+// مراقب الإشعارات السحابية الفوري على أجهزة الطلاب
+function initCloudNotificationWatcher() {
+  if (window.FirebaseService && typeof window.FirebaseService.subscribeNotifications === "function") {
+    var lastSeenNotifTime = Date.now();
+
+    window.FirebaseService.subscribeNotifications(function(notifs) {
+      if (!notifs || notifs.length === 0) return;
+      
+      var latest = notifs[0];
+      var notifTime = new Date(latest.createdAt).getTime();
+
+      if (notifTime > lastSeenNotifTime) {
+        lastSeenNotifTime = notifTime;
+        var user = getCurrentUser();
+        var myUid = user ? String(user.uid || user.id) : "";
+
+        if (latest.targetUid === "ALL" || latest.targetUid === myUid) {
+          if ("Notification" in window && Notification.permission === "granted") {
+            navigator.serviceWorker.ready.then(function(reg) {
+              reg.showNotification(latest.title || "منصة هي كيميا ! 🧪", {
+                body: latest.body || "تنبيه جديد من المنصة",
+                icon: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=192&q=80",
+                dir: "rtl",
+                data: { url: latest.targetUrl || "dashboard.html" }
+              });
+            });
+          }
+        }
+      }
+    });
   }
 }
 
@@ -1461,7 +1538,7 @@ document.addEventListener("DOMContentLoaded", function() {
     if (typeof renderStudentDevicesList === "function") renderStudentDevicesList();
     if (typeof renderAdminOwnDevicesList === "function") renderAdminOwnDevicesList();
     
-    // استدعاء شريط تفعيل الإشعارات بعد اكتمال التحميل[cite: 6]
     showPushNotificationPrompt();
+    initCloudNotificationWatcher();
   }, 100);
 });
