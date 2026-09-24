@@ -83,7 +83,7 @@ function compressImageBase64(base64Str, maxWidth, maxHeight, quality) {
 }
 window.compressImageBase64 = compressImageBase64;
 
-// منع كتابة الأحرف الإنجليزية والأرقام والرموز في خانة الاسم لحظياً[cite: 7]
+// منع كتابة الأحرف الإنجليزية والأرقام والرموز في خانة الاسم لحظياً
 document.addEventListener("input", function(e) {
   if (e.target && (e.target.id === "fullName" || e.target.name === "fullName" || (e.target.placeholder && e.target.placeholder.indexOf("الاسم") !== -1))) {
     var cleanVal = e.target.value.replace(/[^\u0621-\u064A\s]/g, "");
@@ -93,7 +93,7 @@ document.addEventListener("input", function(e) {
   }
 });
 
-// واجهة تأكيد البريد الإلكتروني الأنيقة[cite: 7]
+// واجهة تأكيد البريد الإلكتروني الأنيقة
 function showVerificationPrompt(email, fbUser, pendingDoc) {
   try {
     var oldModal = document.getElementById("hkEmailVerificationModal");
@@ -516,21 +516,73 @@ window.FirebaseService = {
     }
   },
 
+  // الحذف الشامل والنهائي للطالب وسجلاته وبياناته كاملة من المنصة وقاعدة البيانات السحابية
   async deleteUserCascadeByUid(uid) {
     var fb = getFirebase();
     if (fb && fb.firestore && uid) {
+      var targetId = String(uid);
       var batch = fb.firestore().batch();
-      batch.delete(fb.firestore().collection("users").doc(uid));
 
+      // 1. حذف وثيقة المستخدم الرئيسية
+      var userRef = fb.firestore().collection("users").doc(targetId);
+      batch.delete(userRef);
+
+      // استخراج الحساب لمعرفة البريد ورموز الأجهزة قبل الحذف لمسحها
+      var targetUserSnap = await userRef.get().catch(function() { return null; });
+      var targetUserData = targetUserSnap && targetUserSnap.exists ? targetUserSnap.data() : null;
+      var targetEmail = targetUserData && targetUserData.email ? String(targetUserData.email).toLowerCase().trim() : "";
+      var tokens = targetUserData && Array.isArray(targetUserData.fcmTokens) ? targetUserData.fcmTokens : [];
+
+      // 2. حذف مدفوعات الطالب
       try {
-        var paySnap = await fb.firestore().collection("payments").where("userUid", "==", uid).get();
+        var paySnap = await fb.firestore().collection("payments").where("userUid", "==", targetId).get();
         paySnap.forEach(function(doc) { batch.delete(doc.ref); });
-
-        var subSnap = await fb.firestore().collection("submissions").where("userUid", "==", uid).get();
-        subSnap.forEach(function(doc) { batch.delete(doc.ref); });
-
-        await batch.commit();
+        if (targetEmail) {
+          var payEmailSnap = await fb.firestore().collection("payments").where("userEmail", "==", targetEmail).get();
+          payEmailSnap.forEach(function(doc) { batch.delete(doc.ref); });
+        }
       } catch (e) {}
+
+      // 3. حذف تسليمات واختبارات الطالب
+      try {
+        var subSnap = await fb.firestore().collection("submissions").where("userUid", "==", targetId).get();
+        subSnap.forEach(function(doc) { batch.delete(doc.ref); });
+        if (targetEmail) {
+          var subEmailSnap = await fb.firestore().collection("submissions").where("userEmail", "==", targetEmail).get();
+          subEmailSnap.forEach(function(doc) { batch.delete(doc.ref); });
+        }
+      } catch (e) {}
+
+      // 4. حذف سجلات المشاهدة السحابية الخاصة به
+      try {
+        var watchSnap = await fb.firestore().collection("course_watch_logs").where("userUid", "==", targetId).get();
+        watchSnap.forEach(function(doc) { batch.delete(doc.ref); });
+      } catch (e) {}
+
+      // 5. حذف اشتراكات الإشعارات لجميع أجهزة الطالب
+      try {
+        tokens.forEach(function(t) {
+          if (t) batch.delete(fb.firestore().collection("fcm_subscribers").doc(String(t)));
+        });
+      } catch (e) {}
+
+      // 6. حذف محادثة الدعم الفني بالكامل
+      try {
+        var chatMsgsSnap = await fb.firestore().collection("support_threads").doc(targetId).collection("messages").get();
+        chatMsgsSnap.forEach(function(doc) { batch.delete(doc.ref); });
+        batch.delete(fb.firestore().collection("support_threads").doc(targetId));
+      } catch (e) {}
+
+      // تنفيذ الحذف الشامل دفعة واحدة
+      await batch.commit();
+
+      // تنظيف الذاكرة المحلية فورياً إذا كان الحساب المحذوف في localStorage
+      var localUsers = JSON.parse(localStorage.getItem("edu_users") || "[]");
+      var filtered = localUsers.filter(function(u) { return String(u.uid) !== targetId && String(u.id) !== targetId; });
+      localStorage.setItem("edu_users", JSON.stringify(filtered));
+
+      // مسح سجل المحادثات المحلي
+      localStorage.removeItem("edu_chat_" + targetId);
     }
   },
 
@@ -546,28 +598,38 @@ window.FirebaseService = {
           var list = [];
           snap.forEach(function(doc) { 
             var cData = doc.data() || {};
-            var safeCourse = {
+            var safeCourse = Object.assign({}, cData, {
               id: String(doc.id || ""),
               title: String(cData.title || ""),
-              description: String(cData.description || ""),
+              desc: String(cData.desc || cData.description || ""),
+              description: String(cData.description || cData.desc || ""),
               image: String(cData.image || ""),
               price: String(cData.price !== undefined && cData.price !== null ? cData.price : "0"),
               isFree: Boolean(cData.isFree),
               lessons: []
-            };
+            });
 
             if (Array.isArray(cData.lessons)) {
               safeCourse.lessons = cData.lessons.map(function(l) {
                 if (!l || typeof l !== "object") l = {};
                 var rawUrl = String(l.videoUrl || "");
-                return {
-                  id: String(l.id || ""),
+                var pdfsList = Array.isArray(l.pdfs) ? l.pdfs : [];
+                
+                if (pdfsList.length === 0 && l.pdfUrl) {
+                  pdfsList.push({ name: "مذكرة المحاضرة", url: l.pdfUrl });
+                }
+
+                var primaryPdf = pdfsList.length > 0 ? pdfsList[0].url : String(l.pdfUrl || "");
+
+                return Object.assign({}, l, {
+                  id: l.id !== undefined ? l.id : "",
                   title: String(l.title || ""),
-                  description: String(l.description || ""),
+                  description: String(l.description || l.desc || ""),
                   videoUrl: rawUrl ? formatYouTubeEmbedUrl(rawUrl) : "",
                   duration: String(l.duration || ""),
-                  pdfUrl: String(l.pdfUrl || "")
-                };
+                  pdfUrl: primaryPdf,
+                  pdfs: pdfsList
+                });
               });
             }
 
@@ -796,7 +858,7 @@ window.FirebaseService = {
   },
 
   // =========================================================
-  // شات الدعم الفني: استماع فوري فائق الدقة بدون فقدان أي رسالة[cite: 7]
+  // شات الدعم الفني: استماع فوري فائق الدقة بدون فقدان أي رسالة
   // =========================================================
 
   subscribeChatGlobalConfig(callback) {
@@ -840,7 +902,6 @@ window.FirebaseService = {
             snap.forEach(function(doc) { 
               list.push(Object.assign({ id: doc.id }, doc.data())); 
             });
-            // فرز الرسائل محلياً لضمان عدم توقف الاستعلام عند غياب الـ Index السحابي[cite: 7]
             list.sort(function(a, b) {
               var tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
               var tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;

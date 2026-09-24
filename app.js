@@ -90,7 +90,6 @@ function showToast(message, type, title) {
     type = type || "info";
     title = title || (type === "success" ? "تم بنجاح" : type === "error" ? "تنبيه" : "إشعار");
 
-    // حقن CSS الخاص بالتنبيهات تلقائياً لضمان عدم ظهورها كنصوص خام مبعثرة
     if (!document.getElementById("hkToastNotificationStyles")) {
       var st = document.createElement("style");
       st.id = "hkToastNotificationStyles";
@@ -377,7 +376,6 @@ function renderStudentDevicesList(containerId) {
 }
 window.renderStudentDevicesList = renderStudentDevicesList;
 
-// قصر ظهور قسم الأجهزة الإدارية على صفحة الإدارة فقط ومنع الحقن التلقائي في باقي الصفحات
 function renderAdminOwnDevicesList(containerId) {
   try {
     var user = getCurrentUser();
@@ -473,7 +471,6 @@ function renderAdminUserDevices(targetUid, containerId) {
 }
 window.renderAdminUserDevices = renderAdminUserDevices;
 
-// الحساب الدقيق للمؤشرات واستثناء الحسابات الإدارية من بيانات الطلاب
 function calculateStudentMetrics(userUid) {
   if (!userUid) return { enrolledCount: 0, completedExams: 0, avgScore: 0, totalHours: 0, enrolledList: [], submissionsList: [] };
 
@@ -1218,6 +1215,7 @@ window.sendActiveChatMessage = sendActiveChatMessage;
 
 var lastHandledRole = null;
 
+// مراقبة فورية لحالة المستخدم: تغيير الرتبة أو الطرد الفوري ومسح البيانات عند حذف الحساب سحابياً
 function monitorCurrentUserStatus() {
   try {
     var user = getCurrentUser();
@@ -1227,7 +1225,17 @@ function monitorCurrentUserStatus() {
     if (typeof firebase !== "undefined" && firebase.firestore) {
       firebase.firestore().collection("users").doc(uid)
         .onSnapshot(function(docSnap) {
-          if (!docSnap || !docSnap.exists) return;
+          // إذا تم حذف وثيقة المستخدم من قاعدة البيانات بواسطة الأدمن، يطرد فوراً
+          if (!docSnap || !docSnap.exists) {
+            localStorage.removeItem("current_user");
+            localStorage.removeItem("edu_currentUser");
+            localStorage.removeItem("hk_pending_reg_doc");
+            try { if (firebase.auth) firebase.auth().signOut(); } catch(e) {}
+            alert("تم حذف أو إنهاء هذا الحساب من المنصة بواسطة الإدارة.");
+            window.location.replace("login.html");
+            return;
+          }
+
           var liveDoc = docSnap.data();
           if (!liveDoc) return;
           liveDoc.uid = docSnap.id;

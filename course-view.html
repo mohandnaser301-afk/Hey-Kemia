@@ -26,7 +26,8 @@
       padding-top: 56.25%;
       box-shadow: 0 15px 35px rgba(0,0,0,0.3);
     }
-    .video-secure-container iframe {
+    .video-secure-container iframe,
+    .video-secure-container #mainCourseVideoIframe {
       position: absolute;
       top: 0;
       left: 0;
@@ -35,13 +36,24 @@
       border: none;
       pointer-events: auto;
     }
+    /* طبقة شفافة تعزل النقر على زر المشاركة والشعار أعلى الفيديو */
+    .video-top-shield {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 65px;
+      z-index: 12;
+      background: transparent;
+      pointer-events: auto;
+    }
     .secure-watermark {
       position: absolute;
       color: rgba(255, 255, 255, 0.28);
       font-size: 13px;
       font-weight: 800;
       pointer-events: none;
-      z-index: 10;
+      z-index: 15;
       padding: 4px 8px;
       border-radius: 6px;
       background: rgba(0, 0, 0, 0.25);
@@ -113,8 +125,9 @@
   <div class="course-view-layout">
     <div>
       <div class="video-secure-container" id="videoContainerWrapper">
+        <div class="video-top-shield" title="محمية بواسطة منصة هي كيميا"></div>
         <div class="secure-watermark" id="videoDynamicWatermark">HE-KEMIA SECURE</div>
-        <iframe id="mainCourseVideoIframe" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        <div id="ytPlayerTarget"></div>
       </div>
 
       <div style="background:#fff; border-radius:16px; padding:20px; border:1px solid var(--border-subtle); margin-top:16px;">
@@ -133,12 +146,25 @@
     </div>
   </div>
 
+  <!-- مكتبات فايربيز اللازمة للمزامنة اللحظية مع قواعد البيانات -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script src="app.js"></script>
+
+  <!-- YouTube IFrame API لتتبع حالة التشغيل والتحكم بالوقت والموضع -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+
   <script>
     var currentCourse = null;
     var currentLessonIdx = 0;
+    var ytPlayer = null;
+    var isYtApiReady = false;
     var watchTimerInterval = null;
+    var isVideoActivelyPlaying = false;
+    var currentUserId = null;
+    var currentCourseId = null;
 
     document.addEventListener("keydown", function(e) {
       if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67))) {
@@ -147,19 +173,130 @@
       }
     });
 
+    function extractYouTubeVideoId(url) {
+      if (!url) return "";
+      var clean = String(url).trim();
+      var id = "";
+      if (clean.indexOf("youtu.be/") !== -1) {
+        id = clean.split("youtu.be/")[1].split("?")[0].split("&")[0];
+      } else if (clean.indexOf("watch?v=") !== -1) {
+        var params = new URLSearchParams(clean.split("?")[1] || "");
+        id = params.get("v") || "";
+      } else if (clean.indexOf("embed/") !== -1) {
+        id = clean.split("embed/")[1].split("?")[0].split("&")[0];
+      } else if (clean.indexOf("shorts/") !== -1) {
+        id = clean.split("shorts/")[1].split("?")[0].split("&")[0];
+      } else {
+        id = clean;
+      }
+      return id;
+    }
+
+    function onYouTubeIframeAPIReady() {
+      isYtApiReady = true;
+      if (currentCourse && currentCourse.lessons && currentCourse.lessons[currentLessonIdx]) {
+        mountYouTubePlayer(currentLessonIdx);
+      }
+    }
+
+    function mountYouTubePlayer(idx) {
+      if (!currentCourse || !currentCourse.lessons || !currentCourse.lessons[idx]) return;
+      var lesson = currentCourse.lessons[idx];
+      var rawVideoId = extractYouTubeVideoId(lesson.videoUrl);
+
+      // استرجاع نقطة التوقف السابقة إن وجدت
+      var savedProgressSec = getSavedLessonProgress(currentCourseId, idx);
+
+      if (ytPlayer && typeof ytPlayer.loadVideoById === "function") {
+        ytPlayer.loadVideoById({
+          videoId: rawVideoId,
+          startSeconds: savedProgressSec
+        });
+      } else {
+        ytPlayer = new YT.Player('ytPlayerTarget', {
+          videoId: rawVideoId,
+          host: 'https://www.youtube-nocookie.com',
+          playerVars: {
+            autoplay: 0,
+            controls: 1,
+            modestbranding: 1,
+            rel: 0,
+            fs: 1,
+            iv_load_policy: 3,
+            disablekb: 0,
+            playsinline: 1,
+            origin: window.location.origin,
+            start: savedProgressSec
+          },
+          events: {
+            'onReady': function(event) {
+              if (savedProgressSec > 0) {
+                event.target.seekTo(savedProgressSec, true);
+              }
+            },
+            'onStateChange': onPlayerStateChange
+          }
+        });
+      }
+    }
+
+    function onPlayerStateChange(event) {
+      // YT.PlayerState.PLAYING = 1
+      if (event.data === YT.PlayerState.PLAYING) {
+        isVideoActivelyPlaying = true;
+      } else {
+        isVideoActivelyPlaying = false;
+        saveCurrentProgressSnapshot();
+      }
+    }
+
+    function getSavedLessonProgress(courseId, lessonIdx) {
+      try {
+        var progressMap = JSON.parse(localStorage.getItem("edu_lesson_resume_points")) || {};
+        var key = (currentUserId || "usr") + "_" + courseId + "_l" + lessonIdx;
+        return Number(progressMap[key]) || 0;
+      } catch (e) {
+        return 0;
+      }
+    }
+
+    function saveCurrentProgressSnapshot() {
+      if (!ytPlayer || typeof ytPlayer.getCurrentTime !== "function") return;
+      try {
+        var currentTime = Math.floor(ytPlayer.getCurrentTime());
+        if (currentTime > 0) {
+          var progressMap = JSON.parse(localStorage.getItem("edu_lesson_resume_points")) || {};
+          var key = (currentUserId || "usr") + "_" + currentCourseId + "_l" + currentLessonIdx;
+          progressMap[key] = currentTime;
+          localStorage.setItem("edu_lesson_resume_points", JSON.stringify(progressMap));
+
+          if (window.firebase && firebase.firestore && currentUserId) {
+            var updateObj = {};
+            updateObj["progress_" + currentCourseId + "_l" + currentLessonIdx] = currentTime;
+            firebase.firestore().collection("users").doc(currentUserId).set(updateObj, { merge: true }).catch(function(){});
+          }
+        }
+      } catch (e) {}
+    }
+
     function playLesson(idx) {
       if (!currentCourse || !currentCourse.lessons || !currentCourse.lessons[idx]) return;
+      
+      saveCurrentProgressSnapshot();
       currentLessonIdx = idx;
       var lesson = currentCourse.lessons[idx];
 
-      var validEmbedUrl = formatYouTubeEmbedUrl(lesson.videoUrl);
-      document.getElementById("mainCourseVideoIframe").src = validEmbedUrl;
       document.getElementById("currentLessonTitleDisplay").innerText = lesson.title;
 
       var pdfsContainer = document.getElementById("lessonPdfsContainer");
-      if (lesson.pdfs && lesson.pdfs.length > 0) {
+      var pdfsList = Array.isArray(lesson.pdfs) ? lesson.pdfs : [];
+      if (pdfsList.length === 0 && lesson.pdfUrl) {
+        pdfsList.push({ name: "مذكرة المحاضرة", url: lesson.pdfUrl });
+      }
+
+      if (pdfsList.length > 0) {
         pdfsContainer.innerHTML = '<strong style="font-size:12.5px; color:#475569; display:block; margin-bottom:6px;">المذكرات والملفات المرفقة:</strong><div style="display:flex; gap:8px; flex-wrap:wrap;">' +
-          lesson.pdfs.map(p => '<a href="' + p.url + '" target="_blank" class="pdf-download-btn">📄 ' + p.name + '</a>').join("") +
+          pdfsList.map(p => '<a href="' + p.url + '" target="_blank" class="pdf-download-btn">📄 ' + p.name + '</a>').join("") +
           '</div>';
       } else {
         pdfsContainer.innerHTML = '<span style="font-size:12px; color:var(--text-muted);">لا توجد ملفات مرفقة مع هذه المحاضرة.</span>';
@@ -168,21 +305,43 @@
       document.querySelectorAll(".lesson-playlist-item").forEach((el, i) => {
         el.classList.toggle("active", i === idx);
       });
+
+      if (isYtApiReady) {
+        mountYouTubePlayer(idx);
+      }
     }
 
-    function startTrackingWatchTime(userUid, courseId) {
+    // احتساب مدة المشاهدة الفعلية فقط عندما يكون الفيديو في حالة تشغيل
+    function startAccurateWatchTracking(userUid, courseId) {
       if (watchTimerInterval) clearInterval(watchTimerInterval);
 
       watchTimerInterval = setInterval(function() {
+        if (!isVideoActivelyPlaying) return;
+
         var tracking = JSON.parse(localStorage.getItem("edu_course_watch_logs")) || {};
         if (!tracking[courseId]) tracking[courseId] = {};
         if (!tracking[courseId][userUid]) {
           tracking[courseId][userUid] = { totalSeconds: 0, lastActive: new Date().toLocaleTimeString("ar-EG") };
         }
-        tracking[courseId][userUid].totalSeconds += 5;
+
+        tracking[courseId][userUid].totalSeconds += 3;
         tracking[courseId][userUid].lastActive = new Date().toLocaleTimeString("ar-EG");
         localStorage.setItem("edu_course_watch_logs", JSON.stringify(tracking));
-      }, 5000);
+
+        // حفظ نقطة التوقف الحالية دورياً
+        saveCurrentProgressSnapshot();
+
+        // مزامنة وقت الحضور الإجمالي مع قاعدة البيانات
+        if (window.firebase && firebase.firestore) {
+          firebase.firestore().collection("course_watch_logs").doc(courseId + "_" + userUid).set({
+            courseId: courseId,
+            userUid: userUid,
+            totalSeconds: tracking[courseId][userUid].totalSeconds,
+            lastActive: tracking[courseId][userUid].lastActive,
+            updatedAt: new Date().toISOString()
+          }, { merge: true }).catch(function(){});
+        }
+      }, 3000);
     }
 
     document.addEventListener("DOMContentLoaded", function() {
@@ -192,13 +351,15 @@
         return;
       }
 
+      currentUserId = user.uid || user.id;
+
       var wm = document.getElementById("videoDynamicWatermark");
-      if (wm) wm.innerText = user.fullName + " | " + user.studentPhone;
+      if (wm) wm.innerText = user.fullName + " | " + (user.studentPhone || user.phone || "");
 
       var urlParams = new URLSearchParams(window.location.search);
-      var courseId = urlParams.get("id");
+      currentCourseId = urlParams.get("id");
       var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-      currentCourse = courses.find(c => String(c.id) === String(courseId));
+      currentCourse = courses.find(c => String(c.id) === String(currentCourseId));
 
       if (!currentCourse) {
         showToast("لم يتم العثور على الكورس", "error");
@@ -206,9 +367,8 @@
         return;
       }
 
-      // التحقق الصارم والمرن من الصلاحية
       var isStaff = user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "SUPPORT";
-      var isEnrolled = isStudentEnrolledInCourse(user, courseId);
+      var isEnrolled = isStudentEnrolledInCourse(user, currentCourseId);
 
       if (!isStaff && !isEnrolled) {
         showToast("غير مصرح لك بمشاهدة هذا الكورس، يرجى الاشتراك أولاً", "error");
@@ -235,11 +395,12 @@
         ).join("");
 
         playLesson(0);
-        startTrackingWatchTime(user.uid, courseId);
+        startAccurateWatchTracking(currentUserId, currentCourseId);
       }
     });
 
     window.addEventListener("beforeunload", function() {
+      saveCurrentProgressSnapshot();
       if (watchTimerInterval) clearInterval(watchTimerInterval);
     });
   </script>
