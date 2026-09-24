@@ -84,7 +84,7 @@ function customConfirm(message, title, confirmText, cancelText) {
 }
 window.customConfirm = customConfirm;
 
-// نافذة التنبيهات المنبثقة (Toast) مع ضبط التنسيقات وعزل النصوص ومنع تشوه الخطوط
+// نافذة التنبيهات المنبثقة (Toast)
 function showToast(message, type, title) {
   try {
     type = type || "info";
@@ -503,7 +503,6 @@ function calculateStudentMetrics(userUid) {
       }).filter(Boolean);
     }
 
-    // فلترة الكورسات المشترك بها بناءً على الكورسات المتاحة حالياً فقط، فإذا حُذف كورس لا يُحسب[cite: 11]
     var enrolledCoursesList = allCourses.filter(function(c) { 
       var cId = String(c.id).trim();
       return enrolledIds.includes(cId); 
@@ -1256,7 +1255,6 @@ function monitorCurrentUserStatus() {
     if (typeof firebase !== "undefined" && firebase.firestore) {
       firebase.firestore().collection("users").doc(uid)
         .onSnapshot(function(docSnap) {
-          // إذا حُذفت وثيقة الطالب من قاعدة البيانات بواسطة الإدارة، يطرد فوراً وتُمحى بياناته
           if (!docSnap || !docSnap.exists) {
             localStorage.removeItem("current_user");
             localStorage.removeItem("edu_currentUser");
@@ -1332,10 +1330,26 @@ function updateNavbarAndAuthGuards() {
   } catch (e) {}
 }
 
-// دالة تفعيل الكورس الشاملة: تدعم الكورسات المجانية والمدفوعة مع التحديث اللحظي للداشبورد والسحابة[cite: 10]
+// دالة تفعيل الكورس الشاملة والمباشرة مع تتبع الحسابات والاشتراكات بدقة
 async function handleEnrollClick(courseId) {
   try {
     var user = getCurrentUser();
+    
+    // إذا لم يكن مخزناً في الذاكرة المحلية نتحقق من جلسة Auth المباشرة
+    if (!user && typeof firebase !== "undefined" && firebase.auth && firebase.auth().currentUser) {
+      var fbCur = firebase.auth().currentUser;
+      user = {
+        uid: fbCur.uid,
+        id: fbCur.uid,
+        fullName: fbCur.displayName || "طالب",
+        email: fbCur.email,
+        role: "STUDENT",
+        enrolledCourses: []
+      };
+      localStorage.setItem("current_user", JSON.stringify(user));
+      localStorage.setItem("edu_currentUser", JSON.stringify(user));
+    }
+
     if (!user) {
       showToast("يرجى تسجيل الدخول أولاً للاشتراك في الكورس", "info");
       setTimeout(function() { 
@@ -1344,9 +1358,13 @@ async function handleEnrollClick(courseId) {
       return;
     }
 
-    var stringCourseId = String(courseId).trim();
-    var targetUid = String(user.uid || user.id || "").trim();
+    var stringCourseId = String(courseId || "").trim();
+    if (!stringCourseId) {
+      showToast("معرّف الكورس غير صالح", "error");
+      return;
+    }
 
+    var targetUid = String(user.uid || user.id || "").trim();
     var role = (user && user.role ? String(user.role) : "STUDENT").toUpperCase();
     if (role !== "STUDENT") {
       showToast("الحسابات الإدارية تستعرض المحتوى مباشرة", "info");
@@ -1354,7 +1372,6 @@ async function handleEnrollClick(courseId) {
       return;
     }
 
-    // التحقق مما إذا كان الطالب مشتركاً بالفعل[cite: 10]
     var currentEnrolledList = (user.enrolledCourses || []).map(function(id) { return String(id).trim(); });
     if (currentEnrolledList.includes(stringCourseId)) {
       showToast("أنت مشترك بالفعل في هذا الكورس، جاري فتح المحاضرات...", "success");
@@ -1365,7 +1382,6 @@ async function handleEnrollClick(courseId) {
     var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
     var course = courses.find(function(c) { return String(c.id).trim() === stringCourseId; });
 
-    // التحقق الشامل من كون الكورس مجانياً سواء كان عبر خاصية isFree أو السعر 0[cite: 10]
     var isCourseFree = false;
     if (course) {
       isCourseFree = Boolean(course.isFree) || Number(course.price) === 0 || String(course.price).trim() === "0";
@@ -1377,17 +1393,15 @@ async function handleEnrollClick(courseId) {
 
       showToast("جاري تفعيل الكورس في حسابك وتحديث الإحصائيات...", "info");
 
-      // 1. إضافة المعرف لمصفوفة الطالب فورياً[cite: 10]
+      // 1. إضافة الكورس في الذاكرة المحلية فورا للطالب[cite: 10, 11]
       if (!currentEnrolledList.includes(stringCourseId)) {
         currentEnrolledList.push(stringCourseId);
       }
       user.enrolledCourses = currentEnrolledList;
-
-      // 2. تحديث كائن الطالب الحالي في المتصفح[cite: 10]
       localStorage.setItem("current_user", JSON.stringify(user));
       localStorage.setItem("edu_currentUser", JSON.stringify(user));
 
-      // 3. تحديث قائمة المستخدمين الكاملة في localStorage[cite: 10]
+      // 2. تحديث قائمة المستخدمين الكاملة محلياً لكي ينعكس العدد فوراً[cite: 10, 11]
       var allUsers = JSON.parse(localStorage.getItem("edu_users")) || [];
       var uIdx = allUsers.findIndex(function(u) { 
         return (u.uid && String(u.uid).trim() === targetUid) || (u.id && String(u.id).trim() === targetUid); 
@@ -1397,14 +1411,13 @@ async function handleEnrollClick(courseId) {
         localStorage.setItem("edu_users", JSON.stringify(allUsers));
       }
 
-      // 4. الحفظ والمزامنة السحابية الصارمة في Firestore[cite: 10]
+      // 3. التحديث السحابي في Firestore[cite: 10, 11]
       if (typeof firebase !== "undefined" && firebase.firestore && targetUid) {
         try {
           await firebase.firestore().collection("users").doc(targetUid).set({
             enrolledCourses: firebase.firestore.FieldValue.arrayUnion(stringCourseId)
           }, { merge: true });
 
-          // تسجيل وثيقة العملية في payments لتظهر مباشرة في إحصائيات الإدارة والداشبورد[cite: 10]
           await firebase.firestore().collection("payments").add({
             userUid: targetUid,
             userId: targetUid,
@@ -1423,7 +1436,6 @@ async function handleEnrollClick(courseId) {
         }
       }
 
-      // 5. استدعاء FirebaseService إن وجد لضمان مزامنة الدروس[cite: 10]
       if (window.FirebaseService && typeof window.FirebaseService.updateUserEnrollmentsByUid === "function") {
         try {
           await window.FirebaseService.updateUserEnrollmentsByUid(targetUid, currentEnrolledList, user.customAllowedLessons);
@@ -1437,14 +1449,13 @@ async function handleEnrollClick(courseId) {
       return;
     }
 
-    // إذا كان الكورس مدفوعاً يتم التوجيه لصفحة الدفع[cite: 10]
     var proceed = await customConfirm("هل تريد الانتقال لصفحة تأكيد ودفع رسوم الكورس: " + (course ? course.title : "") + "؟", "الاشتراك بالكورس");
     if (proceed) {
       window.location.href = "checkout.html?course=" + stringCourseId;
     }
   } catch(e) {
-    console.error("Enrollment error:", e);
-    showToast("حدث خطأ أثناء محاولة الاشتراك", "error");
+    console.error("Enrollment error details:", e);
+    showToast("حدث خطأ أثناء محاولة الاشتراك: " + (e.message || ""), "error");
   }
 }
 window.handleEnrollClick = handleEnrollClick;
@@ -1510,7 +1521,6 @@ function initGlobalRealtimeSync() {
           if (typeof renderPaymentsTable === "function") renderPaymentsTable(pays);
         });
       }
-      // مزامنة سجلات المشاهدة اللحظية من السحابة
       if (typeof window.FirebaseService.subscribeWatchLogs === "function") {
         window.FirebaseService.subscribeWatchLogs(function() {
           if (typeof renderAdmin === "function") renderAdmin();
