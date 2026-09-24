@@ -84,7 +84,6 @@ function customConfirm(message, title, confirmText, cancelText) {
 }
 window.customConfirm = customConfirm;
 
-// نافذة التنبيهات المنبثقة (Toast) مع ضبط التنسيقات وعزل النصوص ومنع تشوه الخطوط
 function showToast(message, type, title) {
   try {
     type = type || "info";
@@ -165,7 +164,14 @@ window.showToast = showToast;
 function getCurrentUser() {
   try {
     var data = localStorage.getItem("current_user") || localStorage.getItem("edu_currentUser");
-    return data ? JSON.parse(data) : null;
+    if (!data) return null;
+    var user = JSON.parse(data);
+    if (!user) return null;
+    user.uid = String(user.uid || user.id || "");
+    user.id = user.uid;
+    user.fullName = String(user.fullName || user.name || user.studentName || "مستخدم");
+    user.role = String(user.role || "STUDENT").toUpperCase();
+    return user;
   } catch (e) {
     return null;
   }
@@ -471,6 +477,7 @@ function renderAdminUserDevices(targetUid, containerId) {
 }
 window.renderAdminUserDevices = renderAdminUserDevices;
 
+// حساب المؤشرات بدقة مع توحيد البحث بالـ UID والبريد ومراعاة سجلات المشاهدة السحابية
 function calculateStudentMetrics(userUid) {
   if (!userUid) return { enrolledCount: 0, completedExams: 0, avgScore: 0, totalHours: 0, enrolledList: [], submissionsList: [] };
 
@@ -484,9 +491,10 @@ function calculateStudentMetrics(userUid) {
 
     var submissions = JSON.parse(localStorage.getItem("edu_submissions")) || [];
     var userSubs = submissions.filter(function(s) { 
-      return (s.userUid && String(s.userUid) === String(userUid)) || 
-             (s.userId && String(s.userId) === String(userUid)) ||
-             (s.userEmail && targetUser && String(s.userEmail).toLowerCase() === String(targetUser.email).toLowerCase()); 
+      var sUid = String(s.userUid || s.userId || "");
+      var sEmail = String(s.userEmail || s.email || "").toLowerCase().trim();
+      var tEmail = targetUser && targetUser.email ? String(targetUser.email).toLowerCase().trim() : "";
+      return (sUid && sUid === String(userUid)) || (sEmail && tEmail && sEmail === tEmail); 
     });
 
     var avgScore = 0;
@@ -1215,7 +1223,7 @@ window.sendActiveChatMessage = sendActiveChatMessage;
 
 var lastHandledRole = null;
 
-// مراقبة فورية لحالة المستخدم: تغيير الرتبة أو الطرد الفوري ومسح البيانات عند حذف الحساب سحابياً
+// مراقبة فورية لحالة المستخدم: التحقق اللحظي من استمرار وجود وثيقة الحساب
 function monitorCurrentUserStatus() {
   try {
     var user = getCurrentUser();
@@ -1225,7 +1233,7 @@ function monitorCurrentUserStatus() {
     if (typeof firebase !== "undefined" && firebase.firestore) {
       firebase.firestore().collection("users").doc(uid)
         .onSnapshot(function(docSnap) {
-          // إذا تم حذف وثيقة المستخدم من قاعدة البيانات بواسطة الأدمن، يطرد فوراً
+          // إذا حُذفت وثيقة الطالب من قاعدة البيانات بواسطة الإدارة، يطرد فوراً وتُمحى بياناته
           if (!docSnap || !docSnap.exists) {
             localStorage.removeItem("current_user");
             localStorage.removeItem("edu_currentUser");
@@ -1288,6 +1296,11 @@ function updateNavbarAndAuthGuards() {
     if (currentPath.indexOf("admin.html") !== -1) {
       if (!user) {
         window.location.replace("login.html");
+        return;
+      }
+      var role = (user.role || "").toUpperCase();
+      if (role !== "ADMIN" && role !== "SUPER_ADMIN" && role !== "SUPERADMIN" && role !== "MANAGER") {
+        window.location.replace("dashboard.html");
         return;
       }
     }
@@ -1461,7 +1474,6 @@ function showPushNotificationPrompt() {
   }
 }
 
-// دالة تسجيل توكن FCM في Firestore تلقائياً والاشتراك في مجموعة البث العام
 async function registerFCMDeviceAutomatically() {
   try {
     var reg = await navigator.serviceWorker.register("firebase-messaging-sw.js");
@@ -1496,7 +1508,6 @@ async function registerFCMDeviceAutomatically() {
   }
 }
 
-// مراقب الإشعارات السحابية الفوري على أجهزة الطلاب
 function initCloudNotificationWatcher() {
   if (window.FirebaseService && typeof window.FirebaseService.subscribeNotifications === "function") {
     var lastSeenNotifTime = Date.now();
