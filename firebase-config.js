@@ -646,6 +646,35 @@ window.FirebaseService = {
     }, 150);
   },
 
+  // الاستماع المباشر وتحديث سجلات الحضور والمشاهدات السحابية لكل الطلاب
+  subscribeWatchLogs(callback) {
+    var check = setInterval(function() {
+      var fb = getFirebase();
+      if (fb && fb.firestore) {
+        clearInterval(check);
+        fb.firestore().collection("course_watch_logs").onSnapshot(function(snap) {
+          var tracking = JSON.parse(localStorage.getItem("edu_course_watch_logs") || "{}");
+          snap.forEach(function(doc) {
+            var data = doc.data() || {};
+            var cId = String(data.courseId || "");
+            var uId = String(data.userUid || "");
+            if (cId && uId) {
+              if (!tracking[cId]) tracking[cId] = {};
+              tracking[cId][uId] = {
+                totalSeconds: Number(data.totalSeconds) || 0,
+                lastActive: data.lastActive || "الآن"
+              };
+            }
+          });
+          localStorage.setItem("edu_course_watch_logs", JSON.stringify(tracking));
+          if (callback) callback(tracking);
+        }, function(err) {
+          console.warn("Watch logs sync notice:", err);
+        });
+      }
+    }, 150);
+  },
+
   async saveCourse(courseData, courseId) {
     var fb = getFirebase();
     if (fb && fb.firestore) {
@@ -729,7 +758,12 @@ window.FirebaseService = {
         clearInterval(check);
         fb.firestore().collection("submissions").onSnapshot(function(snap) {
           var list = [];
-          snap.forEach(function(doc) { list.push(Object.assign({ id: doc.id }, doc.data())); });
+          snap.forEach(function(doc) { 
+            var subData = doc.data() || {};
+            subData.id = doc.id;
+            subData.userUid = String(subData.userUid || subData.userId || "");
+            list.push(subData); 
+          });
           localStorage.setItem("edu_submissions", JSON.stringify(list));
           if (callback) callback(list);
         }, function(err) {
@@ -743,6 +777,7 @@ window.FirebaseService = {
     var fb = getFirebase();
     if (fb && fb.firestore) {
       submissionData.createdAt = new Date().toISOString();
+      submissionData.userUid = String(submissionData.userUid || submissionData.userId || "");
       await fb.firestore().collection("submissions").add(submissionData);
     }
   },
@@ -757,7 +792,13 @@ window.FirebaseService = {
         clearInterval(check);
         fb.firestore().collection("payments").onSnapshot(function(snap) {
           var list = [];
-          snap.forEach(function(doc) { list.push(Object.assign({ id: doc.id }, doc.data())); });
+          snap.forEach(function(doc) { 
+            var pData = doc.data() || {};
+            pData.id = doc.id;
+            pData.userUid = String(pData.userUid || pData.userId || "");
+            pData.courseId = String(pData.courseId || "");
+            list.push(pData); 
+          });
           localStorage.setItem("edu_payments", JSON.stringify(list));
           if (callback) callback(list);
         }, function(err) {
@@ -776,6 +817,7 @@ window.FirebaseService = {
       paymentData.createdAt = new Date().toISOString();
       paymentData.status = "PENDING";
       paymentData.courseId = String(paymentData.courseId);
+      paymentData.userUid = String(paymentData.userUid || paymentData.userId || "");
       var ref = await fb.firestore().collection("payments").add(paymentData);
       return ref.id;
     }
@@ -801,9 +843,9 @@ window.FirebaseService = {
 
       var batch = fb.firestore().batch();
       var payRef = fb.firestore().collection("payments").doc(paymentId);
-      batch.update(payRef, { status: "APPROVED", userUid: targetUid });
+      batch.update(payRef, { status: "APPROVED", userUid: String(targetUid) });
 
-      var userRef = fb.firestore().collection("users").doc(targetUid);
+      var userRef = fb.firestore().collection("users").doc(String(targetUid));
       batch.update(userRef, {
         enrolledCourses: firebase.firestore.FieldValue.arrayUnion(stringCourseId)
       });
@@ -811,7 +853,7 @@ window.FirebaseService = {
       await batch.commit();
 
       var currentUser = JSON.parse(localStorage.getItem("current_user"));
-      if (currentUser && (currentUser.uid === targetUid || currentUser.id === targetUid)) {
+      if (currentUser && (String(currentUser.uid) === String(targetUid) || String(currentUser.id) === String(targetUid))) {
         if (!currentUser.enrolledCourses) currentUser.enrolledCourses = [];
         if (!currentUser.enrolledCourses.map(String).includes(stringCourseId)) {
           currentUser.enrolledCourses.push(stringCourseId);

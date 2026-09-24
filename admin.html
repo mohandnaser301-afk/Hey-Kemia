@@ -1079,8 +1079,9 @@
         container.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:15px;">لا توجد كورسات منشورة بالمنصة بعد.</p>';
       } else {
         container.innerHTML = courses.map(function(c) {
-          var isCourseActive = enrolled.includes(String(c.id));
-          var allowedLessonIds = customLessons[c.id] || [];
+          var cIdStr = String(c.id);
+          var isCourseActive = enrolled.includes(cIdStr);
+          var allowedLessonIds = customLessons[cIdStr] || customLessons[c.id] || [];
           var lessons = c.lessons || [];
 
           return '<div class="permission-course-card">' +
@@ -1435,6 +1436,7 @@
       var newCourse = {
         title: title,
         desc: desc || "محتوى تدريبي وتأسيسي متكامل في الكيمياء.",
+        description: desc || "محتوى تدريبي وتأسيسي متكامل في الكيمياء.",
         price: isFree ? 0 : (Number(document.getElementById("addCoursePrice").value) || 250),
         isFree: isFree,
         maxViewsType: viewsType,
@@ -1701,13 +1703,17 @@
     function openCourseWatchStats(courseId, courseTitle) {
       document.getElementById("watchModalCourseTitle").innerText = "تقرير المشاهدات: " + courseTitle;
       var tracking = JSON.parse(localStorage.getItem("edu_course_watch_logs")) || {};
-      var courseLogs = tracking[courseId] || {};
-      var enrolledUsers = allStudentsCache.filter(function(u) { return u.enrolledCourses && u.enrolledCourses.map(String).includes(String(courseId)); });
+      var courseLogs = tracking[String(courseId)] || tracking[courseId] || {};
+      
+      // مطابقة الطلاب المشتركين بدقة مهما كانت صيغة معرف الكورس
+      var enrolledUsers = allStudentsCache.filter(function(u) { 
+        return u.enrolledCourses && u.enrolledCourses.map(String).includes(String(courseId)); 
+      });
 
       currentWatchStatsList = enrolledUsers.map(function(u) {
-        var uidKey = u.uid || u.id;
-        var log = courseLogs[uidKey] || courseLogs[u.email] || { totalSeconds: 0, lastActive: "لم يبدأ بعد" };
-        var accessCount = (u.courseAccessCount && u.courseAccessCount[courseId]) || 0;
+        var uidKey = String(u.uid || u.id);
+        var log = courseLogs[uidKey] || (u.email && courseLogs[u.email.toLowerCase()]) || { totalSeconds: 0, lastActive: "لم يبدأ بعد" };
+        var accessCount = (u.courseAccessCount && (u.courseAccessCount[courseId] || u.courseAccessCount[String(courseId)])) || 0;
         return {
           fullName: u.fullName,
           phone: u.studentPhone || "غير مسجل",
@@ -1755,7 +1761,6 @@
       renderWatchStatsTable(filtered);
     }
 
-    // بناء وتحديث الرسوم البيانية بدقة بعد تصفية الحسابات الإدارية
     function renderCharts() {
       var payments = JSON.parse(localStorage.getItem("edu_payments")) || [];
       var submissions = JSON.parse(localStorage.getItem("edu_submissions")) || [];
@@ -1907,7 +1912,6 @@
       showToast("تم إرسال الإشعار السحابي الفوري لجميع أجهزة الطلاب بنجاح ✓", "success");
     });
 
-    // دالة عرض وتحديث كافة بيانات لوحة التحكم
     function renderAdmin() {
       var user = getCurrentUser();
       if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN")) return;
@@ -1939,7 +1943,7 @@
       var subs = JSON.parse(localStorage.getItem("edu_submissions")) || [];
       var supportThreads = JSON.parse(localStorage.getItem("edu_support_threads")) || [];
 
-      // تصفية الطلاب الحقيقيين واستثناء الرتب الإدارية من جداول الطلاب
+      // استخراج الطلاب الحقيقيين واستثناء الرتب الإدارية من جداول الطلاب
       allStudentsCache = users.filter(function(u) { 
         var r = String(u.role || "STUDENT").toUpperCase();
         return r === "STUDENT";
@@ -1962,17 +1966,19 @@
           allStudentsCache.map(function(s) { return '<option value="' + (s.uid || s.id) + '">' + s.fullName + ' (' + s.email + ')</option>'; }).join("");
       }
 
-      // جدول الكورسات
+      // جدول الكورسات مع حساب عدد المشتركين الحقيقيين بدقة
       document.getElementById("coursesTableBody").innerHTML = courses.map(function(c, index) {
         var priceTag = (c.isFree || Number(c.price) === 0) ? '<span style="color:#059669; font-weight:bold;">مجاني</span>' : (c.price + " ج.م");
-        var activeEnrolledCount = allStudentsCache.filter(function(u) { return u.enrolledCourses && u.enrolledCourses.map(String).includes(String(c.id)); }).length;
+        var activeEnrolledCount = allStudentsCache.filter(function(u) { 
+          return u.enrolledCourses && u.enrolledCourses.map(String).includes(String(c.id)); 
+        }).length;
 
         return "<tr>" +
           '<td><img src="' + (c.image || "") + '" style="width:45px; height:32px; object-fit:cover; border-radius:6px;" onerror="this.src=\'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80\'"></td>' +
           "<td><strong>" + c.title + "</strong></td>" +
           "<td>" + priceTag + "</td>" +
           "<td>" + (c.lessons || []).length + " محاضرات</td>" +
-          "<td>" + activeEnrolledCount + " طالب</td>" +
+          "<td><strong>" + activeEnrolledCount + " طالب</strong></td>" +
           "<td>" +
             '<button type="button" class="btn-action btn-action-success" onclick="openCourseWatchStats(\'' + c.id + '\', \'' + c.title.replace(/'/g, "\\'") + '\')" style="margin-left:4px;">تقرير المشاهدات</button>' +
             '<button type="button" class="btn-action btn-action-primary" onclick="openEditCourseModal(' + index + ')" style="margin-left:4px;">تعديل</button>' +
@@ -2099,7 +2105,7 @@
           "<td>" + emailDisplay + "</td>" +
           "<td>" + phoneDisplay + "</td>" +
           "<td>" + govDisplay + "</td>" +
-          "<td>" + m.enrolledCount + " كورسات</td>" +
+          "<td><strong>" + m.enrolledCount + " كورسات</strong></td>" +
           "<td>" + m.completedExams + " امتحانات</td>" +
           "<td><strong>" + m.avgScore + "%</strong></td>" +
           "<td>" + m.totalHours + " ساعة</td>" +
@@ -2205,6 +2211,12 @@
           window.FirebaseService.subscribeUsers(function() { renderAdmin(); });
           window.FirebaseService.subscribePayments(function() { renderAdmin(); });
           window.FirebaseService.subscribeSubmissions(function() { renderAdmin(); });
+          
+          // مزامنة سجلات المشاهدة اللحظية من السحابة وتحديث الجداول
+          if (typeof window.FirebaseService.subscribeWatchLogs === "function") {
+            window.FirebaseService.subscribeWatchLogs(function() { renderAdmin(); });
+          }
+
           if (window.FirebaseService.subscribeAllSupportThreads) {
             window.FirebaseService.subscribeAllSupportThreads(function(threads) {
               localStorage.setItem("edu_support_threads", JSON.stringify(threads));
