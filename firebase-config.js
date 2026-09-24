@@ -293,7 +293,7 @@ window.FirebaseService = {
         uid = createdFbUser.uid;
 
         await createdFbUser.updateProfile({ displayName: valid.fullName }).catch(function() {});
-        await createdFbUser.sendEmailVerification();
+        await createdFbUser.sendEmailVerification().catch(function() {});
       } catch (authErr) {
         if (authErr.code === 'auth/email-already-in-use') {
           throw new Error("هذا البريد الإلكتروني مسجل بالفعل بحساب آخر.");
@@ -303,8 +303,8 @@ window.FirebaseService = {
     }
 
     var userDoc = {
-      uid: uid,
-      id: uid,
+      uid: String(uid),
+      id: String(uid),
       fullName: valid.fullName,
       name: valid.fullName,
       studentName: valid.fullName,
@@ -326,8 +326,26 @@ window.FirebaseService = {
       createdAt: new Date().toISOString()
     };
 
+    if (fb && fb.firestore) {
+      try {
+        await fb.firestore().collection("users").doc(String(uid)).set(userDoc, { merge: true });
+      } catch (err) {
+        console.warn("حفظ وثيقة المستخدم سحابياً:", err);
+      }
+    }
+
+    var allUsers = JSON.parse(localStorage.getItem("edu_users") || "[]");
+    var existingIdx = allUsers.findIndex(function(u) { return String(u.uid) === String(uid) || String(u.id) === String(uid); });
+    if (existingIdx > -1) {
+      allUsers[existingIdx] = userDoc;
+    } else {
+      allUsers.push(userDoc);
+    }
+    localStorage.setItem("edu_users", JSON.stringify(allUsers));
+
     localStorage.setItem("hk_pending_reg_doc", JSON.stringify(userDoc));
     showVerificationPrompt(valid.email, createdFbUser, userDoc);
+
     return userDoc;
   },
 
@@ -516,24 +534,21 @@ window.FirebaseService = {
     }
   },
 
-  // الحذف الشامل والنهائي للطالب وسجلاته وبياناته كاملة من المنصة وقاعدة البيانات السحابية
+  // الحذف الشامل والنهائي للطالب وسجلاته وبياناته كاملة من المنصة وقاعدة البيانات السحابية[cite: 8]
   async deleteUserCascadeByUid(uid) {
     var fb = getFirebase();
     if (fb && fb.firestore && uid) {
       var targetId = String(uid);
       var batch = fb.firestore().batch();
 
-      // 1. حذف وثيقة المستخدم الرئيسية
       var userRef = fb.firestore().collection("users").doc(targetId);
       batch.delete(userRef);
 
-      // استخراج الحساب لمعرفة البريد ورموز الأجهزة قبل الحذف لمسحها
       var targetUserSnap = await userRef.get().catch(function() { return null; });
       var targetUserData = targetUserSnap && targetUserSnap.exists ? targetUserSnap.data() : null;
       var targetEmail = targetUserData && targetUserData.email ? String(targetUserData.email).toLowerCase().trim() : "";
       var tokens = targetUserData && Array.isArray(targetUserData.fcmTokens) ? targetUserData.fcmTokens : [];
 
-      // 2. حذف مدفوعات الطالب
       try {
         var paySnap = await fb.firestore().collection("payments").where("userUid", "==", targetId).get();
         paySnap.forEach(function(doc) { batch.delete(doc.ref); });
@@ -543,7 +558,6 @@ window.FirebaseService = {
         }
       } catch (e) {}
 
-      // 3. حذف تسليمات واختبارات الطالب
       try {
         var subSnap = await fb.firestore().collection("submissions").where("userUid", "==", targetId).get();
         subSnap.forEach(function(doc) { batch.delete(doc.ref); });
@@ -553,35 +567,29 @@ window.FirebaseService = {
         }
       } catch (e) {}
 
-      // 4. حذف سجلات المشاهدة السحابية الخاصة به
       try {
         var watchSnap = await fb.firestore().collection("course_watch_logs").where("userUid", "==", targetId).get();
         watchSnap.forEach(function(doc) { batch.delete(doc.ref); });
       } catch (e) {}
 
-      // 5. حذف اشتراكات الإشعارات لجميع أجهزة الطالب
       try {
         tokens.forEach(function(t) {
           if (t) batch.delete(fb.firestore().collection("fcm_subscribers").doc(String(t)));
         });
       } catch (e) {}
 
-      // 6. حذف محادثة الدعم الفني بالكامل
       try {
         var chatMsgsSnap = await fb.firestore().collection("support_threads").doc(targetId).collection("messages").get();
         chatMsgsSnap.forEach(function(doc) { batch.delete(doc.ref); });
         batch.delete(fb.firestore().collection("support_threads").doc(targetId));
       } catch (e) {}
 
-      // تنفيذ الحذف الشامل دفعة واحدة
       await batch.commit();
 
-      // تنظيف الذاكرة المحلية فورياً إذا كان الحساب المحذوف في localStorage
       var localUsers = JSON.parse(localStorage.getItem("edu_users") || "[]");
       var filtered = localUsers.filter(function(u) { return String(u.uid) !== targetId && String(u.id) !== targetId; });
       localStorage.setItem("edu_users", JSON.stringify(filtered));
 
-      // مسح سجل المحادثات المحلي
       localStorage.removeItem("edu_chat_" + targetId);
     }
   },
@@ -646,7 +654,6 @@ window.FirebaseService = {
     }, 150);
   },
 
-  // الاستماع المباشر وتحديث سجلات الحضور والمشاهدات السحابية لكل الطلاب
   subscribeWatchLogs(callback) {
     var check = setInterval(function() {
       var fb = getFirebase();
@@ -696,10 +703,43 @@ window.FirebaseService = {
     }
   },
 
+  // عند حذف الكورس: يتم حذفه سحابياً ومسحه من مصفوفات اشتراكات جميع الطلاب فوراً لتعديل العداد لحظياً[cite: 8]
   async deleteCourse(courseId) {
     var fb = getFirebase();
     if (fb && fb.firestore && courseId) {
-      await fb.firestore().collection("courses").doc(courseId).delete();
+      var cIdStr = String(courseId).trim();
+      await fb.firestore().collection("courses").doc(cIdStr).delete();
+
+      try {
+        // حذف معرّف الكورس من مصفوفة اشتراكات كل الطلاب المسجلين بالمنصة سحابياً
+        var usersSnap = await fb.firestore().collection("users").where("enrolledCourses", "array-contains", cIdStr).get();
+        var batch = fb.firestore().batch();
+        usersSnap.forEach(function(doc) {
+          batch.update(doc.ref, {
+            enrolledCourses: firebase.firestore.FieldValue.arrayRemove(cIdStr)
+          });
+        });
+        await batch.commit();
+
+        // تحديث مصفوفة edu_users محلياً
+        var localUsers = JSON.parse(localStorage.getItem("edu_users") || "[]");
+        localUsers.forEach(function(u) {
+          if (Array.isArray(u.enrolledCourses)) {
+            u.enrolledCourses = u.enrolledCourses.filter(function(id) { return String(id).trim() !== cIdStr; });
+          }
+        });
+        localStorage.setItem("edu_users", JSON.stringify(localUsers));
+
+        // تحديث حساب المستخدم الحالي إن كان مشتركاً فيه
+        var cur = JSON.parse(localStorage.getItem("current_user") || "null");
+        if (cur && Array.isArray(cur.enrolledCourses)) {
+          cur.enrolledCourses = cur.enrolledCourses.filter(function(id) { return String(id).trim() !== cIdStr; });
+          localStorage.setItem("current_user", JSON.stringify(cur));
+          localStorage.setItem("edu_currentUser", JSON.stringify(cur));
+        }
+      } catch (err) {
+        console.warn("تعديل اشتراكات الطلاب بعد حذف الكورس:", err);
+      }
     }
   },
 

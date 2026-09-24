@@ -478,24 +478,45 @@ function renderAdminUserDevices(targetUid, containerId) {
 }
 window.renderAdminUserDevices = renderAdminUserDevices;
 
-// حساب المؤشرات بدقة مع توحيد البحث بالـ UID والبريد ومراعاة سجلات المشاهدة السحابية
+// حساب المؤشرات بدقة مع توحيد تطابق معرفات الكورسات وضمان قراءة العدد الحقيقي بناءً على الكورسات الموجودة حالياً فقط[cite: 11]
 function calculateStudentMetrics(userUid) {
   if (!userUid) return { enrolledCount: 0, completedExams: 0, avgScore: 0, totalHours: 0, enrolledList: [], submissionsList: [] };
 
   try {
     var users = JSON.parse(localStorage.getItem("edu_users")) || [];
-    var targetUser = users.find(function(u) { return (u.uid && String(u.uid) === String(userUid)) || (u.id && String(u.id) === String(userUid)); });
+    var targetUser = users.find(function(u) { 
+      return (u.uid && String(u.uid).trim() === String(userUid).trim()) || 
+             (u.id && String(u.id).trim() === String(userUid).trim()); 
+    });
+
+    var cur = getCurrentUser();
+    if (cur && (String(cur.uid).trim() === String(userUid).trim() || String(cur.id).trim() === String(userUid).trim())) {
+      targetUser = cur;
+    }
 
     var allCourses = JSON.parse(localStorage.getItem("edu_courses")) || [];
-    var enrolledIds = (targetUser && targetUser.enrolledCourses) ? targetUser.enrolledCourses.map(String) : [];
-    var enrolledCoursesList = allCourses.filter(function(c) { return enrolledIds.includes(String(c.id)); });
+    
+    var enrolledIds = [];
+    if (targetUser && Array.isArray(targetUser.enrolledCourses)) {
+      enrolledIds = targetUser.enrolledCourses.map(function(id) {
+        return String(id).trim();
+      }).filter(Boolean);
+    }
+
+    // فلترة الكورسات المشترك بها بناءً على الكورسات المتاحة حالياً فقط، فإذا حُذف كورس لا يُحسب[cite: 11]
+    var enrolledCoursesList = allCourses.filter(function(c) { 
+      var cId = String(c.id).trim();
+      return enrolledIds.includes(cId); 
+    });
+
+    var finalEnrolledCount = enrolledCoursesList.length;
 
     var submissions = JSON.parse(localStorage.getItem("edu_submissions")) || [];
     var userSubs = submissions.filter(function(s) { 
-      var sUid = String(s.userUid || s.userId || "");
+      var sUid = String(s.userUid || s.userId || "").trim();
       var sEmail = String(s.userEmail || s.email || "").toLowerCase().trim();
       var tEmail = targetUser && targetUser.email ? String(targetUser.email).toLowerCase().trim() : "";
-      return (sUid && sUid === String(userUid)) || (sEmail && tEmail && sEmail === tEmail); 
+      return (sUid && sUid === String(userUid).trim()) || (sEmail && tEmail && sEmail === tEmail); 
     });
 
     var avgScore = 0;
@@ -508,10 +529,11 @@ function calculateStudentMetrics(userUid) {
     var totalSec = 0;
     Object.keys(tracking).forEach(function(cId) {
       if (tracking[cId]) {
-        if (tracking[cId][userUid]) {
-          totalSec += (tracking[cId][userUid].totalSeconds || 0);
-        } else if (targetUser && targetUser.email && tracking[cId][targetUser.email]) {
-          totalSec += (tracking[cId][targetUser.email].totalSeconds || 0);
+        var courseData = tracking[cId];
+        if (courseData[userUid]) {
+          totalSec += (courseData[userUid].totalSeconds || 0);
+        } else if (targetUser && targetUser.email && courseData[targetUser.email.toLowerCase()]) {
+          totalSec += (courseData[targetUser.email.toLowerCase()].totalSeconds || 0);
         }
       }
     });
@@ -519,7 +541,7 @@ function calculateStudentMetrics(userUid) {
     var totalHours = (totalSec / 3600).toFixed(1);
 
     return {
-      enrolledCount: enrolledCoursesList.length,
+      enrolledCount: finalEnrolledCount,
       enrolledList: enrolledCoursesList,
       completedExams: userSubs.length,
       submissionsList: userSubs,
@@ -1310,7 +1332,7 @@ function updateNavbarAndAuthGuards() {
   } catch (e) {}
 }
 
-// دالة تفعيل الكورس الشاملة: تدعم الكورسات المجانية والمدفوعة مع التحديث اللحظي للداشبورد والسحابة
+// دالة تفعيل الكورس الشاملة: تدعم الكورسات المجانية والمدفوعة مع التحديث اللحظي للداشبورد والسحابة[cite: 10]
 async function handleEnrollClick(courseId) {
   try {
     var user = getCurrentUser();
@@ -1332,8 +1354,9 @@ async function handleEnrollClick(courseId) {
       return;
     }
 
-    // التحقق مما إذا كان الطالب مشتركاً بالفعل
-    if (isStudentEnrolledInCourse(user, stringCourseId)) {
+    // التحقق مما إذا كان الطالب مشتركاً بالفعل[cite: 10]
+    var currentEnrolledList = (user.enrolledCourses || []).map(function(id) { return String(id).trim(); });
+    if (currentEnrolledList.includes(stringCourseId)) {
       showToast("أنت مشترك بالفعل في هذا الكورس، جاري فتح المحاضرات...", "success");
       setTimeout(function() { window.location.href = "course-view.html?id=" + stringCourseId; }, 600);
       return;
@@ -1342,7 +1365,7 @@ async function handleEnrollClick(courseId) {
     var courses = JSON.parse(localStorage.getItem("edu_courses")) || [];
     var course = courses.find(function(c) { return String(c.id).trim() === stringCourseId; });
 
-    // التحقق الشامل من كون الكورس مجانياً سواء كان عبر خاصية isFree أو السعر 0
+    // التحقق الشامل من كون الكورس مجانياً سواء كان عبر خاصية isFree أو السعر 0[cite: 10]
     var isCourseFree = false;
     if (course) {
       isCourseFree = Boolean(course.isFree) || Number(course.price) === 0 || String(course.price).trim() === "0";
@@ -1352,37 +1375,36 @@ async function handleEnrollClick(courseId) {
       var confirmed = await customConfirm("هل تؤكد رغبتك في تفعيل والاشتراك بالكورس المجاني: " + (course ? course.title : "") + "؟", "تأكيد الاشتراك المجاني");
       if (!confirmed) return;
 
-      showToast("جاري تفعيل الكورس في حسابك سحابياً...", "info");
+      showToast("جاري تفعيل الكورس في حسابك وتحديث الإحصائيات...", "info");
 
-      // 1. تحديث قائمة الكورسات محلياً للطالب
-      var newEnrolled = (user.enrolledCourses || []).map(String);
-      if (!newEnrolled.includes(stringCourseId)) {
-        newEnrolled.push(stringCourseId);
+      // 1. إضافة المعرف لمصفوفة الطالب فورياً[cite: 10]
+      if (!currentEnrolledList.includes(stringCourseId)) {
+        currentEnrolledList.push(stringCourseId);
       }
-      user.enrolledCourses = newEnrolled;
+      user.enrolledCourses = currentEnrolledList;
 
-      // 2. تحديث التخزين المحلي فورياً
+      // 2. تحديث كائن الطالب الحالي في المتصفح[cite: 10]
       localStorage.setItem("current_user", JSON.stringify(user));
       localStorage.setItem("edu_currentUser", JSON.stringify(user));
 
-      // 3. تحديث قائمة الطلاب العامة في localStorage لكي ينعكس فوراً في الداشبورد والإدارة
+      // 3. تحديث قائمة المستخدمين الكاملة في localStorage[cite: 10]
       var allUsers = JSON.parse(localStorage.getItem("edu_users")) || [];
       var uIdx = allUsers.findIndex(function(u) { 
-        return (u.uid && String(u.uid) === targetUid) || (u.id && String(u.id) === targetUid); 
+        return (u.uid && String(u.uid).trim() === targetUid) || (u.id && String(u.id).trim() === targetUid); 
       });
       if (uIdx > -1) {
-        allUsers[uIdx].enrolledCourses = newEnrolled;
+        allUsers[uIdx].enrolledCourses = currentEnrolledList;
         localStorage.setItem("edu_users", JSON.stringify(allUsers));
       }
 
-      // 4. الحفظ والتفعيل السحابي المباشر في Firestore
+      // 4. الحفظ والمزامنة السحابية الصارمة في Firestore[cite: 10]
       if (typeof firebase !== "undefined" && firebase.firestore && targetUid) {
         try {
           await firebase.firestore().collection("users").doc(targetUid).set({
             enrolledCourses: firebase.firestore.FieldValue.arrayUnion(stringCourseId)
           }, { merge: true });
 
-          // تسجيل طلب دفع معتمد تلقائياً بقيمة 0 ج.م لربط الإحصائيات وسجلات الطالب
+          // تسجيل وثيقة العملية في payments لتظهر مباشرة في إحصائيات الإدارة والداشبورد[cite: 10]
           await firebase.firestore().collection("payments").add({
             userUid: targetUid,
             userId: targetUid,
@@ -1390,32 +1412,32 @@ async function handleEnrollClick(courseId) {
             userEmail: (user.email || "").toLowerCase().trim(),
             studentPhone: user.studentPhone || user.phone || "غير مسجل",
             courseId: stringCourseId,
-            courseTitle: course ? course.title : "كورس مجاني",
+            courseTitle: course ? course.title : "كورس تعليمي",
             amount: 0,
             status: "APPROVED",
             isFreeEnrollment: true,
             createdAt: new Date().toISOString()
           });
         } catch (cloudErr) {
-          console.warn("تفعيل سحابي للكورس المجاني:", cloudErr);
+          console.warn("خطأ في التفعيل السحابي المباشر:", cloudErr);
         }
       }
 
-      // 5. استدعاء FirebaseService إن وجد لضمان مزامنة الدروس
+      // 5. استدعاء FirebaseService إن وجد لضمان مزامنة الدروس[cite: 10]
       if (window.FirebaseService && typeof window.FirebaseService.updateUserEnrollmentsByUid === "function") {
         try {
-          await window.FirebaseService.updateUserEnrollmentsByUid(targetUid, newEnrolled, user.customAllowedLessons);
+          await window.FirebaseService.updateUserEnrollmentsByUid(targetUid, currentEnrolledList, user.customAllowedLessons);
         } catch (e) {}
       }
 
-      showToast("تم تفعيل الكورس بنجاح! جاري تحويلك للمحاضرات ✓", "success");
+      showToast("تم تفعيل واحتساب اشتراكك بنجاح ✓", "success");
       setTimeout(function() { 
-        window.location.href = "course-view.html?id=" + stringCourseId; 
-      }, 800);
+        window.location.href = "dashboard.html"; 
+      }, 700);
       return;
     }
 
-    // إذا كان الكورس مدفوعاً يتم التوجيه لصفحة الدفع
+    // إذا كان الكورس مدفوعاً يتم التوجيه لصفحة الدفع[cite: 10]
     var proceed = await customConfirm("هل تريد الانتقال لصفحة تأكيد ودفع رسوم الكورس: " + (course ? course.title : "") + "؟", "الاشتراك بالكورس");
     if (proceed) {
       window.location.href = "checkout.html?course=" + stringCourseId;
@@ -1486,6 +1508,13 @@ function initGlobalRealtimeSync() {
         window.FirebaseService.subscribePayments(function(pays) {
           if (typeof renderAdmin === "function") renderAdmin();
           if (typeof renderPaymentsTable === "function") renderPaymentsTable(pays);
+        });
+      }
+      // مزامنة سجلات المشاهدة اللحظية من السحابة
+      if (typeof window.FirebaseService.subscribeWatchLogs === "function") {
+        window.FirebaseService.subscribeWatchLogs(function() {
+          if (typeof renderAdmin === "function") renderAdmin();
+          if (typeof renderStudentDashboard === "function") renderStudentDashboard();
         });
       }
     } catch (e) {}
